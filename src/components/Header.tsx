@@ -11,7 +11,7 @@ export function Header() {
           aria-label="VeloDoc home"
         >
           <Image
-            src="/logo-png.png"
+            src="/logo-png.png/logo-png.png"
             alt="VeloDoc"
             width={120}
             height={45}
