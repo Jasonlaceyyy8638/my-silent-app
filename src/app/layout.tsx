@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { ChatbaseWidget } from "@/components/ChatbaseWidget";
 import "./globals.css";
 
@@ -63,6 +64,7 @@ export default function RootLayout({
         >
           <Header />
           {children}
+          <Footer />
           <ChatbaseWidget />
         </body>
       </html>

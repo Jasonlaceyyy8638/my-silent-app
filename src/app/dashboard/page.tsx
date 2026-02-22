@@ -1,10 +1,31 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { FileUp, Sparkles, Download, Info, FileText, Layers, Clock } from "lucide-react";
+import {
+  FileUp,
+  Sparkles,
+  Download,
+  Info,
+  FileText,
+  Layers,
+  Clock,
+  Plug,
+  Zap,
+  FolderSync,
+  FileSpreadsheet,
+} from "lucide-react";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
 import type { ExtractedRow } from "@/types";
+
+type DashboardTab = "architect" | "integrations";
+
+const INTEGRATION_CARDS = [
+  { id: "quickbooks", name: "QuickBooks", icon: Plug, description: "Sync extracted data to your books." },
+  { id: "zapier", name: "Zapier", icon: Zap, description: "Connect to 5,000+ apps automatically." },
+  { id: "gdrive", name: "Google Drive", icon: FolderSync, description: "Import and export from Drive." },
+  { id: "excel", name: "Excel Online", icon: FileSpreadsheet, description: "Open and edit spreadsheets in the cloud." },
+] as const;
 
 const VELOPACK_SIZE = 20;
 
@@ -47,11 +68,17 @@ const GETTING_STARTED_STEPS = [
 ] as const;
 
 export default function DashboardPage() {
+  const [tab, setTab] = useState<DashboardTab>("architect");
+  const [waitlistJoined, setWaitlistJoined] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<ExtractedRow[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const stats = useUsageStats(rows, credits);
+
+  const handleJoinWaitlist = useCallback((id: string) => {
+    setWaitlistJoined((prev) => new Set(prev).add(id));
+  }, []);
 
   const fetchCredits = useCallback(async () => {
     try {
@@ -157,28 +184,95 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
       <div className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">PDF Architect</h1>
             <p className="text-slate-400 text-sm mt-0.5">
               Extract and organize data from any PDF
             </p>
           </div>
-          {credits !== null && (
-            <p className="text-slate-300 flex items-center gap-2">
-              <span className="font-medium text-teal-accent">{credits}</span>
-              credits
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex rounded-lg border border-white/15 bg-white/5 p-1">
               <button
                 type="button"
-                onClick={() => fetchCredits()}
-                className="text-slate-500 hover:text-teal-accent text-xs underline"
+                onClick={() => setTab("architect")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  tab === "architect"
+                    ? "bg-teal-accent/20 text-teal-accent"
+                    : "text-slate-400 hover:text-white"
+                }`}
               >
-                Refresh
+                Architect
               </button>
-            </p>
-          )}
+              <button
+                type="button"
+                onClick={() => setTab("integrations")}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  tab === "integrations"
+                    ? "bg-teal-accent/20 text-teal-accent"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Integrations
+              </button>
+            </div>
+            {credits !== null && tab === "architect" && (
+              <p className="text-slate-300 flex items-center gap-2">
+                <span className="font-medium text-teal-accent">{credits}</span>
+                credits
+                <button
+                  type="button"
+                  onClick={() => fetchCredits()}
+                  className="text-slate-500 hover:text-teal-accent text-xs underline"
+                >
+                  Refresh
+                </button>
+              </p>
+            )}
+          </div>
         </div>
 
+        {tab === "integrations" && (
+          <section className="mb-10">
+            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.4)]">
+              <h2 className="text-lg font-semibold text-white mb-2">Integrations</h2>
+              <p className="text-slate-400 text-sm mb-8">
+                Connect VeloDoc to your stack. Join the waitlist to be first in line.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {INTEGRATION_CARDS.map(({ id, name, icon: Icon, description }) => {
+                  const joined = waitlistJoined.has(id);
+                  return (
+                    <div
+                      key={id}
+                      className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 flex flex-col border-t-teal-accent/30"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-teal-accent/20 flex items-center justify-center mb-4">
+                        <Icon className="h-6 w-6 text-teal-accent" />
+                      </div>
+                      <h3 className="font-semibold text-white">{name}</h3>
+                      <p className="text-slate-400 text-sm mt-1 flex-1">{description}</p>
+                      <span className="mt-3 inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-3 py-1 text-xs font-medium text-teal-accent w-fit">
+                        Coming Soon
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleJoinWaitlist(id)}
+                        disabled={joined}
+                        className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 disabled:pointer-events-none"
+                      >
+                        {joined ? "You're on the list" : "Join Waitlist"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {tab === "architect" && (
+          <>
         <section className="mb-8 rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md overflow-hidden shadow-xl">
           <div className="p-6 sm:p-8">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">
@@ -277,6 +371,8 @@ export default function DashboardPage() {
         <section>
           <ResultsTable rows={rows} />
         </section>
+          </>
+        )}
       </div>
     </main>
   );

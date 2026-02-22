@@ -1,6 +1,7 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import type { ExtractedRow } from "@/types";
 
 type ResultsTableProps = {
@@ -75,6 +76,63 @@ function safeFilename(s: string): string {
   return s.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-").slice(0, 40) || "document";
 }
 
+function downloadExcel(rows: ExtractedRow[], filename?: string) {
+  const hasLineItems = rows.some((r) => r.lineItems && r.lineItems.length > 0);
+  let data: string[][];
+
+  if (hasLineItems) {
+    const header = [
+      "Vendor Name",
+      "Date",
+      "Total Amount",
+      "SKU",
+      "Part Description",
+      "Quantity",
+      "Unit Cost",
+      "Line Total",
+    ];
+    const body: string[][] = [];
+    for (const r of rows) {
+      if (r.lineItems && r.lineItems.length > 0) {
+        for (const li of r.lineItems) {
+          body.push([
+            r.vendorName,
+            r.date,
+            r.totalAmount,
+            li.sku,
+            li.partDescription,
+            li.quantity ?? "",
+            li.unitCost,
+            li.lineTotal ?? "",
+          ]);
+        }
+      } else {
+        body.push([r.vendorName, r.date, r.totalAmount, "", "", "", "", ""]);
+      }
+    }
+    data = [header, ...body];
+  } else {
+    const header = ["Vendor Name", "Total Amount", "Date"];
+    data = [header, ...rows.map((r) => [r.vendorName, r.totalAmount, r.date])];
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Extracted Data");
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([out], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download =
+    filename ??
+    `velodoc-extract-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ResultsTable({ rows }: ResultsTableProps) {
   if (rows.length === 0) return null;
 
@@ -85,14 +143,24 @@ export function ResultsTable({ rows }: ResultsTableProps) {
           Extracted data ({rows.length}{" "}
           {rows.length === 1 ? "document" : "documents"})
         </h2>
-        <button
-          type="button"
-          onClick={() => downloadCsv(rows)}
-          className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          {rows.length > 1 ? "Download all as CSV" : "Download as CSV"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => downloadExcel(rows)}
+            className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Export to Excel
+          </button>
+          <button
+            type="button"
+            onClick={() => downloadCsv(rows)}
+            className="inline-flex items-center gap-2 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-4 py-2 text-sm font-medium transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            {rows.length > 1 ? "Download all as CSV" : "Download as CSV"}
+          </button>
+        </div>
       </div>
       <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 divide-y divide-white/10">
         {rows.map((row, i) => {
