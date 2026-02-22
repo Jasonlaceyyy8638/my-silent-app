@@ -1,27 +1,38 @@
 import { prisma } from "./prisma";
 
+// Raw query rows may have lowercase keys (userid) depending on driver
+function getRowUserId(r: Record<string, unknown>): string {
+  const u = r.userId ?? r.userid;
+  return typeof u === "string" ? u : "";
+}
+function getRowId(r: Record<string, unknown>): string {
+  const i = r.id;
+  return typeof i === "string" ? i : "";
+}
+function getRowCredits(r: Record<string, unknown>): number {
+  const c = r.credits;
+  return typeof c === "number" ? c : 0;
+}
+
 export async function getCredits(userId: string): Promise<number> {
-  // Prisma findUnique can fail to match due to encoding when using pooler; fetch all and match in code
-  const rows = await prisma.$queryRaw<{ userId: string; credits: number }[]>`
+  const rows = await prisma.$queryRaw<Record<string, unknown>[]>`
     SELECT "userId", credits FROM "UserCredits"
   `;
   const normalized = userId.trim();
-  const row = rows.find((r) => r.userId.trim() === normalized);
-  return row?.credits ?? 0;
+  const row = rows.find((r) => getRowUserId(r).trim() === normalized);
+  return row ? getRowCredits(row) : 0;
 }
 
 export async function addCredits(userId: string, amount: number): Promise<number> {
   const current = await getCredits(userId);
-  const rows = await prisma.$queryRaw<{ id: string; userId: string; credits: number }[]>`
+  const rows = await prisma.$queryRaw<Record<string, unknown>[]>`
     SELECT id, "userId", credits FROM "UserCredits"
   `;
   const normalized = userId.trim();
-  const row = rows.find((r) => r.userId.trim() === normalized);
+  const row = rows.find((r) => getRowUserId(r).trim() === normalized);
   if (row) {
-    await prisma.$executeRaw`
-      UPDATE "UserCredits" SET credits = credits + ${amount}, "updatedAt" = NOW()
-      WHERE id = ${row.id}
-    `;
+    const rowId = getRowId(row);
+    await prisma.$executeRaw`UPDATE "UserCredits" SET credits = credits + ${amount}, "updatedAt" = NOW() WHERE id = ${rowId}`;
   } else {
     await prisma.$executeRaw`
       INSERT INTO "UserCredits" (id, "userId", credits, "updatedAt")
@@ -36,15 +47,13 @@ export async function deductCredit(userId: string): Promise<{ ok: boolean; remai
   if (current < 1) {
     return { ok: false, remaining: 0 };
   }
-  const rows = await prisma.$queryRaw<{ id: string; userId: string }[]>`
+  const rows = await prisma.$queryRaw<Record<string, unknown>[]>`
     SELECT id, "userId" FROM "UserCredits"
   `;
   const normalized = userId.trim();
-  const row = rows.find((r) => r.userId.trim() === normalized);
+  const row = rows.find((r) => getRowUserId(r).trim() === normalized);
   if (!row) return { ok: false, remaining: 0 };
-  await prisma.$executeRaw`
-    UPDATE "UserCredits" SET credits = credits - 1, "updatedAt" = NOW()
-    WHERE id = ${row.id}
-  `;
+  const rowId = getRowId(row);
+  await prisma.$executeRaw`UPDATE "UserCredits" SET credits = credits - 1, "updatedAt" = NOW() WHERE id = ${rowId}`;
   return { ok: true, remaining: current - 1 };
 }
