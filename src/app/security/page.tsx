@@ -83,29 +83,41 @@ const PILLARS = [
     id: "encryption",
     Icon: LockIcon,
     title: "Data Encryption",
+    bento: "medium" as const,
     description:
       "All data is encrypted at rest using AES-256 and in transit via TLS 1.2+. Institutional-grade protection ensures your documents and extracted data remain confidential from upload through storage and retrieval.",
   },
   {
-    id: "infrastructure",
-    Icon: CloudIcon,
-    title: "Cloud Infrastructure",
+    id: "transit",
+    Icon: LockIcon,
+    title: "Transit Security",
+    bento: "small" as const,
     description:
-      "VeloDoc is hosted on enterprise-grade AWS and Google Cloud infrastructure with 99.9% uptime SLA and redundant backups. Our compliance-first architecture is designed for reliability and disaster recovery.",
+      "TLS 1.2+ secures every connection. MFA via Clerk ensures only authorized users access their documents.",
   },
   {
     id: "privacy",
     Icon: ShieldIcon,
     title: "Privacy First",
+    bento: "large" as const,
     description:
-      "We do not sell your data. Your uploaded documents are processed and stored securely in private Supabase buckets. Data is isolated per tenant and never used for training or marketing.",
+      "We do not sell your data. Your uploaded documents are processed and stored securely in private Supabase buckets. Extraction is powered by OpenAI's enterprise API; your data is not used for model training.",
   },
   {
     id: "access",
     Icon: AwardIcon,
     title: "Access Control",
+    bento: "medium" as const,
     description:
-      "We use Clerk for multi-factor authentication (MFA) so only authorized users access their documents. Role-based access and audit trails give you full control over who sees what.",
+      "We use Clerk for multi-factor authentication (MFA) so only authorized users access their documents. Role-based access and audit trails give you full control.",
+  },
+  {
+    id: "infrastructure",
+    Icon: CloudIcon,
+    title: "Cloud Infrastructure",
+    bento: "medium" as const,
+    description:
+      "VeloDoc is hosted on AWS and Google Cloud with 99.9% uptime and redundant backups. Compliance-first architecture for reliability and disaster recovery.",
   },
 ] as const;
 
@@ -122,15 +134,17 @@ export default function SecurityPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
-          {PILLARS.map(({ id, Icon, title, description }) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-14 auto-rows-fr">
+          {PILLARS.map(({ id, Icon, title, bento, description }) => (
             <article
               key={id}
-              className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.4)] border-t-teal-accent/30"
+              className={`rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.4)] border-t-teal-accent/30 ${
+                bento === "large" ? "md:col-span-2" : ""
+              }`}
             >
               <div className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-xl bg-teal-accent/10 flex items-center justify-center shrink-0 text-teal-accent">
-                  <Icon className="w-8 h-8" />
+                <div className="w-16 h-16 rounded-xl bg-teal-accent/10 flex items-center justify-center shrink-0 text-teal-accent">
+                  <Icon className="w-10 h-10" />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-xl font-semibold text-white mb-3">

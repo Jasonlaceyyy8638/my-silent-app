@@ -1,0 +1,147 @@
+"use client";
+
+import Link from "next/link";
+import { Download, FileText } from "lucide-react";
+
+const LAST_UPDATED = "February 2025";
+
+const TOC_ITEMS = [
+  { id: "acceptance", label: "Acceptance of Terms" },
+  { id: "credit-system", label: "Credit System" },
+  { id: "acceptable-use", label: "Acceptable Use" },
+  { id: "limit-of-liability", label: "Limit of Liability" },
+  { id: "general", label: "General" },
+] as const;
+
+export default function TermsPage() {
+  const handleDownloadPDF = () => {
+    window.print();
+  };
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum print:bg-white">
+      <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+          <aside className="lg:w-56 shrink-0 print:hidden">
+            <nav className="lg:sticky lg:top-24 space-y-1">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">
+                Contents
+              </p>
+              {TOC_ITEMS.map(({ id, label }) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  className="block rounded-lg px-3 py-2 text-sm text-slate-400 hover:text-teal-accent hover:bg-white/5 transition-colors"
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+          </aside>
+
+          <article className="flex-1 min-w-0">
+            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl shadow-[0_8px_32px_rgba(15,23,42,0.4)] border-t-teal-accent/30 p-8 sm:p-10 print:bg-white print:border print:border-slate-200 print:shadow-none">
+              <header className="border-b border-white/10 pb-6 mb-8 print:border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white print:text-slate-900 tracking-tight">
+                    Terms of Service & Usage Policy
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-semibold transition-colors shrink-0 print:hidden"
+                  >
+                    <Download className="w-4 h-4" aria-hidden />
+                    Download PDF
+                  </button>
+                </div>
+                <p className="text-slate-400 text-sm font-mono print:text-slate-600">
+                  Last updated: {LAST_UPDATED}
+                </p>
+              </header>
+
+              <div className="space-y-10">
+                <section id="acceptance" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    1. Acceptance of Terms
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                    By accessing or using VeloDoc (&quot;Service&quot;), you agree to be bound by these Terms of Service and our{" "}
+                    <Link href="/dpa" className="text-teal-accent hover:underline print:text-slate-900 print:no-underline">
+                      Data Processing Agreement
+                    </Link>
+                    . If you do not agree, do not use the Service.
+                  </p>
+                </section>
+
+                <section id="credit-system" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    2. Credit System
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    VeloDoc operates on a credit-based system. One (1) credit equals one (1) document extraction. Credits are consumed when an extraction is completed. Credits are <strong className="text-white/90 print:text-slate-900">non-refundable</strong> once an extraction has been completed, regardless of the outcome or your satisfaction with the result.
+                  </p>
+                  <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                    Unused credits do not expire for the duration of your account. Purchase terms and pricing are displayed at the point of purchase and may be updated from time to time.
+                  </p>
+                </section>
+
+                <section id="acceptable-use" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    3. Acceptable Use
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    You agree to use the Service only for lawful purposes and in accordance with these Terms. You must not use the Service to process documents or data in any way that:
+                  </p>
+                  <ul className="space-y-2 text-sm text-slate-300 list-disc pl-6 print:text-slate-700">
+                    <li>Violates any applicable law, regulation, or third-party rights.</li>
+                    <li>Involves illegal document processing, fraud, or the facilitation of illegal activity.</li>
+                    <li>Infringes intellectual property or privacy rights of others.</li>
+                    <li>Attempts to reverse-engineer, disrupt, or compromise the security or availability of the Service.</li>
+                  </ul>
+                  <p className="text-slate-300 text-sm leading-relaxed mt-4 print:text-slate-700">
+                    We reserve the right to suspend or terminate access for violations of this Acceptable Use policy.
+                  </p>
+                </section>
+
+                <section id="limit-of-liability" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    4. Limit of Liability
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    The Service is an AI-based document extraction tool. While we strive for accuracy, extraction results are provided &quot;as is&quot; and we do not guarantee that outputs are complete, error-free, or fit for any particular purpose. You are responsible for verifying and using extracted data appropriately.
+                  </p>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    To the maximum extent permitted by law, VeloDoc and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss of profits, data, or business opportunity, arising out of or in connection with your use of the Service. Our total liability for any claims arising from these Terms or the Service shall not exceed the amount you paid to us in the twelve (12) months preceding the claim.
+                  </p>
+                </section>
+
+                <section id="general" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    5. General
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                    We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. For questions, contact us at support@velodoc.app. Our{" "}
+                    <Link href="/security" className="text-teal-accent hover:underline print:text-slate-900 print:no-underline">
+                      Security & Trust
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/dpa" className="text-teal-accent hover:underline print:text-slate-900 print:no-underline">
+                      Data Processing Agreement
+                    </Link>{" "}
+                    form part of our commitment to enterprise-grade compliance.
+                  </p>
+                </section>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </main>
+  );
+}
