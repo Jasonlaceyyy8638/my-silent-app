@@ -2,25 +2,27 @@
 
 import { useEffect } from "react";
 
-const CHATBOT_ID = process.env.NEXT_PUBLIC_CHATBASE_CHATBOT_ID;
-const EMBED_URL = "https://www.chatbase.co/embed.min.js";
+const CHATBASE_EMBED_URL = "https://www.chatbase.co/embed.min.js";
+const CHATBOT_ID = "7RFDPJoo-X5H0MuLzhDgY";
+const DOMAIN = "www.chatbase.co";
 
 export function ChatbaseWidget() {
   useEffect(() => {
-    if (!CHATBOT_ID || typeof document === "undefined") return;
+    if (typeof window === "undefined") return;
     if (document.getElementById("chatbase-embed")) return;
+
+    // Force the bubble to stay open
+    (window as unknown as { chatbaseConfig?: { defaultOpen?: boolean } }).chatbaseConfig = {
+      defaultOpen: true,
+    };
 
     const script = document.createElement("script");
     script.id = "chatbase-embed";
-    script.src = EMBED_URL;
-    script.async = true;
-    script.setAttribute("agent-id", CHATBOT_ID);
+    script.src = CHATBASE_EMBED_URL;
+    script.setAttribute("chatbotId", CHATBOT_ID);
+    script.setAttribute("domain", DOMAIN);
+    script.defer = true;
     document.body.appendChild(script);
-
-    return () => {
-      const el = document.getElementById("chatbase-embed");
-      if (el?.parentNode) el.parentNode.removeChild(el);
-    };
   }, []);
 
   return null;
