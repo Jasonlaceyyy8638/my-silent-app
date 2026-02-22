@@ -45,8 +45,11 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           <p className="text-white font-medium">{creditsLabel}</p>
         </div>
 
+        <p className="text-slate-400 text-sm mb-6">
+          Credits usually appear within a few seconds. If you don&apos;t see them, refresh the dashboard or try again in a moment.
+        </p>
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center justify-center rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum font-medium px-6 py-3 text-base transition-colors shadow-teal-glow"
         >
           Go to Dashboard

@@ -57,9 +57,18 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/credits");
       const data = await res.json();
-      if (res.ok && typeof data.credits === "number") setCredits(data.credits);
+      if (res.ok && typeof data.credits === "number") {
+        setCredits(data.credits);
+        setError(null);
+      } else {
+        setCredits(0);
+        setError(
+          data?.error ?? (res.status === 401 ? "Sign in to see credits." : "Could not load credits.")
+        );
+      }
     } catch {
       setCredits(0);
+      setError("Could not load credits. Check DATABASE_URL on Netlify.");
     }
   }, []);
 
@@ -139,9 +148,16 @@ export default function DashboardPage() {
             </p>
           </div>
           {credits !== null && (
-            <p className="text-slate-300">
-              <span className="font-medium text-teal-accent">{credits}</span>{" "}
+            <p className="text-slate-300 flex items-center gap-2">
+              <span className="font-medium text-teal-accent">{credits}</span>
               credits
+              <button
+                type="button"
+                onClick={() => fetchCredits()}
+                className="text-slate-500 hover:text-teal-accent text-xs underline"
+              >
+                Refresh
+              </button>
             </p>
           )}
         </div>
