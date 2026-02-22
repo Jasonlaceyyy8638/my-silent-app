@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ChatbaseWidget } from "@/components/ChatbaseWidget";
+import Script from "next/script";
 import "./globals.css";
+
+const CHATBOT_ID = process.env.NEXT_PUBLIC_CHATBOT_ID;
+const CHATBASE_EMBED_URL = "https://www.chatbase.co/embed.min.js";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -29,7 +32,14 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
-        <ChatbaseWidget />
+        {CHATBOT_ID && (
+          <Script
+            id="chatbase-embed"
+            src={CHATBASE_EMBED_URL}
+            strategy="afterInteractive"
+            {...{ "agent-id": CHATBOT_ID }}
+          />
+        )}
       </body>
     </html>
   );
