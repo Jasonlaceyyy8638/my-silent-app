@@ -91,20 +91,19 @@ export default function DashboardPage() {
         try {
           data = text ? JSON.parse(text) : {};
         } catch {
-          const hint = text?.slice(0, 100)?.includes("<")
-            ? " Server returned HTML (check URL and env)."
-            : "";
+          const statusInfo = ` (HTTP ${res.status})`;
+          const preview = text?.slice(0, 150)?.trim() || "(empty)";
           throw new Error(
-            res.ok ? "Invalid response from server." : `Extraction failed.${hint}`
+            `Extraction failed${statusInfo}. Response: ${preview}${preview.length >= 150 ? "…" : ""}`
           );
         }
         if (!res.ok) {
           const msg = data.error || "Extraction failed.";
           const supabaseInfo =
             data.supabaseErrorCode != null || data.supabaseErrorMessage != null
-              ? ` (Supabase: ${data.supabaseErrorCode ?? "—"} ${data.supabaseErrorMessage ?? ""})`.trim()
+              ? ` — Supabase: ${data.supabaseErrorCode ?? "—"} ${data.supabaseErrorMessage ?? ""}`.trim()
               : "";
-          throw new Error(msg + supabaseInfo);
+          throw new Error(`${msg}${supabaseInfo} [HTTP ${res.status}]`);
         }
         if (data.extracted) {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);

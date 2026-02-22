@@ -55,7 +55,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (formErr) {
+      const msg = formErr instanceof Error ? formErr.message : "Invalid request body";
+      return NextResponse.json(
+        { error: `Could not read upload: ${msg}. Try a smaller PDF.` },
+        { status: 400 }
+      );
+    }
     const file = formData.get("file") as File | null;
     if (!file || file.type !== "application/pdf") {
       return NextResponse.json(
