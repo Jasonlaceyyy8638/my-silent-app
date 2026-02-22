@@ -2,16 +2,25 @@ import { prisma } from "./prisma";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
+/** Canonical form for comparison (avoids 0/O and 1/l/i confusion from encoding). */
+const canonical = (s: string) =>
+  norm(s).replace(/o/g, "0").replace(/[li]/g, "1");
+
+function matchUserId(rowUserId: string, currentUserId: string): boolean {
+  if (norm(rowUserId) === norm(currentUserId)) return true;
+  return canonical(rowUserId) === canonical(currentUserId);
+}
+
 export async function getCredits(userId: string): Promise<number> {
   const all = await prisma.userCredits.findMany();
-  const row = all.find((r) => norm(r.userId) === norm(userId));
+  const row = all.find((r) => matchUserId(r.userId, userId));
   return row?.credits ?? 0;
 }
 
 export async function addCredits(userId: string, amount: number): Promise<number> {
   const current = await getCredits(userId);
   const all = await prisma.userCredits.findMany();
-  const row = all.find((r) => norm(r.userId) === norm(userId));
+  const row = all.find((r) => matchUserId(r.userId, userId));
   if (row) {
     await prisma.userCredits.update({
       where: { id: row.id },
@@ -29,7 +38,7 @@ export async function deductCredit(userId: string): Promise<{ ok: boolean; remai
   const current = await getCredits(userId);
   if (current < 1) return { ok: false, remaining: 0 };
   const all = await prisma.userCredits.findMany();
-  const row = all.find((r) => norm(r.userId) === norm(userId));
+  const row = all.find((r) => matchUserId(r.userId, userId));
   if (!row) return { ok: false, remaining: 0 };
   const updated = await prisma.userCredits.update({
     where: { id: row.id },
