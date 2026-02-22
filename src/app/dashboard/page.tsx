@@ -10,21 +10,21 @@ import {
   Layers,
   Clock,
   Plug,
-  Zap,
-  FolderSync,
-  FileSpreadsheet,
+  LayoutGrid,
+  Users,
 } from "lucide-react";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
+import { QuickBooksIcon, ExcelIcon, ZapierIcon, GoogleDriveIcon } from "@/components/integration-icons";
 import type { ExtractedRow } from "@/types";
 
-type DashboardTab = "architect" | "integrations";
+type DashboardTab = "architect" | "integrations" | "team";
 
 const INTEGRATION_CARDS = [
-  { id: "quickbooks", name: "QuickBooks", icon: Plug, description: "Sync extracted data to your books." },
-  { id: "zapier", name: "Zapier", icon: Zap, description: "Connect to 5,000+ apps automatically." },
-  { id: "gdrive", name: "Google Drive", icon: FolderSync, description: "Import and export from Drive." },
-  { id: "excel", name: "Excel Online", icon: FileSpreadsheet, description: "Open and edit spreadsheets in the cloud." },
+  { id: "quickbooks", name: "QuickBooks", Icon: QuickBooksIcon, description: "Sync extracted data to your books.", bento: "large" as const },
+  { id: "excel", name: "Excel", Icon: ExcelIcon, description: "Export to spreadsheets in the cloud.", bento: "medium" as const },
+  { id: "zapier", name: "Zapier", Icon: ZapierIcon, description: "Connect to 5,000+ apps automatically.", bento: "medium" as const },
+  { id: "gdrive", name: "Google Drive", Icon: GoogleDriveIcon, description: "Import and export from Drive.", bento: "small" as const },
 ] as const;
 
 const VELOPACK_SIZE = 20;
@@ -181,40 +181,45 @@ export default function DashboardPage() {
     []
   );
 
+  const navItems: { id: DashboardTab; label: string; icon: typeof LayoutGrid }[] = [
+    { id: "architect", label: "Architect", icon: LayoutGrid },
+    { id: "integrations", label: "Integrations", icon: Plug },
+    { id: "team", label: "Team Management", icon: Users },
+  ];
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">PDF Architect</h1>
-            <p className="text-slate-400 text-sm mt-0.5">
-              Extract and organize data from any PDF
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex rounded-lg border border-white/15 bg-white/5 p-1">
+      <div className="flex flex-col md:flex-row min-h-screen">
+        <aside className="md:w-56 md:border-r md:border-white/10 md:bg-petroleum/50 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0">
+          <nav className="p-4 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible">
+            {navItems.map(({ id, label, icon: Icon }) => (
               <button
+                key={id}
                 type="button"
-                onClick={() => setTab("architect")}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                  tab === "architect"
+                onClick={() => setTab(id)}
+                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors w-full whitespace-nowrap ${
+                  tab === id
                     ? "bg-teal-accent/20 text-teal-accent"
-                    : "text-slate-400 hover:text-white"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                Architect
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {label}
               </button>
-              <button
-                type="button"
-                onClick={() => setTab("integrations")}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                  tab === "integrations"
-                    ? "bg-teal-accent/20 text-teal-accent"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Integrations
-              </button>
+            ))}
+          </nav>
+        </aside>
+        <div className="flex-1 mx-auto w-full max-w-4xl px-6 py-8 md:py-12">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                {tab === "architect" ? "PDF Architect" : tab === "integrations" ? "Integrations" : "Team Management"}
+              </h1>
+              <p className="text-slate-400 text-sm mt-0.5">
+                {tab === "architect" && "Extract and organize data from any PDF"}
+                {tab === "integrations" && "Connect VeloDoc to your stack"}
+                {tab === "team" && "Manage your organization"}
+              </p>
             </div>
             {credits !== null && tab === "architect" && (
               <p className="text-slate-300 flex items-center gap-2">
@@ -230,38 +235,41 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
-        </div>
 
         {tab === "integrations" && (
           <section className="mb-10">
             <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.4)]">
-              <h2 className="text-lg font-semibold text-white mb-2">Integrations</h2>
-              <p className="text-slate-400 text-sm mb-8">
-                Connect VeloDoc to your stack. Join the waitlist to be first in line.
+              <h2 className="text-lg font-semibold text-white mb-2">Integration Ecosystem</h2>
+              <p className="text-slate-400 text-sm mb-8 font-mono text-[10px] uppercase tracking-wider">
+                Expanding enterprise ecosystem — join beta for early access.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {INTEGRATION_CARDS.map(({ id, name, icon: Icon, description }) => {
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-fr">
+                {INTEGRATION_CARDS.map(({ id, name, Icon, description, bento }) => {
                   const joined = waitlistJoined.has(id);
+                  const isLarge = bento === "large";
+                  const isSmall = bento === "small";
                   return (
                     <div
                       key={id}
-                      className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 flex flex-col border-t-teal-accent/30"
+                      className={`rounded-2xl border border-white/20 bg-petroleum/40 backdrop-blur-md flex flex-col border-t-teal-accent/30 transition-colors hover:border-teal-accent/40 ${
+                        isLarge ? "md:col-span-2 p-6 sm:p-8" : isSmall ? "md:col-span-1 p-5" : "md:col-span-1 p-6"
+                      }`}
                     >
-                      <div className="w-12 h-12 rounded-xl bg-teal-accent/20 flex items-center justify-center mb-4">
-                        <Icon className="h-6 w-6 text-teal-accent" />
+                      <div className="w-12 h-12 rounded-xl bg-teal-accent/10 flex items-center justify-center mb-4 shrink-0 text-teal-accent">
+                        <Icon className="w-6 h-6" />
                       </div>
-                      <h3 className="font-semibold text-white">{name}</h3>
-                      <p className="text-slate-400 text-sm mt-1 flex-1">{description}</p>
-                      <span className="mt-3 inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-3 py-1 text-xs font-medium text-teal-accent w-fit">
-                        Coming Soon
+                      <h3 className="font-semibold text-white text-sm">{name}</h3>
+                      <p className="text-slate-400 text-xs mt-1 flex-1 leading-relaxed">{description}</p>
+                      <span className="mt-3 inline-block rounded-full bg-petroleum border border-teal-accent/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-teal-accent w-fit">
+                        Join Beta
                       </span>
                       <button
                         type="button"
                         onClick={() => handleJoinWaitlist(id)}
                         disabled={joined}
-                        className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-70 disabled:pointer-events-none"
+                        className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-70 disabled:pointer-events-none"
                       >
-                        {joined ? "You're on the list" : "Join Waitlist"}
+                        {joined ? "You're in" : "Join Beta"}
                       </button>
                     </div>
                   );
@@ -271,108 +279,107 @@ export default function DashboardPage() {
           </section>
         )}
 
+        {tab === "team" && (
+          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center">
+            <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">Team Management</h2>
+            <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
+              Invite team members, assign roles, and manage access across your organization. Built for enterprises that need audit trails and SSO.
+            </p>
+            <span className="inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-4 py-2 text-sm font-medium text-teal-accent">
+              Coming Soon
+            </span>
+          </section>
+        )}
+
         {tab === "architect" && (
           <>
-        <section className="mb-8 rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md overflow-hidden shadow-xl">
-          <div className="p-6 sm:p-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">
-              Usage & Insights
-            </h2>
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-slate-300">Credits Used</span>
-                  <span className="font-medium text-white">
-                    {stats.creditsUsed}/{stats.creditsTotal}{" "}
-                    <span className="text-cyan-400/90">VeloPack credits</span>
-                  </span>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-500 ease-out"
-                    style={{
-                      width: `${Math.min(100, (stats.creditsUsed / stats.creditsTotal) * 100)}%`,
-                    }}
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="md:col-span-2 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 sm:p-8">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Upload & Extract</h2>
+                <UploadZone onFileSelect={handleFileSelect} isUploading={isUploading} />
+                {error && (
+                  <p className="mt-3 text-sm text-red-300 text-center" role="alert">
+                    {error}
+                  </p>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <FileText className="h-5 w-5 text-cyan-400" />
-                  </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md p-6 overflow-hidden">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Usage & Insights</h2>
+                <div className="space-y-4">
                   <div>
-                    <p className="text-2xl font-bold text-white tabular-nums">{stats.documents}</p>
-                    <p className="text-xs text-slate-400">Total Documents Architected</p>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-slate-400">Credits</span>
+                      <span className="text-white font-medium">{stats.creditsUsed}/{stats.creditsTotal}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all"
+                        style={{ width: `${Math.min(100, (stats.creditsUsed / stats.creditsTotal) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <Layers className="h-5 w-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white tabular-nums">{stats.lineItems}</p>
-                    <p className="text-xs text-slate-400">Total Line Items Extracted</p>
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-5 w-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white tabular-nums">{stats.hoursSaved}h</p>
-                    <p className="text-xs text-slate-400">Estimated Hours Saved</p>
+                  <div className="grid grid-cols-1 gap-3 pt-2">
+                    <div className="rounded-xl border border-white/10 bg-slate-800/50 p-3 flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-lg font-bold text-white tabular-nums">{stats.documents}</p>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">Documents</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-slate-800/50 p-3 flex items-center gap-3">
+                      <Layers className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-lg font-bold text-white tabular-nums">{stats.lineItems}</p>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">Line Items</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-slate-800/50 p-3 flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-lg font-bold text-white tabular-nums">{stats.hoursSaved}h</p>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">Hours Saved</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="mb-8">
-          <div className="rounded-2xl border border-white/15 bg-white/[0.07] backdrop-blur-md p-6 sm:p-8 shadow-lg">
-            <h2 className="text-lg font-semibold text-white mb-5">Getting Started</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-              {GETTING_STARTED_STEPS.map(({ icon: Icon, title, description }) => (
-                <div
-                  key={title}
-                  className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-4"
-                >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-accent/20 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-teal-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-white text-sm">{title}</h3>
-                    <p className="text-slate-400 text-xs mt-1 leading-relaxed">{description}</p>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="md:col-span-2 rounded-2xl border border-white/15 bg-white/[0.07] backdrop-blur-md p-6">
+                <h2 className="text-sm font-semibold text-white mb-4">Getting Started</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  {GETTING_STARTED_STEPS.map(({ icon: Icon, title, description }) => (
+                    <div key={title} className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="w-9 h-9 rounded-lg bg-teal-accent/20 flex items-center justify-center flex-shrink-0">
+                        <Icon className="h-4 w-4 text-teal-accent" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-white text-sm">{title}</h3>
+                        <p className="text-slate-400 text-xs mt-0.5 leading-relaxed">{description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                <p className="flex items-start gap-2 text-slate-400 text-xs leading-relaxed">
+                  <Info className="h-4 w-4 flex-shrink-0 mt-0.5" aria-hidden />
+                  <span>VeloDoc understands context. No templates required.</span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-teal-accent/20 bg-teal-accent/5 backdrop-blur-md p-6 flex flex-col justify-center">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  <span className="text-teal-accent font-medium">Pro tip:</span> Drop multi-page PDFs—invoices, BOLs, contracts—and get structured data in one go.
+                </p>
+              </div>
             </div>
-            <p className="flex items-start gap-2 text-slate-400 text-xs leading-relaxed">
-              <Info className="h-4 w-4 flex-shrink-0 mt-0.5" aria-hidden />
-              <span>
-                VeloDoc understands context. Whether it&apos;s a 20-page legal contract or a single repair invoice, we see what others miss.
-              </span>
-            </p>
-          </div>
-        </section>
 
-        <section className="mb-10">
-          <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 sm:p-8">
-            <UploadZone onFileSelect={handleFileSelect} isUploading={isUploading} />
-            {error && (
-              <p className="mt-3 text-sm text-red-300 text-center" role="alert">
-                {error}
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <ResultsTable rows={rows} />
-        </section>
+            <section className="rounded-2xl">
+              <ResultsTable rows={rows} />
+            </section>
           </>
         )}
+        </div>
       </div>
     </main>
   );
