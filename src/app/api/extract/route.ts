@@ -8,8 +8,7 @@ import type { ExtractedRow, LineItem } from "@/types";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
 }
@@ -20,9 +19,10 @@ function getOpenAI() {
   return new OpenAI({ apiKey: key });
 }
 
-const EXTRACT_SYSTEM = `You extract structured data from PDF document text. The documents are from garage door, service, and logistics industries (invoices, bills of lading, material quotes, work orders).
+const EXTRACT_SYSTEM = `You are the VeloDoc Architect. Extract all data from this document into a clean JSON format.
 
-Reply with ONLY a JSON object (no markdown, no code block). Use exactly these top-level keys:
+Reply with ONLY a valid JSON object (no markdown, no code block). Use exactly these top-level keys:
+- documentType (string): one of "Invoice", "BOL", or "Contract"
 - vendorName (string)
 - totalAmount (string, e.g. "1,234.56" or "€ 99.00")
 - date (string, e.g. "2024-01-15" or "Jan 15, 2024")
@@ -30,12 +30,12 @@ Reply with ONLY a JSON object (no markdown, no code block). Use exactly these to
 
 Each item in lineItems must have:
 - sku (string): part number, SKU, item code, or catalog number
-- partDescription (string): full description of the part or service (e.g. "Torsion Spring 1.75x24", "Freight")
-- unitCost (string): price per unit (e.g. "12.50", "0.00")
-- quantity (string, optional): quantity (e.g. "2", "1")
+- partDescription (string): full description of the part or service
+- unitCost (string): price per unit
+- quantity (string, optional)
 - lineTotal (string, optional): extended line total if present
 
-Extract every line item you can find—every part, screw, spring, labor line, and freight. If a value cannot be determined, use empty string "". For lineItems, if there are no clear line items, return an empty array.`;
+Identify if the document is an Invoice, BOL, or Contract. Extract every line item, SKU, and total. If a value cannot be determined, use empty string "". For lineItems, if there are no line items, return an empty array.`;
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         { role: "system", content: EXTRACT_SYSTEM },
         {
           role: "user",
-          content: `Extract vendor, total, date, and all line items (SKUs, part descriptions, unit costs, quantities) from this document. Focus on garage door and logistics terminology.\n\n${text.slice(0, 12000)}`,
+          content: `You are the VeloDoc Architect. Extract all data from this document into a clean JSON format. Identify if it is an Invoice, BOL, or Contract. Extract every line item, SKU, and total.\n\nDocument text:\n\n${text.slice(0, 12000)}`,
         },
       ],
       response_format: { type: "json_object" },
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = JSON.parse(raw) as {
+      documentType?: string;
       vendorName?: string;
       totalAmount?: string;
       date?: string;
@@ -133,6 +134,12 @@ export async function POST(request: NextRequest) {
         lineTotal?: string;
       }>;
     };
+
+    const docType = parsed.documentType?.trim();
+    const documentType =
+      docType === "Invoice" || docType === "BOL" || docType === "Contract"
+        ? docType
+        : undefined;
 
     const lineItems: LineItem[] = Array.isArray(parsed.lineItems)
       ? parsed.lineItems.map((li) => ({
@@ -148,59 +155,67 @@ export async function POST(request: NextRequest) {
       vendorName: String(parsed.vendorName ?? "").trim(),
       totalAmount: String(parsed.totalAmount ?? "").trim(),
       date: String(parsed.date ?? "").trim(),
+      documentType,
       lineItems: lineItems.length > 0 ? lineItems : undefined,
     };
 
     const supabase = getSupabase();
-    if (supabase) {
-      const { data: saved, error: insertError } = await supabase
-        .from("documents")
-        .insert({
-          user_id: userId,
-          file_name: file.name,
-          extracted_data: row as unknown as Record<string, unknown>,
-        })
-        .select("extracted_data")
-        .single();
-
-      console.log("[extract] Supabase insert result:", {
-        success: !insertError && !!saved?.extracted_data,
-        error: insertError
-          ? {
-              code: insertError.code,
-              message: insertError.message,
-              details: insertError.details,
-            }
-          : null,
-        hasSavedData: !!saved?.extracted_data,
-      });
-
-      if (insertError || !saved?.extracted_data) {
-        const code = insertError?.code ?? "UNKNOWN";
-        const message = insertError?.message ?? "No data returned.";
-        console.error("Supabase documents insert failed:", {
-          code,
-          message,
-          details: insertError?.details,
-        });
-        return NextResponse.json(
-          {
-            error: "Failed to save extraction to database.",
-            supabaseErrorCode: code,
-            supabaseErrorMessage: message,
-          },
-          { status: 500 }
-        );
-      }
-      const extracted = saved.extracted_data as ExtractedRow;
-      return NextResponse.json({
-        extracted,
-        remaining: result.remaining,
-      });
+    if (!supabase) {
+      console.error("[extract] Supabase not configured (SUPABASE_SERVICE_ROLE_KEY required).");
+      return NextResponse.json(
+        {
+          error: "Database not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+          supabaseErrorCode: "NO_CONFIG",
+          supabaseErrorMessage: "Supabase env vars missing.",
+        },
+        { status: 500 }
+      );
     }
 
+    const payload = {
+      user_id: userId,
+      file_name: file.name,
+      extracted_data: row as unknown as Record<string, unknown>,
+    };
+    const { data: saved, error: insertError } = await supabase
+      .from("documents")
+      .insert(payload)
+      .select("extracted_data")
+      .single();
+
+    console.log("[extract] Supabase insert result:", {
+      success: !insertError && !!saved?.extracted_data,
+      error: insertError
+        ? {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+          }
+        : null,
+      hasSavedData: !!saved?.extracted_data,
+    });
+
+    if (insertError || !saved?.extracted_data) {
+      const code = insertError?.code ?? "UNKNOWN";
+      const message = insertError?.message ?? "No data returned.";
+      console.error("Supabase documents insert failed:", {
+        code,
+        message,
+        details: insertError?.details,
+      });
+      return NextResponse.json(
+        {
+          error: "Failed to save extraction to database.",
+          supabaseErrorCode: code,
+          supabaseErrorMessage: message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const extracted = saved.extracted_data as ExtractedRow;
     return NextResponse.json({
-      extracted: row,
+      extracted,
       remaining: result.remaining,
     });
   } catch (err) {
