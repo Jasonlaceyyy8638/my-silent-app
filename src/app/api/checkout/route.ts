@@ -7,6 +7,21 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
+const PLANS = {
+  starter: {
+    name: "Starter — 1 Credit",
+    description: "For quick one-off tasks.",
+    unit_amount: 100, // $1.00
+    quantity: 1,
+  },
+  velopack: {
+    name: "VeloPack — 20 Credits",
+    description: "Best value for businesses.",
+    unit_amount: 1000, // $10.00
+    quantity: 1,
+  },
+} as const;
+
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   if (!stripe) {
@@ -17,11 +32,22 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const origin =
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
       request.headers.get("origin") ||
       request.headers.get("referer")?.replace(/\/$/, "") ||
-      process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
+    const baseUrlClean = baseUrl.replace(/\/$/, "");
+
+    let plan: keyof typeof PLANS = "starter";
+    try {
+      const body = await request.json();
+      if (body?.plan === "velopack") plan = "velopack";
+    } catch {
+      // default to starter
+    }
+
+    const config = PLANS[plan];
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -30,16 +56,16 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "10 Credits",
-              description: "One-time purchase of 10 credits for invoice extraction.",
+              name: config.name,
+              description: config.description,
             },
-            unit_amount: 100, // $1.00 in cents
+            unit_amount: config.unit_amount,
           },
-          quantity: 1,
+          quantity: config.quantity,
         },
       ],
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}`,
+      success_url: `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
+      cancel_url: baseUrlClean,
     });
 
     if (!session.url) {

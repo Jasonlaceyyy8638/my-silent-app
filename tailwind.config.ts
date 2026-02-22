@@ -24,6 +24,16 @@ export default {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
+      keyframes: {
+        "checkmark-pop": {
+          "0%": { transform: "scale(0)", opacity: "0" },
+          "55%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+      },
+      animation: {
+        "checkmark-pop": "checkmark-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+      },
     },
   },
   plugins: [],

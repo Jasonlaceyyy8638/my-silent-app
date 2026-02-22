@@ -35,31 +35,31 @@ export function ResultsTable({ rows }: ResultsTableProps) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4">
+    <div className="w-full max-w-4xl mx-auto space-y-4 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-200">
+        <h2 className="text-lg font-medium text-white">
           Extracted data ({rows.length} {rows.length === 1 ? "invoice" : "invoices"})
         </h2>
         <button
           type="button"
           onClick={() => downloadCsv(rows)}
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-surface-950 hover:bg-accent-muted transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-500 hover:bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors"
         >
           <Download className="h-4 w-4" />
           Download as CSV
         </button>
       </div>
-      <div className="rounded-xl border border-zinc-700/80 overflow-hidden bg-zinc-900/50">
+      <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-zinc-700 bg-zinc-800/80">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <tr className="border-b border-white/10 bg-white/10">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
                 Vendor Name
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
                 Total Amount
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
                 Date
               </th>
             </tr>
@@ -68,11 +68,11 @@ export function ResultsTable({ rows }: ResultsTableProps) {
             {rows.map((row, i) => (
               <tr
                 key={i}
-                className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/40 transition-colors"
+                className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors"
               >
-                <td className="px-4 py-3 text-zinc-200">{row.vendorName || "—"}</td>
-                <td className="px-4 py-3 text-zinc-200">{row.totalAmount || "—"}</td>
-                <td className="px-4 py-3 text-zinc-200">{row.date || "—"}</td>
+                <td className="px-4 py-3 text-white">{row.vendorName || "—"}</td>
+                <td className="px-4 py-3 text-white">{row.totalAmount || "—"}</td>
+                <td className="px-4 py-3 text-white">{row.date || "—"}</td>
               </tr>
             ))}
           </tbody>

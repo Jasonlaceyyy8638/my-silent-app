@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import { Header } from "@/components/Header";
 import "./globals.css";
 
 const CHATBOT_ID = process.env.NEXT_PUBLIC_CHATBOT_ID;
@@ -17,8 +18,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clean Your Data Silently",
-  description: "Upload PDF invoices and extract vendor, amount, and date with AI.",
+  title: "VeloDoc: The 10-Second PDF-to-Sheet Architect",
+  description: "VeloDoc turns PDF invoices into structured data in seconds. Upload, architect, export—works with Excel, Google Sheets, and QuickBooks.",
 };
 
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
+        <Header />
         {children}
         {CHATBOT_ID && (
           <Script

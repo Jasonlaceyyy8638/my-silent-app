@@ -1,22 +1,55 @@
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 
-export default function SuccessPage() {
+type SuccessPageProps = {
+  searchParams: Promise<{ plan?: string; credits?: string }>;
+};
+
+export default async function SuccessPage({ searchParams }: SuccessPageProps) {
+  const params = await searchParams;
+  const plan = params?.plan ?? "";
+  const creditsParam = params?.credits;
+  const creditsLabel =
+    creditsParam !== undefined
+      ? `${creditsParam} VeloCredits Added`
+      : plan === "velopack"
+        ? "20 VeloCredits Added"
+        : plan === "starter"
+          ? "1 VeloCredit Added"
+          : "20 VeloCredits Added"; // mock default for celebratory layout
+
   return (
-    <main className="min-h-screen bg-surface-950 flex items-center justify-center px-6">
-      <div className="text-center max-w-md">
-        <CheckCircle className="h-16 w-16 text-accent mx-auto mb-6" />
-        <h1 className="text-2xl font-bold text-white mb-2">
-          Payment successful
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-6 py-12">
+      <div className="text-center max-w-md w-full">
+        {/* Animated checkmark */}
+        <div className="flex justify-center mb-8">
+          <CheckCircle
+            className="h-24 w-24 text-green-400 drop-shadow-lg animate-checkmark-pop"
+            strokeWidth={1.5}
+            aria-hidden
+          />
+        </div>
+
+        <h1 className="text-3xl font-bold text-white mb-3">
+          Credits Successfully Added!
         </h1>
-        <p className="text-zinc-400 mb-8">
-          Thanks for your purchase. Your 10 credits are ready to use.
+        <p className="text-blue-100/90 mb-8 text-lg">
+          Your VeloDoc account has been fueled up. You can now start architecting your PDFs.
         </p>
+
+        {/* Order Summary */}
+        <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-5 py-4 mb-8 text-left">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-blue-200/80 mb-2">
+            Order Summary
+          </h2>
+          <p className="text-white font-medium">{creditsLabel}</p>
+        </div>
+
         <Link
           href="/"
-          className="inline-flex items-center justify-center rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-surface-950 hover:bg-accent-muted transition-colors"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 text-base transition-colors shadow-lg"
         >
-          Back to home
+          Go to Dashboard
         </Link>
       </div>
     </main>
