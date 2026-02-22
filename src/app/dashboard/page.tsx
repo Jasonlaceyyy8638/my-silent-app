@@ -98,7 +98,12 @@ export default function DashboardPage() {
           );
         }
         if (!res.ok) {
-          const msg = data.error || "Extraction failed.";
+          const rawMsg = data.error || "";
+          const hasDetail = rawMsg && rawMsg !== "Extraction failed.";
+          const msg =
+            res.status === 500 && !hasDetail
+              ? "Server error (500). Set OPENAI_API_KEY and DATABASE_URL in Netlify → Site settings → Environment variables, then redeploy. Check the Deploys tab for build logs."
+              : rawMsg || "Extraction failed.";
           const supabaseInfo =
             data.supabaseErrorCode != null || data.supabaseErrorMessage != null
               ? ` — Supabase: ${data.supabaseErrorCode ?? "—"} ${data.supabaseErrorMessage ?? ""}`.trim()

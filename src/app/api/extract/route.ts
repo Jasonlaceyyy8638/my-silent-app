@@ -38,7 +38,17 @@ Each item in lineItems must have:
 Identify if the document is an Invoice, BOL, or Contract. Extract every line item, SKU, and total. If a value cannot be determined, use empty string "". For lineItems, if there are no line items, return an empty array.`;
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
+  let userId: string | null;
+  try {
+    const authResult = await auth();
+    userId = authResult.userId;
+  } catch (authErr) {
+    const msg = authErr instanceof Error ? authErr.message : String(authErr);
+    return NextResponse.json(
+      { error: `Auth failed: ${msg}. Check Clerk keys.` },
+      { status: 500 }
+    );
+  }
   if (!userId) {
     return NextResponse.json(
       { error: "Sign in to use the Architect." },
@@ -49,7 +59,7 @@ export async function POST(request: NextRequest) {
   const openai = getOpenAI();
   if (!openai) {
     return NextResponse.json(
-      { error: "OPENAI_API_KEY is not configured." },
+      { error: "OPENAI_API_KEY is not configured. Add it in Netlify → Environment variables." },
       { status: 500 }
     );
   }
@@ -272,7 +282,7 @@ export async function POST(request: NextRequest) {
         : `Error: ${String(err)}`;
     return NextResponse.json(
       {
-        error: message,
+        error: `Extract failed: ${message}. Check OPENAI_API_KEY, DATABASE_URL, and Netlify function logs.`,
         supabaseErrorCode: null,
         supabaseErrorMessage: null,
       },
