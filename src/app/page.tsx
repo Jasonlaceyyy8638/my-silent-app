@@ -7,7 +7,7 @@ import {
   Download,
   ShoppingCart,
   Briefcase,
-  Home,
+  Home as HomeIcon,
   GraduationCap,
   Truck,
 } from "lucide-react";
@@ -46,7 +46,7 @@ export default function Home() {
       description: "Extract data from vendor quotes and client contracts.",
     },
     {
-      icon: Home,
+      icon: HomeIcon,
       title: "Homeowners & Families",
       description: "Organize medical bills, tax documents, and insurance claims.",
     },
