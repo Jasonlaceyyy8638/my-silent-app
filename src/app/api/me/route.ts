@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getCredits } from "@/lib/credits";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Returns the current user's Clerk ID and their credits from the DB.
- * Use to verify the correct userId and that the DB row exists.
+ * rawCredits = direct SQL to confirm what's actually in the DB for this connection.
  */
 export async function GET() {
   const { userId } = await auth();
@@ -13,13 +14,18 @@ export async function GET() {
   }
   try {
     const credits = await getCredits(userId);
-    // So you can confirm app uses the same Supabase project as where you run SQL
+    // Bypass Prisma client: raw query to see what this connection actually sees
+    const raw = await prisma.$queryRaw<{ credits: number }[]>`
+      SELECT credits FROM "UserCredits" WHERE "userId" = ${userId}
+    `;
+    const rawCredits = raw[0]?.credits ?? null;
     const url = process.env.DATABASE_URL ?? "";
     const match = url.match(/prisma\.([a-zA-Z0-9]+)/);
     const projectRef = match ? match[1] : null;
     return NextResponse.json({
       userId,
       credits,
+      rawCredits,
       dbHint: projectRef
         ? `App DB project ref: ${projectRef} — run SQL in Supabase project with this ref in the URL`
         : undefined,
