@@ -1,10 +1,32 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { FileUp, Sparkles, Download, Info } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { FileUp, Sparkles, Download, Info, FileText, Layers, Clock } from "lucide-react";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
 import type { ExtractedRow } from "@/types";
+
+const VELOPACK_SIZE = 20;
+
+function useUsageStats(rows: ExtractedRow[], creditsRemaining: number | null) {
+  return useMemo(() => {
+    const documents = rows.length;
+    const lineItems = rows.reduce((sum, r) => sum + (r.lineItems?.length ?? 0), 0);
+    const minutesSaved = documents * 5 + lineItems * 1;
+    const hoursSaved = Math.round((minutesSaved / 60) * 10) / 10;
+    const remaining = creditsRemaining ?? 0;
+    const creditsTotal = Math.max(VELOPACK_SIZE, remaining);
+    const creditsUsed = creditsTotal - remaining;
+    return {
+      documents,
+      lineItems,
+      hoursSaved,
+      creditsUsed,
+      creditsTotal,
+      creditsRemaining: remaining,
+    };
+  }, [rows, creditsRemaining]);
+}
 
 const GETTING_STARTED_STEPS = [
   {
@@ -29,6 +51,7 @@ export default function DashboardPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
+  const stats = useUsageStats(rows, credits);
 
   const fetchCredits = useCallback(async () => {
     try {
@@ -89,6 +112,62 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+
+        <section className="mb-8 rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md overflow-hidden shadow-xl">
+          <div className="p-6 sm:p-8">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-5">
+              Usage & Insights
+            </h2>
+            <div className="space-y-6">
+              <div>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-slate-300">Credits Used</span>
+                  <span className="font-medium text-white">
+                    {stats.creditsUsed}/{stats.creditsTotal}{" "}
+                    <span className="text-cyan-400/90">VeloPack credits</span>
+                  </span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-500 ease-out"
+                    style={{
+                      width: `${Math.min(100, (stats.creditsUsed / stats.creditsTotal) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white tabular-nums">{stats.documents}</p>
+                    <p className="text-xs text-slate-400">Total Documents Architected</p>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                    <Layers className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white tabular-nums">{stats.lineItems}</p>
+                    <p className="text-xs text-slate-400">Total Line Items Extracted</p>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-slate-800/50 p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white tabular-nums">{stats.hoursSaved}h</p>
+                    <p className="text-xs text-slate-400">Estimated Hours Saved</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="mb-8">
           <div className="rounded-2xl border border-white/15 bg-white/[0.07] backdrop-blur-md p-6 sm:p-8 shadow-lg">

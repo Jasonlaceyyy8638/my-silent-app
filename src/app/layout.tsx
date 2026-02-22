@@ -15,11 +15,39 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://velodoc.app";
+const OG_TITLE = "VeloDoc | The Universal AI PDF Architect";
+const OG_DESCRIPTION =
+  "Stop manual data entry. Our AI understands the context of your invoices, contracts, and records—so you don't have to.";
+const OG_IMAGE = "/logo-png.png";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://velodoc.app"),
+  metadataBase: new URL(SITE_URL),
   title: "VeloDoc – Your PDFs, finally organized.",
   description:
     "The AI Architect for your documents. From invoices to medical records, transcripts, and contracts—VeloDoc reads any PDF and hands you the data you need.",
+  openGraph: {
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    url: SITE_URL,
+    siteName: "VeloDoc",
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "VeloDoc – The Universal AI PDF Architect",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    images: [`${SITE_URL}${OG_IMAGE}`],
+  },
 };
 
 export default function RootLayout({
