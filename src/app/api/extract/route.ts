@@ -146,6 +146,18 @@ export async function POST(request: NextRequest) {
     });
     } catch (openaiErr) {
       const msg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
+      const isQuota = /429|quota|exceeded/i.test(msg);
+      if (isQuota) {
+        const { addCredits } = await import("@/lib/credits");
+        await addCredits(userId, 1); // refund: extraction didn't complete
+        return NextResponse.json(
+          {
+            error:
+              "AI extraction is temporarily unavailable (provider quota exceeded). Check your OpenAI account billing at platform.openai.com and try again later. Your credit was not used.",
+          },
+          { status: 503 }
+        );
+      }
       return NextResponse.json(
         { error: `OpenAI API failed: ${msg}. Check OPENAI_API_KEY and rate limits.` },
         { status: 500 }
@@ -248,6 +260,7 @@ export async function POST(request: NextRequest) {
       if (insertError || !saved?.extracted_data) {
         const code = insertError?.code ?? "UNKNOWN";
         const message = insertError?.message ?? "No data returned.";
+        const isTableMissing = code === "PGRST205" || /table.*not found|schema cache/i.test(message);
         console.error("Supabase documents insert failed:", {
           code,
           message,
@@ -257,7 +270,9 @@ export async function POST(request: NextRequest) {
           extracted: row,
           remaining: result.remaining,
           saveFailed: true,
-          saveError: "Failed to save to database.",
+          saveError: isTableMissing
+            ? "Cloud save is optional. The 'documents' table was not found in Supabase."
+            : "Failed to save to database.",
           supabaseErrorCode: code,
           supabaseErrorMessage: message,
         });

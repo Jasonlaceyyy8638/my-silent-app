@@ -122,10 +122,13 @@ export default function DashboardPage() {
         if (data.extracted) {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
-          if (data.saveFailed && (data.supabaseErrorCode || data.supabaseErrorMessage)) {
-            setError(
-              `Saved locally. Database save failed: ${data.supabaseErrorCode ?? ""} ${data.supabaseErrorMessage ?? ""}`.trim()
-            );
+          if (data.saveFailed) {
+            const friendly = data.saveError && data.supabaseErrorCode === "PGRST205"
+              ? "Saved to this session. To also save to Supabase, create the documents table (see docs/DATABASE.md)."
+              : (data.supabaseErrorCode || data.supabaseErrorMessage)
+                ? `Saved locally. Database save failed: ${data.supabaseErrorCode ?? ""} ${data.supabaseErrorMessage ?? ""}`.trim()
+                : null;
+            if (friendly) setError(friendly);
           }
         }
       } catch (e) {

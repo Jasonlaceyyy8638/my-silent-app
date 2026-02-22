@@ -44,11 +44,42 @@ DATABASE_URL="postgresql://prisma.hupsfpzhdrkmvlskqxbg:YOUR_PRISMA_PASSWORD@aws-
 - Replace `YOUR_PRISMA_PASSWORD` with the password you set in step 1.
 - If the password contains `$`, `#`, `@`, or `%`, URL-encode them: `$` → `%24`, `#` → `%23`, `@` → `%40`, `%` → `%25`.
 
-### 3. Push the schema
+### 3. Allow Prisma to read credits (RLS)
+
+If the app shows 0 credits but the row exists in Supabase (e.g. you see it in SQL Editor), Row Level Security may be blocking the `prisma` role. Run in SQL Editor:
+
+```sql
+ALTER TABLE "UserCredits" DISABLE ROW LEVEL SECURITY;
+```
+
+(To re-enable later and use a policy instead: `ALTER TABLE "UserCredits" ENABLE ROW LEVEL SECURITY;` then add a policy that allows `prisma` to SELECT/INSERT/UPDATE.)
+
+### 4. Push the schema
 
 ```bash
 npx prisma db push
 ```
+
+### 5. Optional: Create the `documents` table (for cloud save of extractions)
+
+If you want extracted PDFs to be saved in Supabase (so they appear in the Table Editor and can be queried), create the `documents` table. In **SQL Editor** run:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id text NOT NULL,
+  file_name text,
+  extracted_data jsonb,
+  created_at timestamptz DEFAULT NOW()
+);
+
+ALTER TABLE public.documents DISABLE ROW LEVEL SECURITY;
+
+-- Optional: grant to prisma if you use it for other tools
+-- GRANT ALL ON public.documents TO prisma;
+```
+
+The app inserts into this table when Supabase is configured. If the table doesn't exist, extraction still works and data is returned to the browser; you'll see a note that cloud save was skipped.
 
 ### Session pooler format (reference)
 
