@@ -102,6 +102,7 @@ export async function POST(request: Request) {
     await sgMail.send({
       to: toEmail,
       from: FROM_EMAIL,
+      replyTo: "service@bgrdayton.com",
       subject: WELCOME_SUBJECT,
       text: textBody,
       html: htmlBody,
