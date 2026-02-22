@@ -78,7 +78,16 @@ export async function POST(request: NextRequest) {
       type: file.type,
     });
 
-    const result = await deductCredit(userId);
+    let result: { ok: boolean; remaining: number };
+    try {
+      result = await deductCredit(userId);
+    } catch (creditsErr) {
+      const msg = creditsErr instanceof Error ? creditsErr.message : String(creditsErr);
+      return NextResponse.json(
+        { error: `Credits check failed: ${msg}. Check DATABASE_URL and Prisma.` },
+        { status: 500 }
+      );
+    }
     if (!result.ok) {
       return NextResponse.json(
         { error: "No credits left. Buy more credits to extract." },
@@ -86,9 +95,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const pdfData = await pdfParse(buffer);
-    const text = pdfData.text?.trim() || "";
+    let text: string;
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const pdfData = await pdfParse(buffer);
+      text = pdfData.text?.trim() || "";
+    } catch (pdfErr) {
+      const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+      return NextResponse.json(
+        { error: `PDF parse failed: ${msg}. Try a different PDF.` },
+        { status: 400 }
+      );
+    }
     console.log("[extract] PDF parsed:", {
       textLength: text.length,
       preview: text.slice(0, 200) + (text.length > 200 ? "..." : ""),
@@ -102,7 +120,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const completion = await openai.chat.completions.create({
+    let completion: Awaited<ReturnType<typeof openai.chat.completions.create>>;
+    try {
+      completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: EXTRACT_SYSTEM },
@@ -114,6 +134,13 @@ export async function POST(request: NextRequest) {
       response_format: { type: "json_object" },
       temperature: 0.1,
     });
+    } catch (openaiErr) {
+      const msg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
+      return NextResponse.json(
+        { error: `OpenAI API failed: ${msg}. Check OPENAI_API_KEY and rate limits.` },
+        { status: 500 }
+      );
+    }
 
     const raw = completion.choices[0]?.message?.content?.trim();
     console.log("[extract] AI response:", {
@@ -242,7 +269,7 @@ export async function POST(request: NextRequest) {
     const message =
       err instanceof Error
         ? `${err.name}: ${err.message}`
-        : "Extraction failed.";
+        : `Error: ${String(err)}`;
     return NextResponse.json(
       {
         error: message,
