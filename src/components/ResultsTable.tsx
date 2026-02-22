@@ -1,7 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
-import type { ExtractedRow } from "@/types";
+import type { ExtractedRow, LineItem } from "@/types";
 
 type ResultsTableProps = {
   rows: ExtractedRow[];
@@ -15,20 +15,103 @@ function escapeCsvCell(value: string): string {
 }
 
 function downloadCsv(rows: ExtractedRow[]) {
-  const header = "Vendor Name,Total Amount,Date";
-  const body = rows
-    .map((r) =>
-      [r.vendorName, r.totalAmount, r.date].map(escapeCsvCell).join(",")
-    )
-    .join("\n");
+  const hasLineItems = rows.some((r) => r.lineItems && r.lineItems.length > 0);
+  let header: string;
+  let body: string;
+
+  if (hasLineItems) {
+    header =
+      "Vendor Name,Date,Total Amount,SKU,Part Description,Quantity,Unit Cost,Line Total";
+    const lineRows: string[] = [];
+    for (const r of rows) {
+      if (r.lineItems && r.lineItems.length > 0) {
+        for (const li of r.lineItems) {
+          lineRows.push(
+            [
+              r.vendorName,
+              r.date,
+              r.totalAmount,
+              li.sku,
+              li.partDescription,
+              li.quantity ?? "",
+              li.unitCost,
+              li.lineTotal ?? "",
+            ]
+              .map(escapeCsvCell)
+              .join(",")
+          );
+        }
+      } else {
+        lineRows.push(
+          [r.vendorName, r.date, r.totalAmount, "", "", "", "", ""]
+            .map(escapeCsvCell)
+            .join(",")
+        );
+      }
+    }
+    body = lineRows.join("\n");
+  } else {
+    header = "Vendor Name,Total Amount,Date";
+    body = rows
+      .map((r) =>
+        [r.vendorName, r.totalAmount, r.date].map(escapeCsvCell).join(",")
+      )
+      .join("\n");
+  }
+
   const csv = `${header}\n${body}`;
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `invoice-data-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `velodoc-extract-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function LineItemsTable({ items }: { items: LineItem[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="mt-3 overflow-x-auto rounded-lg border border-white/10 bg-white/5">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/10">
+            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              SKU
+            </th>
+            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Part Description
+            </th>
+            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Qty
+            </th>
+            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Unit Cost
+            </th>
+            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Line Total
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((li, j) => (
+            <tr
+              key={j}
+              className="border-b border-white/5 last:border-0 hover:bg-white/5"
+            >
+              <td className="px-3 py-2 font-mono text-teal-accent/90">
+                {li.sku || "—"}
+              </td>
+              <td className="px-3 py-2 text-slate-200">{li.partDescription || "—"}</td>
+              <td className="px-3 py-2 text-slate-300">{li.quantity ?? "—"}</td>
+              <td className="px-3 py-2 text-slate-300">{li.unitCost || "—"}</td>
+              <td className="px-3 py-2 text-slate-300">{li.lineTotal ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export function ResultsTable({ rows }: ResultsTableProps) {
@@ -38,7 +121,8 @@ export function ResultsTable({ rows }: ResultsTableProps) {
     <div className="w-full max-w-4xl mx-auto space-y-4 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-medium text-white">
-          Extracted data ({rows.length} {rows.length === 1 ? "invoice" : "invoices"})
+          Extracted data ({rows.length}{" "}
+          {rows.length === 1 ? "document" : "documents"})
         </h2>
         <button
           type="button"
@@ -49,34 +133,32 @@ export function ResultsTable({ rows }: ResultsTableProps) {
           Download as CSV
         </button>
       </div>
-      <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/10">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Vendor Name
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Total Amount
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={i}
-                className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors"
-              >
-                <td className="px-4 py-3 text-white">{row.vendorName || "—"}</td>
-                <td className="px-4 py-3 text-white">{row.totalAmount || "—"}</td>
-                <td className="px-4 py-3 text-white">{row.date || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 divide-y divide-white/10">
+        {rows.map((row, i) => (
+          <div key={i} className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <span className="text-slate-400 uppercase tracking-wider text-xs">
+                  Vendor
+                </span>
+                <p className="text-white font-medium mt-0.5">{row.vendorName || "—"}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 uppercase tracking-wider text-xs">
+                  Total
+                </span>
+                <p className="text-white font-medium mt-0.5">{row.totalAmount || "—"}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 uppercase tracking-wider text-xs">
+                  Date
+                </span>
+                <p className="text-white font-medium mt-0.5">{row.date || "—"}</p>
+              </div>
+            </div>
+            <LineItemsTable items={row.lineItems ?? []} />
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -57,7 +57,12 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
       <div className="mx-auto max-w-5xl px-6 py-12">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Architect</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-white">PDF Architect</h1>
+            <p className="text-slate-400 text-sm mt-0.5">
+              Deep line-item extraction for service & logistics
+            </p>
+          </div>
           {credits !== null && (
             <p className="text-slate-300">
               <span className="font-medium text-teal-accent">{credits}</span>{" "}

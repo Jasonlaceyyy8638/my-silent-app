@@ -17,9 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://velodoc.app"),
-  title: "VeloDoc: AI PDF-to-Sheet Architect",
+  title: "VeloDoc – Stop typing. Start building.",
   description:
-    "The silent data extraction tool for logistics, invoices, and garage door repair pros. Turn messy PDFs into clean spreadsheets in 10 seconds.",
+    "The PDF Architect for service and logistics pros. Extract SKUs, part descriptions, and unit costs from invoices, BOLs, and quotes—no templates required.",
 };
 
 export default function RootLayout({

@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
 import { deductCredit } from "@/lib/credits";
+import type { ExtractedRow, LineItem } from "@/types";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -10,13 +11,22 @@ function getOpenAI() {
   return new OpenAI({ apiKey: key });
 }
 
-export type ExtractedRow = {
-  vendorName: string;
-  totalAmount: string;
-  date: string;
-};
+const EXTRACT_SYSTEM = `You extract structured data from PDF document text. The documents are from garage door, service, and logistics industries (invoices, bills of lading, material quotes, work orders).
 
-const EXTRACT_SYSTEM = `You extract structured data from invoice text. Reply with ONLY a JSON object (no markdown, no code block) with exactly these keys: vendorName (string), totalAmount (string, e.g. "1,234.56" or "€ 99.00"), date (string, e.g. "2024-01-15" or "Jan 15, 2024"). If a value cannot be determined, use empty string "".`;
+Reply with ONLY a JSON object (no markdown, no code block). Use exactly these top-level keys:
+- vendorName (string)
+- totalAmount (string, e.g. "1,234.56" or "€ 99.00")
+- date (string, e.g. "2024-01-15" or "Jan 15, 2024")
+- lineItems (array of objects)
+
+Each item in lineItems must have:
+- sku (string): part number, SKU, item code, or catalog number
+- partDescription (string): full description of the part or service (e.g. "Torsion Spring 1.75x24", "Freight")
+- unitCost (string): price per unit (e.g. "12.50", "0.00")
+- quantity (string, optional): quantity (e.g. "2", "1")
+- lineTotal (string, optional): extended line total if present
+
+Extract every line item you can find—every part, screw, spring, labor line, and freight. If a value cannot be determined, use empty string "". For lineItems, if there are no clear line items, return an empty array.`;
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -71,7 +81,7 @@ export async function POST(request: NextRequest) {
         { role: "system", content: EXTRACT_SYSTEM },
         {
           role: "user",
-          content: `Extract vendor name, total amount, and date from this invoice text:\n\n${text.slice(0, 12000)}`,
+          content: `Extract vendor, total, date, and all line items (SKUs, part descriptions, unit costs, quantities) from this document. Focus on garage door and logistics terminology.\n\n${text.slice(0, 12000)}`,
         },
       ],
       response_format: { type: "json_object" },
@@ -88,11 +98,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsed = JSON.parse(raw) as Record<string, string>;
+    const parsed = JSON.parse(raw) as {
+      vendorName?: string;
+      totalAmount?: string;
+      date?: string;
+      lineItems?: Array<{
+        sku?: string;
+        partDescription?: string;
+        unitCost?: string;
+        quantity?: string;
+        lineTotal?: string;
+      }>;
+    };
+
+    const lineItems: LineItem[] = Array.isArray(parsed.lineItems)
+      ? parsed.lineItems.map((li) => ({
+          sku: String(li.sku ?? "").trim(),
+          partDescription: String(li.partDescription ?? "").trim(),
+          unitCost: String(li.unitCost ?? "").trim(),
+          quantity: li.quantity != null ? String(li.quantity).trim() : undefined,
+          lineTotal: li.lineTotal != null ? String(li.lineTotal).trim() : undefined,
+        }))
+      : [];
+
     const row: ExtractedRow = {
       vendorName: String(parsed.vendorName ?? "").trim(),
       totalAmount: String(parsed.totalAmount ?? "").trim(),
       date: String(parsed.date ?? "").trim(),
+      lineItems: lineItems.length > 0 ? lineItems : undefined,
     };
 
     return NextResponse.json({
