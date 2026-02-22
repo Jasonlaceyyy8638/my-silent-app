@@ -14,7 +14,11 @@ export async function GET() {
   }
   try {
     const credits = await getCredits(userId);
-    // Bypass Prisma client: raw query to see what this connection actually sees
+    // What does this connection see? (proves if we're on the right DB)
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT count(*)::bigint as count FROM "UserCredits"
+    `;
+    const totalRows = Number(countResult[0]?.count ?? 0);
     const raw = await prisma.$queryRaw<{ credits: number }[]>`
       SELECT credits FROM "UserCredits" WHERE "userId" = ${userId}
     `;
@@ -26,6 +30,7 @@ export async function GET() {
       userId,
       credits,
       rawCredits,
+      totalRowsInTable: totalRows,
       dbHint: projectRef
         ? `App DB project ref: ${projectRef} — run SQL in Supabase project with this ref in the URL`
         : undefined,
