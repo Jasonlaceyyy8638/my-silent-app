@@ -14,7 +14,7 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
-function downloadCsv(rows: ExtractedRow[]) {
+function downloadCsv(rows: ExtractedRow[], filename?: string) {
   const hasLineItems = rows.some((r) => r.lineItems && r.lineItems.length > 0);
   let header: string;
   let body: string;
@@ -64,9 +64,15 @@ function downloadCsv(rows: ExtractedRow[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `velodoc-extract-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download =
+    filename ??
+    `velodoc-extract-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function safeFilename(s: string): string {
+  return s.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-").slice(0, 40) || "document";
 }
 
 function LineItemsTable({ items }: { items: LineItem[] }) {
@@ -130,35 +136,50 @@ export function ResultsTable({ rows }: ResultsTableProps) {
           className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
         >
           <Download className="h-4 w-4" />
-          Download as CSV
+          {rows.length > 1 ? "Download all as CSV" : "Download as CSV"}
         </button>
       </div>
       <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 divide-y divide-white/10">
-        {rows.map((row, i) => (
-          <div key={i} className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-              <div>
-                <span className="text-slate-400 uppercase tracking-wider text-xs">
-                  Vendor
-                </span>
-                <p className="text-white font-medium mt-0.5">{row.vendorName || "—"}</p>
+        {rows.map((row, i) => {
+          const name = safeFilename(row.vendorName || "document");
+          const datePart = row.date ? safeFilename(row.date) : "";
+          const oneFilename = `velodoc-${name}-${datePart || i + 1}.csv`;
+          return (
+            <div key={i} className="p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm flex-1 min-w-0">
+                  <div>
+                    <span className="text-slate-400 uppercase tracking-wider text-xs">
+                      Vendor
+                    </span>
+                    <p className="text-white font-medium mt-0.5">{row.vendorName || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 uppercase tracking-wider text-xs">
+                      Total
+                    </span>
+                    <p className="text-white font-medium mt-0.5">{row.totalAmount || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 uppercase tracking-wider text-xs">
+                      Date
+                    </span>
+                    <p className="text-white font-medium mt-0.5">{row.date || "—"}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadCsv([row], oneFilename)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-3 py-1.5 text-xs font-medium transition-colors shrink-0"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download CSV
+                </button>
               </div>
-              <div>
-                <span className="text-slate-400 uppercase tracking-wider text-xs">
-                  Total
-                </span>
-                <p className="text-white font-medium mt-0.5">{row.totalAmount || "—"}</p>
-              </div>
-              <div>
-                <span className="text-slate-400 uppercase tracking-wider text-xs">
-                  Date
-                </span>
-                <p className="text-white font-medium mt-0.5">{row.date || "—"}</p>
-              </div>
+              <LineItemsTable items={row.lineItems ?? []} />
             </div>
-            <LineItemsTable items={row.lineItems ?? []} />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
