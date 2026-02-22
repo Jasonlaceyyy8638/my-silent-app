@@ -79,6 +79,9 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
       cancel_url: baseUrlClean,
+      payment_intent_data: {
+        statement_descriptor: "VELODOC",
+      },
     });
 
     if (!session.url) {
