@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
+import { deductCredit } from "@/lib/credits";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -17,6 +19,14 @@ export type ExtractedRow = {
 const EXTRACT_SYSTEM = `You extract structured data from invoice text. Reply with ONLY a JSON object (no markdown, no code block) with exactly these keys: vendorName (string), totalAmount (string, e.g. "1,234.56" or "€ 99.00"), date (string, e.g. "2024-01-15" or "Jan 15, 2024"). If a value cannot be determined, use empty string "".`;
 
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Sign in to use the Architect." },
+      { status: 401 }
+    );
+  }
+
   const openai = getOpenAI();
   if (!openai) {
     return NextResponse.json(
@@ -35,10 +45,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const result = await deductCredit(userId);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: "No credits left. Buy more credits to extract." },
+        { status: 402 }
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const pdfData = await pdfParse(buffer);
     const text = pdfData.text?.trim() || "";
     if (!text) {
+      const { addCredits } = await import("@/lib/credits");
+      await addCredits(userId, 1);
       return NextResponse.json(
         { error: "No text could be extracted from this PDF." },
         { status: 400 }
@@ -60,6 +80,8 @@ export async function POST(request: NextRequest) {
 
     const raw = completion.choices[0]?.message?.content?.trim();
     if (!raw) {
+      const { addCredits } = await import("@/lib/credits");
+      await addCredits(userId, 1);
       return NextResponse.json(
         { error: "AI did not return extraction data." },
         { status: 500 }
@@ -73,7 +95,10 @@ export async function POST(request: NextRequest) {
       date: String(parsed.date ?? "").trim(),
     };
 
-    return NextResponse.json({ extracted: row });
+    return NextResponse.json({
+      extracted: row,
+      remaining: result.remaining,
+    });
   } catch (err) {
     console.error("Extract error:", err);
     const message =

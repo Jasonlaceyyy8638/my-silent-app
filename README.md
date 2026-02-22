@@ -1,49 +1,47 @@
-# Clean Your Data Silently
+# VeloDoc
 
-A Micro-SaaS landing page that lets users upload PDF invoices and extract **Vendor Name**, **Total Amount**, and **Date** using AI (OpenAI). Dark mode by default, no login or database.
+VeloDoc turns PDF invoices into structured data in seconds. **Sign in** to use the Architect (upload, extract, export). Credits are stored per user and purchased via Stripe.
 
 ## Stack
 
 - **Next.js** (App Router)
-- **Tailwind CSS**
-- **Lucide Icons**
+- **Clerk** — authentication (sign in, protected dashboard)
+- **Prisma + SQLite** — user credits per Clerk user ID
+- **Stripe** — checkout and webhook to add credits
+- **Tailwind CSS**, **Lucide Icons**
 - **OpenAI** (GPT-4o-mini) for extraction
 - **pdf-parse** for PDF text extraction
-- **Chatbase** (optional) — floating chat bubble for user questions
+- **Chatbase** (optional) — floating chat bubble
 
 ## Setup
 
 1. **Install dependencies**
 
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
-2. **Set your OpenAI API key**
+2. **Environment variables**
 
-   Copy `.env.example` to `.env` and add your key:
+   Copy `.env.example` to `.env` and fill in:
+
+   - **Clerk** — [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys:  
+     `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+   - **Database** — SQLite:  
+     `DATABASE_URL="file:./dev.db"`
+   - **OpenAI** — [platform.openai.com/api-keys](https://platform.openai.com/api-keys):  
+     `OPENAI_API_KEY`
+   - **Stripe** — [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys):  
+     `STRIPE_SECRET_KEY`  
+     For credits on purchase, add a webhook endpoint in Stripe pointing to `https://your-domain.com/api/webhooks/stripe` (event: `checkout.session.completed`) and set `STRIPE_WEBHOOK_SECRET`.
+   - **App URL** (production):  
+     `NEXT_PUBLIC_APP_URL=https://your-netlify-url.com`
+
+3. **Database**
 
    ```bash
-   cp .env.example .env
+   npx prisma migrate dev
    ```
-
-   Edit `.env`:
-
-   ```
-   OPENAI_API_KEY=sk-your-key-here
-   ```
-
-   Get a key from [OpenAI API keys](https://platform.openai.com/api-keys).
-
-3. **(Optional) Add Chatbase chat bubble**
-
-   In `.env`, set your Chatbase chatbot ID (from [Chatbase Dashboard](https://www.chatbase.co/dashboard) → Deploy → Chat widget → Embed):
-
-   ```
-   NEXT_PUBLIC_CHATBASE_CHATBOT_ID=your-chatbot-id
-   ```
-
-   The floating chat bubble appears in the bottom right and handles user questions via your Chatbase agent.
 
 4. **Run the app**
 
@@ -55,10 +53,9 @@ A Micro-SaaS landing page that lets users upload PDF invoices and extract **Vend
 
 ## Usage
 
-1. Open the landing page.
-2. Drag & drop a PDF invoice (or click to browse).
-3. The app extracts vendor name, total amount, and date and adds a row to the table.
-4. Use **Download as CSV** to export all extracted rows.
+- **Landing (/**):** Hero, pricing, “Buy Credits”. Sign in via header to access the dashboard.
+- **Dashboard (/dashboard):** Protected. Upload PDFs, run Architect (1 credit per extraction), download CSV. Credits shown in the header.
+- **Buy Credits:** Stripe Checkout; after payment, the webhook adds credits to the signed-in user’s Clerk ID.
 
 ## Scripts
 

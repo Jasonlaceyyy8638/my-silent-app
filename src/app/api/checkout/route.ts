@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 
 function getStripe(): Stripe | null {
@@ -13,16 +14,26 @@ const PLANS = {
     description: "For quick one-off tasks.",
     unit_amount: 100, // $1.00
     quantity: 1,
+    credits: 1,
   },
   velopack: {
     name: "VeloPack — 20 Credits",
     description: "Best value for businesses.",
     unit_amount: 1000, // $10.00
     quantity: 1,
+    credits: 20,
   },
 } as const;
 
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Sign in to buy credits." },
+      { status: 401 }
+    );
+  }
+
   const stripe = getStripe();
   if (!stripe) {
     return NextResponse.json(
@@ -51,6 +62,8 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      client_reference_id: userId,
+      metadata: { plan, userId },
       line_items: [
         {
           price_data: {
