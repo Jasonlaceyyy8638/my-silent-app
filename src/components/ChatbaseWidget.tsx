@@ -3,17 +3,25 @@
 import { useEffect } from "react";
 
 const CHATBASE_EMBED_URL = "https://www.chatbase.co/embed.min.js";
-const CHATBOT_ID = "7RFDPJoo-X5H0MuLzhDgY";
 const DOMAIN = "www.chatbase.co";
+
+// Use env so you can set NEXT_PUBLIC_CHATBOT_ID in Netlify. Get the correct ID from
+// Chatbase Dashboard → Deploy → Chat widget → Embed tab.
+const CHATBOT_ID =
+  typeof process.env.NEXT_PUBLIC_CHATBOT_ID === "string" &&
+  process.env.NEXT_PUBLIC_CHATBOT_ID.trim() !== ""
+    ? process.env.NEXT_PUBLIC_CHATBOT_ID.trim()
+    : "7RFDPJoo-X5H0MuLzhDgY";
 
 export function ChatbaseWidget() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (document.getElementById("chatbase-embed")) return;
+    if (!CHATBOT_ID) return;
 
-    // Force the bubble to stay open
+    // Don’t force open so the panel isn’t shown while the widget is still loading
     (window as unknown as { chatbaseConfig?: { defaultOpen?: boolean } }).chatbaseConfig = {
-      defaultOpen: true,
+      defaultOpen: false,
     };
 
     const script = document.createElement("script");
