@@ -1,2 +1,5 @@
-# Put logo-png.png in this folder.
-# The Header uses /logo-png.png (this file: public/logo-png.png).
+# LOGO: Put your logo file HERE in this folder (public/).
+# Name the file exactly: logo-png.png
+# Do NOT create a subfolder — the file must be directly in public/:
+#   public/logo-png.png   ✓ correct
+#   public/logo-png.png/logo-png.png   ✗ wrong

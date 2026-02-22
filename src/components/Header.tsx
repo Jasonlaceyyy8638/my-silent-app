@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export function Header() {
   return (
@@ -10,13 +9,13 @@ export function Header() {
           className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
           aria-label="VeloDoc home"
         >
-          <Image
-            src="/logo-png.png/logo-png.png"
+          {/* Logo: place file at public/logo-png.png (file directly in public folder) */}
+          <img
+            src="/logo-png.png"
             alt="VeloDoc"
             width={120}
             height={45}
             className="h-[45px] w-auto shadow-[0_0_15px_rgba(34,211,238,0.4)]"
-            priority
           />
         </Link>
         <nav className="flex items-center gap-4">
