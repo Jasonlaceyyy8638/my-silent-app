@@ -6,8 +6,10 @@ import {
   LayoutGrid,
   Download,
   ShoppingCart,
-  Layers,
-  Zap,
+  Briefcase,
+  Home,
+  GraduationCap,
+  Truck,
 } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
@@ -37,6 +39,29 @@ export default function Home() {
     }
   }, []);
 
+  const audiences = [
+    {
+      icon: Briefcase,
+      title: "Professionals",
+      description: "Extract data from vendor quotes and client contracts.",
+    },
+    {
+      icon: Home,
+      title: "Homeowners & Families",
+      description: "Organize medical bills, tax documents, and insurance claims.",
+    },
+    {
+      icon: GraduationCap,
+      title: "Students & Academics",
+      description: "Turn research papers and syllabi into structured study guides.",
+    },
+    {
+      icon: Truck,
+      title: "Logistics & Trade",
+      description: "Automate invoices, BOLs, and work orders.",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
@@ -49,10 +74,10 @@ export default function Home() {
             className="w-[200px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mb-6"
           />
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white">
-            Stop typing. Start building.
+            Your PDFs, finally organized.
           </h1>
           <p className="mt-5 text-lg sm:text-xl text-slate-200 max-w-2xl mx-auto leading-relaxed">
-            VeloDoc is the <span className="text-teal-accent font-medium">&quot;PDF Architect&quot;</span> for service and logistics pros. Whether it&apos;s an Amarr parts order, a trucking BOL, or a complex vendor quote, our AI understands your industry language—not just the totals.
+            VeloDoc is the <span className="text-teal-accent font-medium">AI Architect</span> for your documents. From complex business invoices to medical records, school transcripts, and legal contracts—if it&apos;s a PDF, VeloDoc reads it, structures it, and hands you the data you need.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <SignedIn>
@@ -76,7 +101,7 @@ export default function Home() {
 
         <section className="mb-14 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8">
           <p className="text-center text-slate-200 text-lg max-w-3xl mx-auto">
-            Unlike QuickBooks, which just sees a dollar sign, <span className="text-white font-semibold">VeloDoc sees the part numbers, quantities, and labor rates</span> that run your business.
+            Most apps just search for text. <span className="text-white font-semibold">VeloDoc understands it.</span> Whether you&apos;re a solo freelancer or a busy dispatcher, our AI eliminates manual entry forever.
           </p>
         </section>
 
@@ -86,21 +111,21 @@ export default function Home() {
               <FileUp className="h-10 w-10 text-teal-accent mb-3" />
               <h3 className="font-semibold text-white">Upload</h3>
               <p className="text-sm text-slate-300 mt-2">
-                Invoices, Bill of Ladings, Material Quotes, Work Orders—drop any PDF.
+                Drop any PDF—invoices, contracts, records, or quotes.
               </p>
             </div>
             <div className="flex flex-col items-center text-center p-5 rounded-xl bg-white/5 border border-white/10 w-full max-w-[260px]">
               <LayoutGrid className="h-10 w-10 text-teal-accent mb-3" />
               <h3 className="font-semibold text-white">Architect</h3>
               <p className="text-sm text-slate-300 mt-2">
-                AI extracts vendor, totals, dates, and every line item: SKUs, parts, unit costs.
+                AI reads your document and extracts the data that matters.
               </p>
             </div>
             <div className="flex flex-col items-center text-center p-5 rounded-xl bg-white/5 border border-white/10 w-full max-w-[260px]">
               <Download className="h-10 w-10 text-teal-accent mb-3" />
               <h3 className="font-semibold text-white">Export</h3>
               <p className="text-sm text-slate-300 mt-2">
-                Download as CSV or use in Excel, Google Sheets, or QuickBooks.
+                Download as CSV or use in Excel, Google Sheets, and more.
               </p>
             </div>
           </div>
@@ -108,37 +133,29 @@ export default function Home() {
 
         <section className="mb-14">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Built for the field
+            Who is VeloDoc for?
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-accent/20 flex items-center justify-center">
-                <Layers className="h-5 w-5 text-teal-accent" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+            {audiences.map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-5"
+              >
+                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-teal-accent/20 flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-teal-accent" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">{title}</h3>
+                  <p className="text-sm text-slate-300 mt-1">{description}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-white">Deep line-item extraction</h3>
-                <p className="text-sm text-slate-300 mt-1">
-                  Get every screw and spring listed—SKUs, part descriptions, quantities, and unit costs. No manual re-keying.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4 rounded-xl border border-white/10 bg-white/5 p-5">
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-accent/20 flex items-center justify-center">
-                <Zap className="h-5 w-5 text-teal-accent" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white">Universal compatibility</h3>
-                <p className="text-sm text-slate-300 mt-1">
-                  No templates required. Upload any vendor format—garage door, trucking, or general B2B—and we parse it.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
         <section className="mb-14 text-center">
           <p className="text-slate-300 mb-4">
-            Sign in to access the PDF Architect. Buy credits to extract data from your documents.
+            Sign in to access the Architect. Buy credits to extract data from your PDFs.
           </p>
           <SignedOut>
             <Link
@@ -152,7 +169,7 @@ export default function Home() {
 
         <section id="pricing" className="mb-14 scroll-mt-24">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Simple, silent pricing
+            Simple pricing
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 flex flex-col">
@@ -177,7 +194,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-white">VeloPack</h3>
               <p className="mt-1 text-3xl font-bold text-white">$10.00</p>
               <p className="text-slate-300 text-sm mt-1">20 Credits</p>
-              <p className="text-slate-400 text-sm mt-2">Best value for businesses.</p>
+              <p className="text-slate-400 text-sm mt-2">Best value for regular use.</p>
               <button
                 type="button"
                 onClick={() => handleCheckout("velopack")}

@@ -3,17 +3,131 @@ import { Webhook } from "svix";
 import sgMail from "@sendgrid/mail";
 
 const FROM_EMAIL = "jason@velodoc.app";
-const WELCOME_SUBJECT = "Welcome to VeloDoc – Let's get those PDFs sorted 🛠️";
+const WELCOME_SUBJECT = "Welcome to VeloDoc";
+const DASHBOARD_URL = "https://velodoc.app/dashboard";
 
 function getWelcomeBody(firstName: string): string {
   const first_name = firstName || "there";
-  return `Hey ${first_name},
+  return `Hello ${first_name},
 
-I'm Jason, the founder of VeloDoc. Like you, I've spent plenty of time in the field and running a service business. I built VeloDoc because I got tired of manually typing data from messy invoices and logistics PDFs into spreadsheets.
+I'm Jason, founder of VeloDoc. I built this tool to solve a universal problem: the hours we lose to manual data entry. Whether you're processing a stack of business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files—it understands them. You're no longer just storing PDFs; you're unlocking them.
 
-Your account is active and your PDF Architect is ready. Just log in and upload your first file—we'll handle the heavy lifting from there.
+The Architecture of Your Data Starts Now.
 
-If you have any questions, just hit reply.`.trim();
+Getting started: 1) Upload any PDF 2) Architect the data (our AI reads the context) 3) Export to Excel or Google Sheets.
+
+Launch your dashboard: ${DASHBOARD_URL}
+
+Welcome to the future of the PDF.
+
+— Jason Lacey, Founder`.trim();
+}
+
+function getWelcomeHtml(firstName: string): string {
+  const first_name = firstName || "there";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to VeloDoc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0; padding:0; background-color:#f5f5f7; font-family: Inter, Helvetica, -apple-system, BlinkMacSystemFont, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f7;">
+    <tr>
+      <td align="center" style="padding:56px 24px 72px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background-color:#ffffff; border-radius:20px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+          <tr>
+            <td style="background:linear-gradient(180deg, #1e293b 0%, #0f172a 100%); padding:56px 48px 48px; text-align:center;">
+              <h1 style="margin:0; font-size:28px; font-weight:700; color:#ffffff; letter-spacing:-0.02em; line-height:1.3;">
+                The Architecture of Your Data Starts Now.
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:48px 48px 40px;">
+              <p style="margin:0 0 20px; font-size:17px; color:#374151; line-height:1.7;">
+                Hello ${first_name},
+              </p>
+              <p style="margin:0 0 32px; font-size:17px; color:#374151; line-height:1.7;">
+                I'm Jason, founder of VeloDoc. I built this tool to solve a universal problem: the hours we lose to manual data entry. Whether you're processing a stack of business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files—it understands them. You're no longer just storing PDFs; you're unlocking them.
+              </p>
+              <h2 style="margin:0 0 24px; font-size:15px; font-weight:700; color:#0f172a; letter-spacing:0.02em; text-transform:uppercase;">
+                Getting Started
+              </h2>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:32px;">
+                <tr>
+                  <td style="padding:16px 0; border-bottom:1px solid #e5e7eb;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td width="36" style="vertical-align:top; padding-right:16px;">
+                          <span style="display:inline-block; width:28px; height:28px; background:#0f172a; color:#fff; font-size:14px; font-weight:700; line-height:28px; text-align:center; border-radius:8px;">1</span>
+                        </td>
+                        <td>
+                          <p style="margin:0; font-size:17px; font-weight:600; color:#111827;">Upload any PDF</p>
+                          <p style="margin:4px 0 0; font-size:15px; color:#6b7280; line-height:1.6;">Drop your file—no setup required.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 0; border-bottom:1px solid #e5e7eb;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td width="36" style="vertical-align:top; padding-right:16px;">
+                          <span style="display:inline-block; width:28px; height:28px; background:#0f172a; color:#fff; font-size:14px; font-weight:700; line-height:28px; text-align:center; border-radius:8px;">2</span>
+                        </td>
+                        <td>
+                          <p style="margin:0; font-size:17px; font-weight:600; color:#111827;">Architect the data</p>
+                          <p style="margin:4px 0 0; font-size:15px; color:#6b7280; line-height:1.6;">Our AI reads the context and structures everything.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 0;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td width="36" style="vertical-align:top; padding-right:16px;">
+                          <span style="display:inline-block; width:28px; height:28px; background:#0f172a; color:#fff; font-size:14px; font-weight:700; line-height:28px; text-align:center; border-radius:8px;">3</span>
+                        </td>
+                        <td>
+                          <p style="margin:0; font-size:17px; font-weight:600; color:#111827;">Export to Excel or Google Sheets</p>
+                          <p style="margin:4px 0 0; font-size:15px; color:#6b7280; line-height:1.6;">Download your data and keep moving.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:40px 0 32px;">
+                <tr>
+                  <td align="center">
+                    <a href="${DASHBOARD_URL}" style="display:inline-block; padding:18px 40px; background-color:#0f172a; color:#ffffff; font-size:17px; font-weight:700; text-decoration:none; border-radius:12px; line-height:1;">
+                      Launch Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0; font-size:17px; color:#374151; line-height:1.7;">
+                Welcome to the future of the PDF.
+              </p>
+              <p style="margin:6px 0 0; font-size:17px; color:#374151; line-height:1.7;">
+                — Jason Lacey, Founder
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 type ClerkUserCreatedData = {
@@ -93,10 +207,7 @@ export async function POST(request: Request) {
   sgMail.setApiKey(apiKey);
 
   const textBody = getWelcomeBody(firstName);
-  const htmlBody = textBody
-    .split("\n\n")
-    .map((p) => `<p>${p.replace(/\n/g, "<br />")}</p>`)
-    .join("");
+  const htmlBody = getWelcomeHtml(firstName);
 
   try {
     await sgMail.send({

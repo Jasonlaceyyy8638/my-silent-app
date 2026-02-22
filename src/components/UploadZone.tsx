@@ -67,7 +67,7 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
       <span className="text-slate-300 text-center text-sm">
         {isUploading
           ? "Extracting data…"
-          : "Drag & drop a PDF here—invoices, BOLs, quotes, work orders—or click to browse"}
+          : "Drop any PDF here—Invoices, Contracts, Records, or Quotes."}
       </span>
     </label>
   );
