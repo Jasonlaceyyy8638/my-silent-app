@@ -63,6 +63,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    console.log("[extract] File received:", {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    });
 
     const result = await deductCredit(userId);
     if (!result.ok) {
@@ -75,6 +80,10 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const pdfData = await pdfParse(buffer);
     const text = pdfData.text?.trim() || "";
+    console.log("[extract] PDF parsed:", {
+      textLength: text.length,
+      preview: text.slice(0, 200) + (text.length > 200 ? "..." : ""),
+    });
     if (!text) {
       const { addCredits } = await import("@/lib/credits");
       await addCredits(userId, 1);
@@ -98,6 +107,11 @@ export async function POST(request: NextRequest) {
     });
 
     const raw = completion.choices[0]?.message?.content?.trim();
+    console.log("[extract] AI response:", {
+      hasContent: !!raw,
+      length: raw?.length ?? 0,
+      preview: raw ? raw.slice(0, 300) + (raw.length > 300 ? "..." : "") : null,
+    });
     if (!raw) {
       const { addCredits } = await import("@/lib/credits");
       await addCredits(userId, 1);
@@ -149,10 +163,32 @@ export async function POST(request: NextRequest) {
         .select("extracted_data")
         .single();
 
+      console.log("[extract] Supabase insert result:", {
+        success: !insertError && !!saved?.extracted_data,
+        error: insertError
+          ? {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+            }
+          : null,
+        hasSavedData: !!saved?.extracted_data,
+      });
+
       if (insertError || !saved?.extracted_data) {
-        console.error("Supabase documents insert failed:", insertError);
+        const code = insertError?.code ?? "UNKNOWN";
+        const message = insertError?.message ?? "No data returned.";
+        console.error("Supabase documents insert failed:", {
+          code,
+          message,
+          details: insertError?.details,
+        });
         return NextResponse.json(
-          { error: "Failed to save extraction to database." },
+          {
+            error: "Failed to save extraction to database.",
+            supabaseErrorCode: code,
+            supabaseErrorMessage: message,
+          },
           { status: 500 }
         );
       }

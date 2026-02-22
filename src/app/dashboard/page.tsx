@@ -79,14 +79,25 @@ export default function DashboardPage() {
           body: formData,
         });
         const text = await res.text();
-        let data: { extracted?: ExtractedRow; remaining?: number; error?: string };
+        let data: {
+          extracted?: ExtractedRow;
+          remaining?: number;
+          error?: string;
+          supabaseErrorCode?: string;
+          supabaseErrorMessage?: string;
+        };
         try {
           data = text ? JSON.parse(text) : {};
         } catch {
           throw new Error(res.ok ? "Invalid response from server." : "Extraction failed.");
         }
         if (!res.ok) {
-          throw new Error(data.error || "Extraction failed.");
+          const msg = data.error || "Extraction failed.";
+          const supabaseInfo =
+            data.supabaseErrorCode != null || data.supabaseErrorMessage != null
+              ? ` (Supabase: ${data.supabaseErrorCode ?? "—"} ${data.supabaseErrorMessage ?? ""})`.trim()
+              : "";
+          throw new Error(msg + supabaseInfo);
         }
         if (data.extracted) {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
