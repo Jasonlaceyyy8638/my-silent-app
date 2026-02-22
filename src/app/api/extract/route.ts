@@ -203,14 +203,15 @@ export async function POST(request: NextRequest) {
         message,
         details: insertError?.details,
       });
-      return NextResponse.json(
-        {
-          error: "Failed to save extraction to database.",
-          supabaseErrorCode: code,
-          supabaseErrorMessage: message,
-        },
-        { status: 500 }
-      );
+      // Still return extracted data so the dashboard shows results; surface save failure
+      return NextResponse.json({
+        extracted: row,
+        remaining: result.remaining,
+        saveFailed: true,
+        saveError: "Failed to save to database.",
+        supabaseErrorCode: code,
+        supabaseErrorMessage: message,
+      });
     }
 
     const extracted = saved.extracted_data as ExtractedRow;
@@ -221,7 +222,16 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("Extract error:", err);
     const message =
-      err instanceof Error ? err.message : "Extraction failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+      err instanceof Error
+        ? `${err.name}: ${err.message}`
+        : "Extraction failed.";
+    return NextResponse.json(
+      {
+        error: message,
+        supabaseErrorCode: null,
+        supabaseErrorMessage: null,
+      },
+      { status: 500 }
+    );
   }
 }

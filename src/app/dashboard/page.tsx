@@ -83,13 +83,20 @@ export default function DashboardPage() {
           extracted?: ExtractedRow;
           remaining?: number;
           error?: string;
-          supabaseErrorCode?: string;
-          supabaseErrorMessage?: string;
+          saveFailed?: boolean;
+          saveError?: string;
+          supabaseErrorCode?: string | null;
+          supabaseErrorMessage?: string | null;
         };
         try {
           data = text ? JSON.parse(text) : {};
         } catch {
-          throw new Error(res.ok ? "Invalid response from server." : "Extraction failed.");
+          const hint = text?.slice(0, 100)?.includes("<")
+            ? " Server returned HTML (check URL and env)."
+            : "";
+          throw new Error(
+            res.ok ? "Invalid response from server." : `Extraction failed.${hint}`
+          );
         }
         if (!res.ok) {
           const msg = data.error || "Extraction failed.";
@@ -102,6 +109,11 @@ export default function DashboardPage() {
         if (data.extracted) {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
+          if (data.saveFailed && (data.supabaseErrorCode || data.supabaseErrorMessage)) {
+            setError(
+              `Saved locally. Database save failed: ${data.supabaseErrorCode ?? ""} ${data.supabaseErrorMessage ?? ""}`.trim()
+            );
+          }
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong.");
