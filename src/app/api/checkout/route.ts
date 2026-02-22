@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
 
     const logoUrl = `${baseUrlClean}/logo-png.png`;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+    const sessionParams = {
+      mode: "payment" as const,
       client_reference_id: userId,
       metadata: { plan, userId },
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "usd" as const,
             product_data: {
               name: config.name,
               description: config.description,
@@ -88,7 +88,11 @@ export async function POST(request: NextRequest) {
         display_name: "VeloDoc",
         logo: { type: "url" as const, url: logoUrl },
       },
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(
+      sessionParams as Parameters<typeof stripe.checkout.sessions.create>[0]
+    );
 
     if (!session.url) {
       return NextResponse.json(
