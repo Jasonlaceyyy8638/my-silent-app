@@ -78,12 +78,18 @@ export default function DashboardPage() {
           method: "POST",
           body: formData,
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data: { extracted?: ExtractedRow; remaining?: number; error?: string };
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          throw new Error(res.ok ? "Invalid response from server." : "Extraction failed.");
+        }
         if (!res.ok) {
           throw new Error(data.error || "Extraction failed.");
         }
         if (data.extracted) {
-          setRows((prev) => [...prev, data.extracted]);
+          setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
         }
       } catch (e) {

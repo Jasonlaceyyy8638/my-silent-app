@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
 import { deductCredit } from "@/lib/credits";
 import type { ExtractedRow, LineItem } from "@/types";
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -127,6 +136,32 @@ export async function POST(request: NextRequest) {
       date: String(parsed.date ?? "").trim(),
       lineItems: lineItems.length > 0 ? lineItems : undefined,
     };
+
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data: saved, error: insertError } = await supabase
+        .from("documents")
+        .insert({
+          user_id: userId,
+          file_name: file.name,
+          extracted_data: row as unknown as Record<string, unknown>,
+        })
+        .select("extracted_data")
+        .single();
+
+      if (insertError || !saved?.extracted_data) {
+        console.error("Supabase documents insert failed:", insertError);
+        return NextResponse.json(
+          { error: "Failed to save extraction to database." },
+          { status: 500 }
+        );
+      }
+      const extracted = saved.extracted_data as ExtractedRow;
+      return NextResponse.json({
+        extracted,
+        remaining: result.remaining,
+      });
+    }
 
     return NextResponse.json({
       extracted: row,
