@@ -1,7 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
-import type { ExtractedRow, LineItem } from "@/types";
+import type { ExtractedRow } from "@/types";
 
 type ResultsTableProps = {
   rows: ExtractedRow[];
@@ -75,51 +75,6 @@ function safeFilename(s: string): string {
   return s.replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-").slice(0, 40) || "document";
 }
 
-function LineItemsTable({ items }: { items: LineItem[] }) {
-  if (!items.length) return null;
-  return (
-    <div className="mt-3 overflow-x-auto rounded-lg border border-white/10 bg-white/5">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-white/10 bg-white/10">
-            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              SKU
-            </th>
-            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Part Description
-            </th>
-            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Qty
-            </th>
-            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Unit Cost
-            </th>
-            <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Line Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((li, j) => (
-            <tr
-              key={j}
-              className="border-b border-white/5 last:border-0 hover:bg-white/5"
-            >
-              <td className="px-3 py-2 font-mono text-teal-accent/90">
-                {li.sku || "—"}
-              </td>
-              <td className="px-3 py-2 text-slate-200">{li.partDescription || "—"}</td>
-              <td className="px-3 py-2 text-slate-300">{li.quantity ?? "—"}</td>
-              <td className="px-3 py-2 text-slate-300">{li.unitCost || "—"}</td>
-              <td className="px-3 py-2 text-slate-300">{li.lineTotal ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export function ResultsTable({ rows }: ResultsTableProps) {
   if (rows.length === 0) return null;
 
@@ -176,7 +131,6 @@ export function ResultsTable({ rows }: ResultsTableProps) {
                   Download CSV
                 </button>
               </div>
-              <LineItemsTable items={row.lineItems ?? []} />
             </div>
           );
         })}
