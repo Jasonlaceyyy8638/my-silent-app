@@ -72,9 +72,22 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchSavedDocuments = useCallback(async () => {
+    try {
+      const res = await fetch("/api/documents");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.rows)) {
+        setRows(data.rows);
+      }
+    } catch {
+      // keep existing rows
+    }
+  }, []);
+
   useEffect(() => {
     fetchCredits();
-  }, [fetchCredits]);
+    fetchSavedDocuments();
+  }, [fetchCredits, fetchSavedDocuments]);
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -122,6 +135,7 @@ export default function DashboardPage() {
         if (data.extracted) {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
+          fetchSavedDocuments();
           if (data.saveFailed) {
             const friendly = data.saveError && data.supabaseErrorCode === "PGRST205"
               ? "Saved to this session. To also save to Supabase, create the documents table (see docs/DATABASE.md)."
