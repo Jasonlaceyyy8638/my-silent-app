@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0c0c0e;
+  --foreground: #e4e4e7;
+  --muted: #71717a;
+  --border: #27272a;
+  --accent: #22c55e;
+}
+
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-surface-950 text-zinc-100 min-h-screen;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
