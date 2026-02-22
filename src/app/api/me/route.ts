@@ -23,6 +23,11 @@ export async function GET() {
       SELECT credits FROM "UserCredits" WHERE "userId" = ${userId}
     `;
     const rawCredits = raw[0]?.credits ?? null;
+    // List userIds in table so we can see if yours is there (debug only)
+    const allRows = await prisma.$queryRaw<{ userId: string }[]>`
+      SELECT "userId" FROM "UserCredits"
+    `;
+    const userIdsInTable = allRows.map((r) => r.userId);
     const url = process.env.DATABASE_URL ?? "";
     const match = url.match(/prisma\.([a-zA-Z0-9]+)/);
     const projectRef = match ? match[1] : null;
@@ -31,6 +36,7 @@ export async function GET() {
       credits,
       rawCredits,
       totalRowsInTable: totalRows,
+      userIdsInTable,
       dbHint: projectRef
         ? `App DB project ref: ${projectRef} — run SQL in Supabase project with this ref in the URL`
         : undefined,
