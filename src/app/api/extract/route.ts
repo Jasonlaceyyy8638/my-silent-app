@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsed = JSON.parse(raw) as {
+    let parsed: {
       documentType?: string;
       vendorName?: string;
       totalAmount?: string;
@@ -134,6 +134,21 @@ export async function POST(request: NextRequest) {
         lineTotal?: string;
       }>;
     };
+    try {
+      parsed = JSON.parse(raw);
+    } catch (parseErr) {
+      const { addCredits } = await import("@/lib/credits");
+      await addCredits(userId, 1);
+      const msg = parseErr instanceof Error ? parseErr.message : "Invalid JSON";
+      return NextResponse.json(
+        {
+          error: `AI returned invalid JSON: ${msg}`,
+          supabaseErrorCode: null,
+          supabaseErrorMessage: null,
+        },
+        { status: 500 }
+      );
+    }
 
     const docType = parsed.documentType?.trim();
     const documentType =
@@ -160,63 +175,57 @@ export async function POST(request: NextRequest) {
     };
 
     const supabase = getSupabase();
-    if (!supabase) {
-      console.error("[extract] Supabase not configured (SUPABASE_SERVICE_ROLE_KEY required).");
-      return NextResponse.json(
-        {
-          error: "Database not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-          supabaseErrorCode: "NO_CONFIG",
-          supabaseErrorMessage: "Supabase env vars missing.",
-        },
-        { status: 500 }
-      );
-    }
+    if (supabase) {
+      const payload = {
+        user_id: userId,
+        file_name: file.name,
+        extracted_data: row as unknown as Record<string, unknown>,
+      };
+      const { data: saved, error: insertError } = await supabase
+        .from("documents")
+        .insert(payload)
+        .select("extracted_data")
+        .single();
 
-    const payload = {
-      user_id: userId,
-      file_name: file.name,
-      extracted_data: row as unknown as Record<string, unknown>,
-    };
-    const { data: saved, error: insertError } = await supabase
-      .from("documents")
-      .insert(payload)
-      .select("extracted_data")
-      .single();
-
-    console.log("[extract] Supabase insert result:", {
-      success: !insertError && !!saved?.extracted_data,
-      error: insertError
-        ? {
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details,
-          }
-        : null,
-      hasSavedData: !!saved?.extracted_data,
-    });
-
-    if (insertError || !saved?.extracted_data) {
-      const code = insertError?.code ?? "UNKNOWN";
-      const message = insertError?.message ?? "No data returned.";
-      console.error("Supabase documents insert failed:", {
-        code,
-        message,
-        details: insertError?.details,
+      console.log("[extract] Supabase insert result:", {
+        success: !insertError && !!saved?.extracted_data,
+        error: insertError
+          ? {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+            }
+          : null,
+        hasSavedData: !!saved?.extracted_data,
       });
-      // Still return extracted data so the dashboard shows results; surface save failure
+
+      if (insertError || !saved?.extracted_data) {
+        const code = insertError?.code ?? "UNKNOWN";
+        const message = insertError?.message ?? "No data returned.";
+        console.error("Supabase documents insert failed:", {
+          code,
+          message,
+          details: insertError?.details,
+        });
+        return NextResponse.json({
+          extracted: row,
+          remaining: result.remaining,
+          saveFailed: true,
+          saveError: "Failed to save to database.",
+          supabaseErrorCode: code,
+          supabaseErrorMessage: message,
+        });
+      }
+      const extracted = saved.extracted_data as ExtractedRow;
       return NextResponse.json({
-        extracted: row,
+        extracted,
         remaining: result.remaining,
-        saveFailed: true,
-        saveError: "Failed to save to database.",
-        supabaseErrorCode: code,
-        supabaseErrorMessage: message,
       });
     }
 
-    const extracted = saved.extracted_data as ExtractedRow;
+    // Supabase not configured: still return extracted data so extraction works
     return NextResponse.json({
-      extracted,
+      extracted: row,
       remaining: result.remaining,
     });
   } catch (err) {
