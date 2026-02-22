@@ -19,12 +19,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           : "20 VeloCredits Added"; // mock default for celebratory layout
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum flex items-center justify-center px-6 py-12">
       <div className="text-center max-w-md w-full">
         {/* Animated checkmark */}
         <div className="flex justify-center mb-8">
           <CheckCircle
-            className="h-24 w-24 text-green-400 drop-shadow-lg animate-checkmark-pop"
+            className="h-24 w-24 text-lime-accent drop-shadow-lg animate-checkmark-pop"
             strokeWidth={1.5}
             aria-hidden
           />
@@ -33,13 +33,13 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         <h1 className="text-3xl font-bold text-white mb-3">
           Credits Successfully Added!
         </h1>
-        <p className="text-blue-100/90 mb-8 text-lg">
+        <p className="text-slate-200 mb-8 text-lg">
           Your VeloDoc account has been fueled up. You can now start architecting your PDFs.
         </p>
 
         {/* Order Summary */}
         <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-5 py-4 mb-8 text-left">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-blue-200/80 mb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
             Order Summary
           </h2>
           <p className="text-white font-medium">{creditsLabel}</p>
@@ -47,7 +47,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 
         <Link
           href="/"
-          className="inline-flex items-center justify-center rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 text-base transition-colors shadow-lg"
+          className="inline-flex items-center justify-center rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum font-medium px-6 py-3 text-base transition-colors shadow-teal-glow"
         >
           Go to Dashboard
         </Link>

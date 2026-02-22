@@ -43,7 +43,7 @@ export function ResultsTable({ rows }: ResultsTableProps) {
         <button
           type="button"
           onClick={() => downloadCsv(rows)}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-500 hover:bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
         >
           <Download className="h-4 w-4" />
           Download as CSV
@@ -53,13 +53,13 @@ export function ResultsTable({ rows }: ResultsTableProps) {
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-white/10 bg-white/10">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 Vendor Name
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 Total Amount
               </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-blue-100/80">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
                 Date
               </th>
             </tr>

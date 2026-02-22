@@ -48,7 +48,7 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
       className={`
         flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-8 py-12
         transition-colors cursor-pointer
-        ${isDragging ? "border-blue-400/60 bg-blue-400/10" : "border-white/20 hover:border-white/30 bg-white/5"}
+        ${isDragging ? "border-teal-accent/60 bg-teal-accent/10" : "border-white/20 hover:border-teal-accent/40 bg-white/5"}
         ${isUploading ? "pointer-events-none opacity-70" : ""}
       `}
     >
@@ -60,11 +60,11 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
         disabled={isUploading}
       />
       {isUploading ? (
-        <Loader2 className="h-12 w-12 text-blue-300 animate-spin" />
+        <Loader2 className="h-12 w-12 text-teal-accent animate-spin" />
       ) : (
-        <FileUp className="h-12 w-12 text-blue-200/80" />
+        <FileUp className="h-12 w-12 text-teal-accent/90" />
       )}
-      <span className="text-blue-100/80 text-center text-sm">
+      <span className="text-slate-300 text-center text-sm">
         {isUploading
           ? "Extracting data…"
           : "Drag & drop a PDF invoice here, or click to browse"}

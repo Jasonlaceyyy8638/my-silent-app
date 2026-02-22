@@ -63,34 +63,43 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
-        {/* Hero */}
-        <section className="text-center mb-12">
+        {/* Hero: central logo + headline */}
+        <section className="text-center mb-12 flex flex-col items-center">
+          <img
+            src="/logo-png.png"
+            alt="VeloDoc"
+            width={200}
+            height={80}
+            className="w-[200px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mb-6"
+          />
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
             VeloDoc: The 10-Second PDF-to-Sheet Architect
           </h1>
-          <p className="mt-4 text-lg text-blue-100/90 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-slate-200 max-w-2xl mx-auto">
             Turn PDF invoices into structured data in seconds. Upload, architect, export—silently.
           </p>
         </section>
 
-        {/* Benefits Grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-          <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10">
-            <FileUp className="h-10 w-10 text-blue-300 mb-3" />
-            <h3 className="font-semibold text-white">Upload</h3>
-            <p className="text-sm text-blue-100/80 mt-1">Drop your PDF invoice</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10">
-            <LayoutGrid className="h-10 w-10 text-blue-300 mb-3" />
-            <h3 className="font-semibold text-white">Architect</h3>
-            <p className="text-sm text-blue-100/80 mt-1">AI extracts vendor, amount, date</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10">
-            <Download className="h-10 w-10 text-blue-300 mb-3" />
-            <h3 className="font-semibold text-white">Export</h3>
-            <p className="text-sm text-blue-100/80 mt-1">Download as CSV or use in your tools</p>
+        {/* Benefits Grid: centered under logo and headline */}
+        <section className="flex justify-center mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl justify-items-center">
+            <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10 w-full max-w-[240px]">
+              <FileUp className="h-10 w-10 text-teal-accent mb-3" />
+              <h3 className="font-semibold text-white">Upload</h3>
+              <p className="text-sm text-slate-300 mt-1">Drop your PDF invoice</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10 w-full max-w-[240px]">
+              <LayoutGrid className="h-10 w-10 text-teal-accent mb-3" />
+              <h3 className="font-semibold text-white">Architect</h3>
+              <p className="text-sm text-slate-300 mt-1">AI extracts vendor, amount, date</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10 w-full max-w-[240px]">
+              <Download className="h-10 w-10 text-teal-accent mb-3" />
+              <h3 className="font-semibold text-white">Export</h3>
+              <p className="text-sm text-slate-300 mt-1">Download as CSV or use in your tools</p>
+            </div>
           </div>
         </section>
 
@@ -115,31 +124,31 @@ export default function Home() {
             <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 flex flex-col">
               <h3 className="text-lg font-semibold text-white">Starter</h3>
               <p className="mt-1 text-3xl font-bold text-white">$1.00</p>
-              <p className="text-blue-100/80 text-sm mt-1">1 Credit</p>
-              <p className="text-blue-100/70 text-sm mt-2">For quick one-off tasks.</p>
+              <p className="text-slate-300 text-sm mt-1">1 Credit</p>
+              <p className="text-slate-400 text-sm mt-2">For quick one-off tasks.</p>
               <button
                 type="button"
                 onClick={() => handleCheckout("starter")}
                 disabled={checkoutPlan !== null}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/20 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-70 disabled:pointer-events-none transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors"
               >
                 <ShoppingCart className="h-4 w-4" />
                 {checkoutPlan === "starter" ? "Redirecting…" : "Get Starter"}
               </button>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 flex flex-col relative">
-              <span className="absolute -top-2.5 right-4 rounded-full bg-blue-500/80 px-2 py-0.5 text-xs font-medium text-white">
+              <span className="absolute -top-2.5 right-4 rounded-full bg-lime-accent px-2 py-0.5 text-xs font-medium text-petroleum">
                 Best value
               </span>
               <h3 className="text-lg font-semibold text-white">VeloPack</h3>
               <p className="mt-1 text-3xl font-bold text-white">$10.00</p>
-              <p className="text-blue-100/80 text-sm mt-1">20 Credits</p>
-              <p className="text-blue-100/70 text-sm mt-2">Best value for businesses.</p>
+              <p className="text-slate-300 text-sm mt-1">20 Credits</p>
+              <p className="text-slate-400 text-sm mt-2">Best value for businesses.</p>
               <button
                 type="button"
                 onClick={() => handleCheckout("velopack")}
                 disabled={checkoutPlan !== null}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors"
               >
                 <ShoppingCart className="h-4 w-4" />
                 {checkoutPlan === "velopack" ? "Redirecting…" : "Get VeloPack"}
@@ -150,7 +159,7 @@ export default function Home() {
 
         {/* Trust Bar */}
         <section className="text-center">
-          <p className="text-sm text-blue-100/70 mb-4">Works with your favorite tools</p>
+          <p className="text-sm text-slate-400 mb-4">Works with your favorite tools</p>
           <div className="flex flex-wrap items-center justify-center gap-8 grayscale opacity-80">
             <div className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 border border-white/10">
               <span className="text-sm font-medium text-white">Excel</span>

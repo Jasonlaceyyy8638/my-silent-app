@@ -15,10 +15,16 @@ export default {
           900: "#121216",
           950: "#0c0c0e",
         },
+        petroleum: "#0f172a",
+        "teal-accent": "#22d3ee",
+        "lime-accent": "#a3e635",
         accent: {
-          DEFAULT: "#22c55e",
-          muted: "#16a34a",
+          DEFAULT: "#22d3ee",
+          muted: "#a3e635",
         },
+      },
+      boxShadow: {
+        "teal-glow": "0 0 25px rgba(34, 211, 238, 0.3)",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
