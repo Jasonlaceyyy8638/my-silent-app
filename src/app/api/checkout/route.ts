@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
 
     const config = PLANS[plan];
 
+    const logoUrl = `${baseUrlClean}/logo-png.png`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: userId,
@@ -81,6 +83,10 @@ export async function POST(request: NextRequest) {
       cancel_url: baseUrlClean,
       payment_intent_data: {
         statement_descriptor: "VELODOC",
+      },
+      branding_settings: {
+        display_name: "VeloDoc",
+        logo: { type: "url" as const, url: logoUrl },
       },
     });
 
