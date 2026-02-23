@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, UserButton, OrganizationSwitcher } from "@clerk/nextjs";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import { ChevronDown, Monitor } from "lucide-react";
 
 const SOLUTIONS_LINKS = [
@@ -133,10 +134,25 @@ export function Header() {
             Buy Credits
           </Link>
           <SignedIn>
+            <OrganizationSwitcher
+              hidePersonal
+              afterCreateOrganizationUrl="/dashboard"
+              afterSelectOrganizationUrl="/dashboard"
+              appearance={{
+                ...clerkAppearance,
+                elements: {
+                  ...clerkAppearance.elements,
+                  organizationSwitcherTrigger:
+                    "rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 px-3 py-2 h-9",
+                },
+              }}
+            />
             <UserButton
               afterSignOutUrl="/"
               appearance={{
+                ...clerkAppearance,
                 elements: {
+                  ...clerkAppearance.elements,
                   avatarBox: "h-9 w-9",
                 },
               }}

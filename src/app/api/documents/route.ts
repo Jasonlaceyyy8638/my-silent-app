@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 import type { ExtractedRow } from "@/types";
-
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
 
 /**
  * GET: return saved extractions for the current user so the dashboard can show
@@ -22,31 +15,38 @@ export async function GET() {
 
   const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({ rows: [] });
+    return NextResponse.json({ rows: [], usage: [] });
   }
 
   try {
     const { data, error } = await supabase
       .from("documents")
-      .select("extracted_data")
+      .select("extracted_data, file_name, created_at, page_count, credit_cost")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
       if (error.code === "PGRST205") {
-        return NextResponse.json({ rows: [] });
+        return NextResponse.json({ rows: [], usage: [] });
       }
       console.error("[documents] list error:", error);
-      return NextResponse.json({ rows: [] });
+      return NextResponse.json({ rows: [], usage: [] });
     }
 
-    const rows: ExtractedRow[] = (data ?? [])
+    const raw = data ?? [];
+    const rows: ExtractedRow[] = raw
       .map((r) => r.extracted_data as ExtractedRow | null)
       .filter((r): r is ExtractedRow => r != null && typeof r === "object");
 
-    return NextResponse.json({ rows });
+    const usage = raw.map((r) => ({
+      file_name: r.file_name ?? "Document",
+      date_processed: r.created_at ?? new Date().toISOString(),
+      credits_used: typeof r.credit_cost === "number" ? r.credit_cost : 1,
+    }));
+
+    return NextResponse.json({ rows, usage });
   } catch (err) {
     console.error("[documents] error:", err);
-    return NextResponse.json({ rows: [] });
+    return NextResponse.json({ rows: [], usage: [] });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addCredits } from "@/lib/credits";
+import { addCreditsForAuth } from "@/lib/credits-auth";
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -63,8 +64,19 @@ export async function POST(request: NextRequest) {
       ? fromMetadata
       : CREDITS_BY_PLAN[plan] ?? 1;
 
+  const organizationId =
+    (session.metadata?.organizationId as string) ??
+    (session.metadata?.orgId as string) ??
+    (session.metadata?.corporate === "true" && session.metadata?.organizationId
+      ? (session.metadata.organizationId as string)
+      : null);
+
   try {
-    await addCredits(userId, amount);
+    if (organizationId && organizationId.trim()) {
+      await addCreditsForAuth(userId, amount, organizationId);
+    } else {
+      await addCredits(userId, amount);
+    }
   } catch (err) {
     console.error("Webhook addCredits error:", err);
     return NextResponse.json(

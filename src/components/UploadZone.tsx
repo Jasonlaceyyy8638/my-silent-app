@@ -6,19 +6,21 @@ import { FileUp, Loader2 } from "lucide-react";
 type UploadZoneProps = {
   onFileSelect: (file: File) => void;
   isUploading: boolean;
+  disabled?: boolean;
 };
 
-export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
+export function UploadZone({ onFileSelect, isUploading, disabled = false }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
+      if (disabled) return;
       const file = e.dataTransfer.files[0];
       if (file?.type === "application/pdf") onFileSelect(file);
     },
-    [onFileSelect]
+    [onFileSelect, disabled]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -33,12 +35,15 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (disabled) return;
       const file = e.target.files?.[0];
       if (file?.type === "application/pdf") onFileSelect(file);
       e.target.value = "";
     },
-    [onFileSelect]
+    [onFileSelect, disabled]
   );
+
+  const isDisabled = isUploading || disabled;
 
   return (
     <label
@@ -47,9 +52,11 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
       onDragLeave={handleDragLeave}
       className={`
         flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-8 py-12
-        transition-colors cursor-pointer
-        ${isDragging ? "border-teal-accent/60 bg-teal-accent/10" : "border-white/20 hover:border-teal-accent/40 bg-white/5"}
-        ${isUploading ? "pointer-events-none opacity-70" : ""}
+        transition-colors
+        ${isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
+        ${isDragging && !isDisabled ? "border-teal-accent/60 bg-teal-accent/10" : "border-white/20 hover:border-teal-accent/40 bg-white/5"}
+        ${isUploading ? "pointer-events-none" : ""}
+        ${disabled && !isUploading ? "pointer-events-none" : ""}
       `}
     >
       <input
@@ -57,7 +64,7 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
         accept="application/pdf"
         onChange={handleChange}
         className="hidden"
-        disabled={isUploading}
+        disabled={isDisabled}
       />
       {isUploading ? (
         <Loader2 className="h-12 w-12 text-teal-accent animate-spin" />

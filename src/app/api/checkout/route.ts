@@ -30,7 +30,7 @@ const PLANS = {
 } as const;
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     return NextResponse.json(
       { error: "Sign in to buy credits." },
@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
 
     let lineItems: Stripe.Checkout.SessionCreateParams["line_items"];
     let successUrl: string;
-    let metadata: Record<string, string> = { plan, userId };
+    const metadata: Record<string, string> = { plan, userId };
+    if (orgId && orgId.trim()) metadata.organizationId = orgId;
 
     if (plan === "starter") {
       const config = PLANS.starter;

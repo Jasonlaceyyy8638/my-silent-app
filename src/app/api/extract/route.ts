@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
-import { deductCredits, ensureWelcomeCredits, getCredits } from "@/lib/credits";
+import { getSupabase } from "@/lib/supabase";
+import {
+  getCreditsForAuth,
+  ensureWelcomeCredits,
+  deductCreditsForAuth,
+  addCreditsForAuth,
+} from "@/lib/credits-auth";
+import { insertApiLog } from "@/lib/api-log";
 import type { ExtractedRow, LineItem } from "@/types";
 
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+const EXTRACT_ENDPOINT = "/api/extract";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -39,9 +40,11 @@ Identify if the document is an Invoice, BOL, or Contract. Extract every line ite
 
 export async function POST(request: NextRequest) {
   let userId: string | null;
+  let orgId: string | null | undefined;
   try {
     const authResult = await auth();
     userId = authResult.userId;
+    orgId = authResult.orgId ?? null;
   } catch (authErr) {
     const msg = authErr instanceof Error ? authErr.message : String(authErr);
     return NextResponse.json(
@@ -56,7 +59,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await ensureWelcomeCredits(userId);
+  const supabase = getSupabase();
+  await ensureWelcomeCredits(userId, orgId);
 
   const openai = getOpenAI();
   if (!openai) {
@@ -113,8 +117,15 @@ export async function POST(request: NextRequest) {
     const creditsNeeded =
       numPages <= 5 ? 1 : 1 + Math.ceil((numPages - 5) / 5);
 
-    const balance = await getCredits(userId);
+    const balance = await getCreditsForAuth(userId, orgId);
     if (balance < creditsNeeded) {
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 402,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: "Insufficient credits for this document size." },
         { status: 402 }
@@ -123,15 +134,29 @@ export async function POST(request: NextRequest) {
 
     let result: { ok: boolean; remaining: number };
     try {
-      result = await deductCredits(userId, creditsNeeded);
+      result = await deductCreditsForAuth(userId, creditsNeeded, orgId);
     } catch (creditsErr) {
       const msg = creditsErr instanceof Error ? creditsErr.message : String(creditsErr);
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 500,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: `Credits check failed: ${msg}. Check DATABASE_URL and Prisma.` },
         { status: 500 }
       );
     }
     if (!result.ok) {
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 402,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: "Insufficient credits for this document size." },
         { status: 402 }
@@ -139,8 +164,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!text) {
-      const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, creditsNeeded);
+      await addCreditsForAuth(userId, creditsNeeded, orgId);
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 400,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: "No text could be extracted from this PDF." },
         { status: 400 }
@@ -165,8 +196,14 @@ export async function POST(request: NextRequest) {
       const msg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
       const isQuota = /429|quota|exceeded/i.test(msg);
       if (isQuota) {
-        const { addCredits } = await import("@/lib/credits");
-        await addCredits(userId, creditsNeeded); // refund: extraction didn't complete
+        await addCreditsForAuth(userId, creditsNeeded, orgId); // refund
+        await insertApiLog(supabase, {
+          user_id: userId,
+          org_id: orgId ?? null,
+          endpoint: EXTRACT_ENDPOINT,
+          status_code: 503,
+          credits_consumed: 0,
+        });
         return NextResponse.json(
           {
             error:
@@ -175,6 +212,13 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 500,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: `OpenAI API failed: ${msg}. Check OPENAI_API_KEY and rate limits.` },
         { status: 500 }
@@ -188,8 +232,14 @@ export async function POST(request: NextRequest) {
       preview: raw ? raw.slice(0, 300) + (raw.length > 300 ? "..." : "") : null,
     });
     if (!raw) {
-      const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, creditsNeeded);
+      await addCreditsForAuth(userId, creditsNeeded, orgId);
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 500,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         { error: "AI did not return extraction data." },
         { status: 500 }
@@ -212,9 +262,15 @@ export async function POST(request: NextRequest) {
     try {
       parsed = JSON.parse(raw);
     } catch (parseErr) {
-      const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, creditsNeeded);
+      await addCreditsForAuth(userId, creditsNeeded, orgId);
       const msg = parseErr instanceof Error ? parseErr.message : "Invalid JSON";
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 500,
+        credits_consumed: 0,
+      });
       return NextResponse.json(
         {
           error: `AI returned invalid JSON: ${msg}`,
@@ -249,12 +305,13 @@ export async function POST(request: NextRequest) {
       lineItems: lineItems.length > 0 ? lineItems : undefined,
     };
 
-    const supabase = getSupabase();
     if (supabase) {
       const payload = {
         user_id: userId,
         file_name: file.name,
         extracted_data: row as unknown as Record<string, unknown>,
+        page_count: numPages,
+        credit_cost: creditsNeeded,
       };
       const { data: saved, error: insertError } = await supabase
         .from("documents")
@@ -283,6 +340,13 @@ export async function POST(request: NextRequest) {
           message,
           details: insertError?.details,
         });
+        await insertApiLog(supabase, {
+          user_id: userId,
+          org_id: orgId ?? null,
+          endpoint: EXTRACT_ENDPOINT,
+          status_code: 200,
+          credits_consumed: creditsNeeded,
+        });
         return NextResponse.json({
           extracted: row,
           remaining: result.remaining,
@@ -296,6 +360,13 @@ export async function POST(request: NextRequest) {
         });
       }
       const extracted = saved.extracted_data as ExtractedRow;
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 200,
+        credits_consumed: creditsNeeded,
+      });
       return NextResponse.json({
         extracted,
         remaining: result.remaining,
@@ -304,6 +375,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase not configured: still return extracted data so extraction works
+    await insertApiLog(supabase, {
+      user_id: userId,
+      org_id: orgId ?? null,
+      endpoint: EXTRACT_ENDPOINT,
+      status_code: 200,
+      credits_consumed: creditsNeeded,
+    });
     return NextResponse.json({
       extracted: row,
       remaining: result.remaining,
@@ -315,6 +393,14 @@ export async function POST(request: NextRequest) {
       err instanceof Error
         ? `${err.name}: ${err.message}`
         : `Error: ${String(err)}`;
+    const supabaseForLog = getSupabase();
+    await insertApiLog(supabaseForLog, {
+      user_id: userId ?? "unknown",
+      org_id: orgId ?? null,
+      endpoint: EXTRACT_ENDPOINT,
+      status_code: 500,
+      credits_consumed: 0,
+    });
     return NextResponse.json(
       {
         error: `Extract failed: ${message}. Check OPENAI_API_KEY, DATABASE_URL, and Netlify function logs.`,

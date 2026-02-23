@@ -12,9 +12,13 @@ import {
   Plug,
   LayoutGrid,
   Users,
+  ChevronRight,
 } from "lucide-react";
+import Link from "next/link";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
+import { UsageHistory, type UsageEntry } from "@/components/UsageHistory";
+import { SecurityLog, type SecurityLogEntry } from "@/components/SecurityLog";
 import { QuickBooksIcon, ExcelIcon, ZapierIcon, GoogleDriveIcon } from "@/components/integration-icons";
 import type { ExtractedRow } from "@/types";
 
@@ -75,6 +79,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
+  const [usage, setUsage] = useState<UsageEntry[]>([]);
+  const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
   const stats = useUsageStats(rows, credits);
 
   const handleJoinWaitlist = useCallback((id: string) => {
@@ -104,22 +110,39 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/documents");
       const data = await res.json();
-      if (res.ok && Array.isArray(data.rows)) {
-        setRows(data.rows);
+      if (res.ok) {
+        if (Array.isArray(data.rows)) setRows(data.rows);
+        if (Array.isArray(data.usage)) setUsage(data.usage);
       }
     } catch {
       // keep existing rows
     }
   }, []);
 
+  const fetchApiLogs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/api-logs");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.logs)) setSecurityLogs(data.logs);
+    } catch {
+      setSecurityLogs([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCredits();
     fetchSavedDocuments();
-  }, [fetchCredits, fetchSavedDocuments]);
+    fetchApiLogs();
+  }, [fetchCredits, fetchSavedDocuments, fetchApiLogs]);
 
   const handleFileSelect = useCallback(
     async (file: File) => {
       setError(null);
+      setSuccessMessage(null);
+      if (credits !== null && credits < 1) {
+        setError("Insufficient credits. Top up to extract documents.");
+        return;
+      }
       setIsUploading(true);
       try {
         const formData = new FormData();
@@ -165,6 +188,7 @@ export default function DashboardPage() {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
           fetchSavedDocuments();
+          fetchApiLogs();
           const creditsMsg =
             typeof data.creditsUsed === "number" && data.creditsUsed > 0
               ? data.creditsUsed === 1
@@ -190,7 +214,7 @@ export default function DashboardPage() {
         setIsUploading(false);
       }
     },
-    []
+    [credits]
   );
 
   const navItems: { id: DashboardTab; label: string; icon: typeof LayoutGrid }[] = [
@@ -292,15 +316,19 @@ export default function DashboardPage() {
         )}
 
         {tab === "team" && (
-          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center">
+          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center border-t-teal-accent/30">
             <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-white mb-2">Team Management</h2>
             <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
               Invite team members, assign roles, and manage access across your organization. Built for enterprises that need audit trails and SSO.
             </p>
-            <span className="inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-4 py-2 text-sm font-medium text-teal-accent">
-              Coming Soon
-            </span>
+            <Link
+              href="/settings/team"
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
+            >
+              Open Team Settings
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </section>
         )}
 
@@ -309,7 +337,24 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="md:col-span-2 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-6 sm:p-8">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Upload & Extract</h2>
-                <UploadZone onFileSelect={handleFileSelect} isUploading={isUploading} />
+                {credits !== null && credits < 1 && (
+                  <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-amber-200 text-sm font-medium">
+                      Insufficient credits. Add credits to extract documents.
+                    </p>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
+                    >
+                      Top Up Credits
+                    </Link>
+                  </div>
+                )}
+                <UploadZone
+                  onFileSelect={handleFileSelect}
+                  isUploading={isUploading}
+                  disabled={credits !== null && credits < 1}
+                />
                 {error && (
                   <p className="mt-3 text-sm text-red-300 text-center" role="alert">
                     {error}
@@ -390,6 +435,14 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+
+            <section className="rounded-2xl mb-6">
+              <UsageHistory usage={usage} />
+            </section>
+
+            <section className="rounded-2xl mb-6">
+              <SecurityLog logs={securityLogs} />
+            </section>
 
             <section className="rounded-2xl">
               <ResultsTable rows={rows} />
