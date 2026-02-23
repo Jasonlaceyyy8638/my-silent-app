@@ -25,6 +25,8 @@ import { HeroCinematic } from "@/components/HeroCinematic";
 import { ComparisonSection } from "@/components/ComparisonSection";
 import { FeaturesBento } from "@/components/FeaturesBento";
 import { IndustrySwitcher } from "@/components/IndustrySwitcher";
+import { SignupSection } from "@/components/SignupSection";
+import { AboutSection } from "@/components/AboutSection";
 
 const MIN_BULK_CREDITS = 20;
 const MAX_BULK_CREDITS = 10000;
@@ -133,8 +135,14 @@ export default function Home() {
           <ComparisonSection />
         </MotionScrollSection>
 
+        <SignupSection />
+
         <MotionScrollSection className="mb-14">
           <IndustrySwitcher />
+        </MotionScrollSection>
+
+        <MotionScrollSection className="mb-14">
+          <AboutSection />
         </MotionScrollSection>
 
         <MotionScrollSection className="mb-14">

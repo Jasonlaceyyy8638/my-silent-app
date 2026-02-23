@@ -23,11 +23,20 @@ export function HeroCinematic() {
           <Image
             src="/logo-png.png"
             alt="VeloDoc"
-            width={200}
-            height={80}
-            className="w-[200px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
+            width={320}
+            height={128}
+            className="w-[280px] sm:w-[320px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
           />
         </motion.div>
+
+        <motion.p
+          className="mb-4 text-base sm:text-lg font-semibold text-teal-accent"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          Start Architecting for Free — Get 5 Credits on Signup
+        </motion.p>
 
         <motion.h1
           className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter text-white leading-[1.05]"
@@ -48,7 +57,7 @@ export function HeroCinematic() {
         </motion.p>
 
         <motion.div
-          className="mt-12 flex flex-col sm:flex-row gap-3 justify-center"
+          className="mt-12 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 1.2 }}
@@ -56,7 +65,7 @@ export function HeroCinematic() {
           <SignedIn>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-6 py-3 text-sm font-semibold transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-accent hover:bg-lime-accent text-petroleum px-8 py-4 text-base font-semibold transition-colors shadow-[0_0_25px_rgba(34,211,238,0.3)]"
             >
               Go to Dashboard
             </Link>
@@ -64,10 +73,13 @@ export function HeroCinematic() {
           <SignedOut>
             <Link
               href="/sign-up"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-6 py-3 text-sm font-semibold transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-accent hover:bg-lime-accent text-petroleum px-8 py-4 text-base font-bold transition-colors shadow-[0_0_25px_rgba(34,211,238,0.3)]"
             >
-              Get Started
+              Create Free Account
             </Link>
+            <p className="text-slate-400 text-sm text-center max-w-md">
+              No credit card required. Experience institutional-grade extraction in seconds.
+            </p>
           </SignedOut>
         </motion.div>
       </div>

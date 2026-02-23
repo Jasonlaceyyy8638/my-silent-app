@@ -38,9 +38,9 @@ export function Header() {
             <Image
               src="/logo-png.png"
               alt="VeloDoc"
-              width={120}
-              height={48}
-              className="h-8 w-auto"
+              width={160}
+              height={64}
+              className="h-11 w-auto"
             />
           </Link>
           <nav className="hidden sm:flex items-center gap-1">
