@@ -26,16 +26,16 @@ import { ComparisonSection } from "@/components/ComparisonSection";
 import { FeaturesBento } from "@/components/FeaturesBento";
 import { IndustrySwitcher } from "@/components/IndustrySwitcher";
 
-const MIN_BULK_CREDITS = 1;
-const MAX_BULK_CREDITS = 1000;
+const MIN_BULK_CREDITS = 20;
+const MAX_BULK_CREDITS = 10000;
 
-/** Tiers: 1–99 $1.00; 100–499 $0.90 (10%); 500–999 $0.85 (15%); 1,000+ $0.80 (20%). */
+/** Tiers: 20–99 $1.00; 100–499 10% off; 500–999 15% off; 1,000–10,000 flat 20% off ($0.80). */
 function getBulkPrice(credits: number): {
   total: number;
   perCredit: number;
   savingsPercentage: number;
 } {
-  const c = Math.max(0, Math.round(credits));
+  const c = Math.max(MIN_BULK_CREDITS, Math.min(MAX_BULK_CREDITS, Math.round(credits)));
   let perCredit: number;
   let savingsPercentage: number;
   if (c >= 1000) {
@@ -254,7 +254,7 @@ export default function Home() {
                 Bulk discount
               </span>
               <h3 className="text-lg font-semibold text-white">VeloPack</h3>
-              <p className="text-slate-400 text-sm mt-1">Choose 1–1,000 credits. Save up to 20% at volume.</p>
+              <p className="text-slate-400 text-sm mt-1">Choose 20–10,000 credits. Save up to 20% at volume.</p>
               <div className="mt-6 space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2 gap-4">
@@ -263,13 +263,13 @@ export default function Home() {
                     </label>
                     <input
                       type="number"
-                      min={MIN_BULK_CREDITS}
-                      max={MAX_BULK_CREDITS}
-                      value={bulkCredits}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        if (!Number.isNaN(v)) setBulkCredits(Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, v)));
-                      }}
+min={MIN_BULK_CREDITS}
+                    max={MAX_BULK_CREDITS}
+                    value={Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits))}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (!Number.isNaN(v)) setBulkCredits(Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, v)));
+                    }}
                       className="w-20 rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-right font-mono text-sm font-semibold text-teal-accent tabular-nums focus:border-teal-accent focus:outline-none focus:ring-1 focus:ring-teal-accent"
                     />
                   </div>
@@ -279,8 +279,10 @@ export default function Home() {
                     min={MIN_BULK_CREDITS}
                     max={MAX_BULK_CREDITS}
                     step={1}
-                    value={bulkCredits}
-                    onChange={(e) => setBulkCredits(Number(e.target.value))}
+                    value={Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits))}
+                    onChange={(e) =>
+                      setBulkCredits(Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, Number(e.target.value))))
+                    }
                     className="w-full h-2 rounded-full appearance-none bg-slate-700 accent-teal-accent cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
@@ -290,7 +292,8 @@ export default function Home() {
                 </div>
                 {bulkPrice.savingsPercentage > 0 && (
                   <p className="text-teal-accent text-sm font-medium">
-                    You are saving {bulkPrice.savingsPercentage}% on {bulkCredits.toLocaleString()} credits.
+                    You are saving {bulkPrice.savingsPercentage}% on{" "}
+                    {Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)).toLocaleString()} credits.
                   </p>
                 )}
                 <div className="flex flex-wrap items-baseline gap-2">
@@ -309,16 +312,20 @@ export default function Home() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => handleCheckout("velopack")}
+                  onClick={() =>
+                    handleCheckout("velopack", Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)))
+                  }
                   disabled={checkoutPlan !== null}
                   className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-3 text-sm font-semibold disabled:opacity-70 disabled:pointer-events-none transition-colors"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  {checkoutPlan === "velopack" ? "Redirecting…" : `Get ${bulkCredits} Credits`}
+                  {checkoutPlan === "velopack"
+                    ? "Redirecting…"
+                    : `Get ${Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)).toLocaleString()} Credits`}
                 </button>
               </div>
               <p className="mt-6 pt-6 border-t border-white/10 text-slate-500 text-xs text-center">
-                Need more than 5,000 credits?{" "}
+                Need more than 10,000 credits?{" "}
                 <a
                   href="mailto:sales@velodoc.app?subject=Enterprise%20credits%20inquiry"
                   className="text-teal-accent hover:underline font-medium"
