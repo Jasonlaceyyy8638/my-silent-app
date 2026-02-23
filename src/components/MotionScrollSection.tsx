@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 
 const defaultVariants = {
@@ -23,13 +23,37 @@ export function MotionScrollSection({
   as: Component = "section",
   transition = { duration: 0.5, delay: 0.1 },
 }: MotionScrollSectionProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px 0px -80px 0px" });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setMounted(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  if (!mounted) {
+    const inner = <div ref={ref}>{children}</div>;
+    if (Component === "section") {
+      return (
+        <section id={id} className={className}>
+          {inner}
+        </section>
+      );
+    }
+    return (
+      <div id={id} className={className}>
+        {inner}
+      </div>
+    );
+  }
 
   const content = (
     <motion.div
       ref={ref}
-      initial="hidden"
+      initial={isInView ? "visible" : "hidden"}
       animate={isInView ? "visible" : "hidden"}
       variants={defaultVariants}
       transition={{

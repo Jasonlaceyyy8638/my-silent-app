@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Truck, Wrench, Scale, Stethoscope, Banknote } from "lucide-react";
 
@@ -67,7 +67,29 @@ const CARD_CLASS =
 
 export function IndustrySwitcher() {
   const [active, setActive] = useState<(typeof INDUSTRIES)[number]["id"]>("logistics");
+  const [mounted, setMounted] = useState(false);
   const current = INDUSTRIES.find((i) => i.id === active) ?? INDUSTRIES[0];
+
+  useEffect(() => setMounted(true), []);
+
+  const cardContent = (
+    <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-teal-accent/20 flex items-center justify-center text-teal-accent border border-teal-accent/30">
+        <current.icon className="w-7 h-7" />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-xl font-semibold text-white mb-4">{current.label}</h3>
+        <ul className="space-y-2">
+          {current.benefits.map((benefit) => (
+            <li key={benefit} className="flex items-center gap-2 text-slate-300 text-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-lime-accent shrink-0" aria-hidden />
+              {benefit}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
 
   return (
     <section className="mb-14">
@@ -97,31 +119,35 @@ export function IndustrySwitcher() {
       </div>
 
       <div className={`max-w-2xl mx-auto ${CARD_CLASS}`}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col sm:flex-row sm:items-start gap-6"
-          >
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-teal-accent/20 flex items-center justify-center text-teal-accent border border-teal-accent/30">
-              <current.icon className="w-7 h-7" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-xl font-semibold text-white mb-4">{current.label}</h3>
-              <ul className="space-y-2">
-                {current.benefits.map((benefit) => (
-                  <li key={benefit} className="flex items-center gap-2 text-slate-300 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-lime-accent shrink-0" aria-hidden />
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+        {!mounted ? (
+          cardContent
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col sm:flex-row sm:items-start gap-6"
+            >
+              <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-teal-accent/20 flex items-center justify-center text-teal-accent border border-teal-accent/30">
+                <current.icon className="w-7 h-7" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-white mb-4">{current.label}</h3>
+                <ul className="space-y-2">
+                  {current.benefits.map((benefit) => (
+                    <li key={benefit} className="flex items-center gap-2 text-slate-300 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-lime-accent shrink-0" aria-hidden />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
     </section>
   );

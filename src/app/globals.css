@@ -60,3 +60,10 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
+
+/* Chatbase / chat widget: avoid z-index conflict with header (z-50) and modals */
+#chat-button,
+[id*="chatbase"][id*="button"],
+iframe[src*="chatbase"] {
+  z-index: 9999 !important;
+}
