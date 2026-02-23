@@ -53,7 +53,15 @@ export async function POST(request: NextRequest) {
   }
 
   const plan = (session.metadata?.plan as string) ?? "starter";
-  const amount = CREDITS_BY_PLAN[plan] ?? 1;
+  const metadataCredits = session.metadata?.credits;
+  const fromMetadata =
+    metadataCredits != null && String(metadataCredits).trim() !== ""
+      ? Math.max(1, Math.round(Number(metadataCredits)))
+      : null;
+  const amount: number =
+    Number.isFinite(fromMetadata) && fromMetadata != null
+      ? fromMetadata
+      : CREDITS_BY_PLAN[plan] ?? 1;
 
   try {
     await addCredits(userId, amount);

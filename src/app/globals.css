@@ -24,3 +24,14 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Scroll-triggered fade and slide */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.scroll-animate.scroll-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

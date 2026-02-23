@@ -8,6 +8,13 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
+const MIN_BULK_CREDITS = 20;
+const MAX_BULK_CREDITS = 1000;
+const BULK_DISCOUNT_THRESHOLD = 100;
+const CENTS_PER_CREDIT_STANDARD = 50; // $0.50
+const BULK_DISCOUNT_PERCENT = 0.12; // 12% off when > 100 credits
+const CENTS_PER_CREDIT_BULK = Math.round(CENTS_PER_CREDIT_STANDARD * (1 - BULK_DISCOUNT_PERCENT)); // 44
+
 const PLANS = {
   starter: {
     name: "Starter — 1 Credit",
@@ -15,13 +22,6 @@ const PLANS = {
     unit_amount: 100, // $1.00
     quantity: 1,
     credits: 1,
-  },
-  velopack: {
-    name: "VeloPack — 20 Credits",
-    description: "Best value for businesses.",
-    unit_amount: 1000, // $10.00
-    quantity: 1,
-    credits: 20,
   },
 } as const;
 
@@ -50,23 +50,28 @@ export async function POST(request: NextRequest) {
       "http://localhost:3000";
     const baseUrlClean = baseUrl.replace(/\/$/, "");
 
-    let plan: keyof typeof PLANS = "starter";
+    let plan: "starter" | "velopack" = "starter";
+    let credits = 20;
     try {
       const body = await request.json();
-      if (body?.plan === "velopack") plan = "velopack";
+      if (body?.plan === "velopack") {
+        plan = "velopack";
+        const requested = typeof body?.credits === "number" ? body.credits : 20;
+        credits = Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, Math.round(requested)));
+      }
     } catch {
       // default to starter
     }
 
-    const config = PLANS[plan];
-
     const logoUrl = `${baseUrlClean}/logo-png.png`;
 
-    const sessionParams = {
-      mode: "payment" as const,
-      client_reference_id: userId,
-      metadata: { plan, userId },
-      line_items: [
+    let lineItems: Stripe.Checkout.SessionCreateParams["line_items"];
+    let successUrl: string;
+    let metadata: Record<string, string> = { plan, userId };
+
+    if (plan === "starter") {
+      const config = PLANS.starter;
+      lineItems = [
         {
           price_data: {
             currency: "usd" as const,
@@ -78,8 +83,38 @@ export async function POST(request: NextRequest) {
           },
           quantity: config.quantity,
         },
-      ],
-      success_url: `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
+      ];
+      successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=starter`;
+    } else {
+      const centsPerCredit =
+        credits > BULK_DISCOUNT_THRESHOLD ? CENTS_PER_CREDIT_BULK : CENTS_PER_CREDIT_STANDARD;
+      const description =
+        credits > BULK_DISCOUNT_THRESHOLD
+          ? "Bulk discount applied. Best value for teams."
+          : "Best value for regular use.";
+      metadata.credits = String(credits);
+      lineItems = [
+        {
+          price_data: {
+            currency: "usd" as const,
+            product_data: {
+              name: `VeloPack — ${credits} Credits`,
+              description,
+            },
+            unit_amount: centsPerCredit,
+          },
+          quantity: credits,
+        },
+      ];
+      successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=velopack&credits=${credits}`;
+    }
+
+    const sessionParams = {
+      mode: "payment" as const,
+      client_reference_id: userId,
+      metadata,
+      line_items: lineItems,
+      success_url: successUrl,
       cancel_url: baseUrlClean,
       payment_intent_data: {
         statement_descriptor: "VELODOC",

@@ -81,12 +81,12 @@ export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-petroleum/90 backdrop-blur-md">
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 lg:gap-12">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-8 sm:gap-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 sm:gap-6 flex-wrap">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             {SECURITY_BADGES.map(({ Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-3 border-t-teal-accent/20 min-w-[140px]"
+                className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-3 border-t-teal-accent/20"
               >
                 <Icon className="h-5 w-5 text-teal-accent/90 shrink-0" />
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
@@ -95,22 +95,17 @@ export function Footer() {
               </div>
             ))}
           </div>
-          <div className="lg:text-right">
-            <p className="text-[10px] font-mono font-semibold uppercase tracking-widest text-slate-500 mb-4">
-              Trust & Legal
-            </p>
-            <nav className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-6">
-              {TRUST_LEGAL_LINKS.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          <nav className="flex flex-wrap items-center gap-4 sm:gap-6 border-t border-white/10 pt-6 sm:pt-0 sm:border-t-0">
+            {TRUST_LEGAL_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 border-t border-white/10 pt-8 mt-8">
