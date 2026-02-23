@@ -23,9 +23,9 @@ export function HeroCinematic() {
           <Image
             src="/logo-png.png"
             alt="VeloDoc"
-            width={320}
-            height={128}
-            className="w-[280px] sm:w-[320px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
+            width={480}
+            height={192}
+            className="w-[340px] sm:w-[400px] lg:w-[460px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
           />
         </motion.div>
 
