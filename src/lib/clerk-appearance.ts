@@ -8,6 +8,8 @@ export const clerkAppearance = {
     colorBackground: "#0f172a",
     colorInputBackground: "#0f172a",
     colorInputText: "#f1f5f9",
+    colorText: "#ffffff",
+    colorTextSecondary: "#e2e8f0",
     borderRadius: "12px",
   },
   elements: {

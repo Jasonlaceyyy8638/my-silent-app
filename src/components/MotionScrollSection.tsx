@@ -28,24 +28,20 @@ export function MotionScrollSection({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setMounted(true));
-    });
-    return () => cancelAnimationFrame(id);
+    setMounted(true);
   }, []);
 
   if (!mounted) {
-    const inner = <div ref={ref}>{children}</div>;
     if (Component === "section") {
       return (
         <section id={id} className={className}>
-          {inner}
+          {children}
         </section>
       );
     }
     return (
       <div id={id} className={className}>
-        {inner}
+        {children}
       </div>
     );
   }
@@ -53,8 +49,8 @@ export function MotionScrollSection({
   const content = (
     <motion.div
       ref={ref}
-      initial={isInView ? "visible" : "hidden"}
-      animate={isInView ? "visible" : "hidden"}
+      initial="visible"
+      animate="visible"
       variants={defaultVariants}
       transition={{
         duration: transition.duration,

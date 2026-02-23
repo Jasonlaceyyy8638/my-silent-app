@@ -67,3 +67,18 @@ body {
 iframe[src*="chatbase"] {
   z-index: 9999 !important;
 }
+
+/* Clerk UserButton dropdown: high-contrast text so "Manage account" / "Sign out" are readable */
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverCard .cl-userPreview,
+.cl-userButtonPopoverCard a,
+.cl-userButtonPopoverCard button,
+.cl-userButtonPopoverCard span:not(.cl-avatarBox) {
+  color: #ffffff !important;
+}
+.cl-userButtonPopoverCard .cl-footerActionLink {
+  color: #22d3ee !important;
+}
+.cl-userButtonPopoverCard .cl-userButtonPopoverFooter {
+  color: #94a3b8 !important;
+}

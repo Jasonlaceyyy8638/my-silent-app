@@ -23,12 +23,7 @@ export function ComparisonSection() {
   const isInView = useInView(ref, { once: true, margin: "-80px 0px -80px 0px" });
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setMounted(true));
-    });
-    return () => cancelAnimationFrame(id);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   if (!mounted) {
     return (
@@ -83,24 +78,24 @@ export function ComparisonSection() {
     <section ref={ref} className="mb-14">
       <motion.h2
         className="text-2xl sm:text-3xl font-bold text-white text-center mb-2"
-        initial={{ opacity: 0, y: 16 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
         Why VeloDoc?
       </motion.h2>
       <motion.p
         className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-10"
-        initial={{ opacity: 0, y: 12 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         Enterprise Compliance vs. traditional OCR Manual Cleanup.
       </motion.p>
       <motion.div
         className={`${CARD_CLASS} overflow-hidden max-w-3xl mx-auto`}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+        initial={{ opacity: 1, scale: 1 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         <table className="w-full text-left">
@@ -116,8 +111,8 @@ export function ComparisonSection() {
               <motion.tr
                 key={feature}
                 className="border-b border-white/10 last:border-0"
-                initial={{ opacity: 0, x: -12 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                initial={{ opacity: 1, x: 0 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.35, delay: 0.08 * (i + 1), ease: [0.22, 1, 0.36, 1] }}
               >
                 <td className="py-4 px-5 text-slate-200 text-sm">{feature}</td>
