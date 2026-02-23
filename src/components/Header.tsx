@@ -8,11 +8,9 @@ import { clerkAppearance } from "@/lib/clerk-appearance";
 import { ChevronDown, Monitor } from "lucide-react";
 
 const SOLUTIONS_LINKS = [
-  { href: "/solutions#logistics", label: "Logistics & Freight" },
-  { href: "/solutions#legal", label: "Legal & Contracts" },
-  { href: "/solutions#finance", label: "Finance & Accounting" },
-  { href: "/solutions#education", label: "Education & Research" },
-  { href: "/solutions#retail", label: "Retail & Procurement" },
+  { href: "/solutions/legal", label: "Legal & Contracts" },
+  { href: "/solutions/medical", label: "Medical & Healthcare" },
+  { href: "/solutions/finance", label: "Finance & Accounting" },
 ] as const;
 
 export function Header() {
