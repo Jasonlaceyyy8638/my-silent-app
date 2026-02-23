@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
-import { deductCredit } from "@/lib/credits";
+import { deductCredit, ensureWelcomeCredits } from "@/lib/credits";
 import type { ExtractedRow, LineItem } from "@/types";
 
 function getSupabase() {
@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   }
+
+  await ensureWelcomeCredits(userId);
 
   const openai = getOpenAI();
   if (!openai) {

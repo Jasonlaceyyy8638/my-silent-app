@@ -5,19 +5,33 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
-const MIN_BULK_CREDITS = 20;
+const MIN_BULK_CREDITS = 1;
 const MAX_BULK_CREDITS = 1000;
-const BULK_THRESHOLD = 100;
-const PRICE_PER_CREDIT = 0.5;
-const BULK_DISCOUNT_PERCENT = 12;
 
-function getBulkPrice(credits: number): { total: number; perCredit: number; isBulk: boolean } {
-  const isBulk = credits > BULK_THRESHOLD;
-  const perCredit = isBulk
-    ? PRICE_PER_CREDIT * (1 - BULK_DISCOUNT_PERCENT / 100)
-    : PRICE_PER_CREDIT;
-  const total = Math.round(perCredit * credits * 100) / 100;
-  return { total, perCredit, isBulk };
+/** Tiers: 1–99 $1.00; 100–499 $0.90 (10%); 500–999 $0.85 (15%); 1,000+ $0.80 (20%). */
+function getBulkPrice(credits: number): {
+  total: number;
+  perCredit: number;
+  savingsPercentage: number;
+} {
+  const c = Math.max(0, Math.round(credits));
+  let perCredit: number;
+  let savingsPercentage: number;
+  if (c >= 1000) {
+    perCredit = 0.8;
+    savingsPercentage = 20;
+  } else if (c >= 500) {
+    perCredit = 0.85;
+    savingsPercentage = 15;
+  } else if (c >= 100) {
+    perCredit = 0.9;
+    savingsPercentage = 10;
+  } else {
+    perCredit = 1.0;
+    savingsPercentage = 0;
+  }
+  const total = Math.round(perCredit * c * 100) / 100;
+  return { total, perCredit, savingsPercentage };
 }
 
 type Plan = "starter" | "velopack";
@@ -52,10 +66,10 @@ export default function PricingPage() {
   );
 
   const bulkPrice = getBulkPrice(bulkCredits);
-  const bulkDiscountSubtext =
-    bulkCredits > BULK_THRESHOLD
-      ? `You're saving ${BULK_DISCOUNT_PERCENT}% on this order.`
-      : `Save ${BULK_DISCOUNT_PERCENT}% on 100+ credits`;
+  const savingsLabel =
+    bulkPrice.savingsPercentage > 0
+      ? `You are saving ${bulkPrice.savingsPercentage}% on ${bulkCredits.toLocaleString()} credits.`
+      : "Save up to 20% at 100+ credits.";
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
@@ -102,7 +116,7 @@ export default function PricingPage() {
             </span>
             <h2 className="text-lg font-semibold text-white">VeloPack</h2>
             <p className="text-slate-400 text-sm mt-1">
-              Choose 20–1,000 credits. {bulkDiscountSubtext}
+              Choose 1–1,000 credits. {savingsLabel}
             </p>
             <div className="mt-6 space-y-4">
               <div>
@@ -130,34 +144,34 @@ export default function PricingPage() {
                   type="range"
                   min={MIN_BULK_CREDITS}
                   max={MAX_BULK_CREDITS}
-                  step={10}
+                  step={1}
                   value={bulkCredits}
                   onChange={(e) => setBulkCredits(Number(e.target.value))}
                   className="w-full h-2 rounded-full appearance-none bg-slate-700 accent-teal-accent cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
-                  <span>20</span>
-                  <span>1,000</span>
+                  <span>{MIN_BULK_CREDITS}</span>
+                  <span>{MAX_BULK_CREDITS.toLocaleString()}</span>
                 </div>
               </div>
-              {bulkCredits > BULK_THRESHOLD && (
+              {bulkPrice.savingsPercentage > 0 && (
                 <p className="text-teal-accent text-sm font-medium">
-                  You&apos;re saving {BULK_DISCOUNT_PERCENT}% on 100+ credits.
+                  You are saving {bulkPrice.savingsPercentage}% on {bulkCredits.toLocaleString()} credits.
                 </p>
               )}
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
                   ${bulkPrice.total.toFixed(2)}
                 </span>
-                {bulkPrice.isBulk && (
+                {bulkPrice.savingsPercentage > 0 && (
                   <span className="rounded bg-teal-accent/20 text-teal-accent text-xs font-medium px-2 py-0.5">
-                    {BULK_DISCOUNT_PERCENT}% off
+                    {bulkPrice.savingsPercentage}% off
                   </span>
                 )}
               </div>
               <p className="text-slate-500 text-xs">
                 ${bulkPrice.perCredit.toFixed(2)}/credit
-                {bulkPrice.isBulk && " (bulk rate)"}
+                {bulkPrice.savingsPercentage > 0 && " (volume rate)"}
               </p>
               <SignedIn>
                 <button

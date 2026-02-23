@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getCredits } from "@/lib/credits";
+import { ensureWelcomeCredits } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
 
 const norm = (s: string) => s.trim().toLowerCase();
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   try {
-    const credits = await getCredits(userId);
+    const credits = await ensureWelcomeCredits(userId);
     const url = process.env.DATABASE_URL ?? "";
     const projectRef = url.match(/prisma\.([a-zA-Z0-9]+)/)?.[1] ?? null;
 

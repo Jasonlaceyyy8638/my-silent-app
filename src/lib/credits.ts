@@ -17,6 +17,19 @@ export async function getCredits(userId: string): Promise<number> {
   return row?.credits ?? 0;
 }
 
+const WELCOME_CREDITS = 5;
+
+/** Ensures the user has a credits row; if they don't (new account), creates one with 5 free credits. Returns their current credit balance. */
+export async function ensureWelcomeCredits(userId: string): Promise<number> {
+  const all = await prisma.userCredits.findMany();
+  const row = all.find((r) => matchUserId(r.userId, userId));
+  if (row) return row.credits;
+  await prisma.userCredits.create({
+    data: { userId, credits: WELCOME_CREDITS },
+  });
+  return WELCOME_CREDITS;
+}
+
 export async function addCredits(userId: string, amount: number): Promise<number> {
   const current = await getCredits(userId);
   const all = await prisma.userCredits.findMany();

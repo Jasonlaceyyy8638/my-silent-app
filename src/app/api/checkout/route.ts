@@ -8,12 +8,16 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
-const MIN_BULK_CREDITS = 20;
+const MIN_BULK_CREDITS = 1;
 const MAX_BULK_CREDITS = 1000;
-const BULK_DISCOUNT_THRESHOLD = 100;
-const CENTS_PER_CREDIT_STANDARD = 50; // $0.50
-const BULK_DISCOUNT_PERCENT = 0.12; // 12% off when > 100 credits
-const CENTS_PER_CREDIT_BULK = Math.round(CENTS_PER_CREDIT_STANDARD * (1 - BULK_DISCOUNT_PERCENT)); // 44
+
+/** Cents per credit by tier: 1–99 $1.00; 100–499 $0.90; 500–999 $0.85; 1,000+ $0.80 */
+function getCentsPerCredit(credits: number): number {
+  if (credits >= 1000) return 80;
+  if (credits >= 500) return 85;
+  if (credits >= 100) return 90;
+  return 100;
+}
 
 const PLANS = {
   starter: {
@@ -86,12 +90,11 @@ export async function POST(request: NextRequest) {
       ];
       successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=starter`;
     } else {
-      const centsPerCredit =
-        credits > BULK_DISCOUNT_THRESHOLD ? CENTS_PER_CREDIT_BULK : CENTS_PER_CREDIT_STANDARD;
+      const centsPerCredit = getCentsPerCredit(credits);
       const description =
-        credits > BULK_DISCOUNT_THRESHOLD
-          ? "Bulk discount applied. Best value for teams."
-          : "Best value for regular use.";
+        credits >= 100
+          ? "Volume discount applied. Best value for teams."
+          : "Pay-as-you-go credits.";
       metadata.credits = String(credits);
       lineItems = [
         {

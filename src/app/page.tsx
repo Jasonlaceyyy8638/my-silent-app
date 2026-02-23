@@ -26,17 +26,33 @@ import { ComparisonSection } from "@/components/ComparisonSection";
 import { FeaturesBento } from "@/components/FeaturesBento";
 import { IndustrySwitcher } from "@/components/IndustrySwitcher";
 
-const MIN_BULK_CREDITS = 20;
+const MIN_BULK_CREDITS = 1;
 const MAX_BULK_CREDITS = 1000;
-const BULK_THRESHOLD = 100;
-const PRICE_PER_CREDIT = 0.5;
-const BULK_DISCOUNT = 0.12;
 
-function getBulkPrice(credits: number): { total: number; perCredit: number; isBulk: boolean } {
-  const isBulk = credits > BULK_THRESHOLD;
-  const perCredit = isBulk ? PRICE_PER_CREDIT * (1 - BULK_DISCOUNT) : PRICE_PER_CREDIT;
-  const total = Math.round(perCredit * credits * 100) / 100;
-  return { total, perCredit, isBulk };
+/** Tiers: 1–99 $1.00; 100–499 $0.90 (10%); 500–999 $0.85 (15%); 1,000+ $0.80 (20%). */
+function getBulkPrice(credits: number): {
+  total: number;
+  perCredit: number;
+  savingsPercentage: number;
+} {
+  const c = Math.max(0, Math.round(credits));
+  let perCredit: number;
+  let savingsPercentage: number;
+  if (c >= 1000) {
+    perCredit = 0.8;
+    savingsPercentage = 20;
+  } else if (c >= 500) {
+    perCredit = 0.85;
+    savingsPercentage = 15;
+  } else if (c >= 100) {
+    perCredit = 0.9;
+    savingsPercentage = 10;
+  } else {
+    perCredit = 1.0;
+    savingsPercentage = 0;
+  }
+  const total = Math.round(perCredit * c * 100) / 100;
+  return { total, perCredit, savingsPercentage };
 }
 
 type Plan = "starter" | "velopack";
@@ -45,6 +61,7 @@ export default function Home() {
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
   const [bulkCredits, setBulkCredits] = useState(100);
   const [error, setError] = useState<string | null>(null);
+  const bulkPrice = getBulkPrice(bulkCredits);
 
   const handleCheckout = useCallback(async (plan: Plan, credits?: number) => {
     setError(null);
@@ -66,8 +83,6 @@ export default function Home() {
       setCheckoutPlan(null);
     }
   }, [bulkCredits]);
-
-  const bulkPrice = getBulkPrice(bulkCredits);
 
   const integrations = [
     { name: "QuickBooks", icon: Plug, description: "Sync extracted data to your books." },
@@ -239,7 +254,7 @@ export default function Home() {
                 Bulk discount
               </span>
               <h3 className="text-lg font-semibold text-white">VeloPack</h3>
-              <p className="text-slate-400 text-sm mt-1">Choose 20–1,000 credits. 12% off over 100.</p>
+              <p className="text-slate-400 text-sm mt-1">Choose 1–1,000 credits. Save up to 20% at volume.</p>
               <div className="mt-6 space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2 gap-4">
@@ -263,29 +278,34 @@ export default function Home() {
                     type="range"
                     min={MIN_BULK_CREDITS}
                     max={MAX_BULK_CREDITS}
-                    step={10}
+                    step={1}
                     value={bulkCredits}
                     onChange={(e) => setBulkCredits(Number(e.target.value))}
                     className="w-full h-2 rounded-full appearance-none bg-slate-700 accent-teal-accent cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
-                    <span>20</span>
-                    <span>1,000</span>
+                    <span>{MIN_BULK_CREDITS}</span>
+                    <span>{MAX_BULK_CREDITS.toLocaleString()}</span>
                   </div>
                 </div>
+                {bulkPrice.savingsPercentage > 0 && (
+                  <p className="text-teal-accent text-sm font-medium">
+                    You are saving {bulkPrice.savingsPercentage}% on {bulkCredits.toLocaleString()} credits.
+                  </p>
+                )}
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
                     ${bulkPrice.total.toFixed(2)}
                   </span>
-                  {bulkPrice.isBulk && (
+                  {bulkPrice.savingsPercentage > 0 && (
                     <span className="rounded bg-teal-accent/20 text-teal-accent text-xs font-medium px-2 py-0.5">
-                      12% off
+                      {bulkPrice.savingsPercentage}% off
                     </span>
                   )}
                 </div>
                 <p className="text-slate-500 text-xs">
                   ${bulkPrice.perCredit.toFixed(2)}/credit
-                  {bulkPrice.isBulk && " (bulk rate)"}
+                  {bulkPrice.savingsPercentage > 0 && " (volume rate)"}
                 </p>
                 <button
                   type="button"

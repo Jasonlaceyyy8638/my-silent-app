@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getCredits } from "@/lib/credits";
+import { ensureWelcomeCredits } from "@/lib/credits";
 
 export async function GET() {
   const { userId } = await auth();
@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const credits = await getCredits(userId);
+    const credits = await ensureWelcomeCredits(userId);
     return NextResponse.json({ credits });
   } catch (err) {
     console.error("Credits error:", err);
