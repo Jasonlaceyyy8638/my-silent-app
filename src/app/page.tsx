@@ -20,9 +20,11 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { Testimonials } from "@/components/Testimonials";
 import { TrustBar } from "@/components/TrustBar";
 import { CaseStudies } from "@/components/CaseStudies";
-import { ScrollSection } from "@/components/ScrollSection";
-import { Industries } from "@/components/Industries";
-import { BenefitsBento } from "@/components/BenefitsBento";
+import { MotionScrollSection } from "@/components/MotionScrollSection";
+import { HeroCinematic } from "@/components/HeroCinematic";
+import { ComparisonSection } from "@/components/ComparisonSection";
+import { FeaturesBento } from "@/components/FeaturesBento";
+import { IndustrySwitcher } from "@/components/IndustrySwitcher";
 
 const MIN_BULK_CREDITS = 20;
 const MAX_BULK_CREDITS = 1000;
@@ -99,69 +101,32 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/30">
+      <HeroCinematic />
+
       <div className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
-        <ScrollSection className="text-center mb-12 flex flex-col items-center">
-          <img
-            src="/logo-png.png"
-            alt="VeloDoc"
-            width={200}
-            height={80}
-            className="w-[200px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mb-8"
-          />
-          <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter text-white max-w-5xl mx-auto leading-[1.05]">
-            Eliminate manual data entry. Forever.
-          </h1>
-          <p className="mt-8 text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
-            VeloDoc is the enterprise AI that turns unstructured PDFs into structured, queryable data—invoices, BOLs, contracts, and transcripts—with deterministic schemas and one-click export.
-          </p>
-          <p className="mt-4 text-slate-400 text-base max-w-2xl mx-auto">
-            No templates, no rules. Context-aware extraction, 256-bit encryption, and audit-ready outputs so your team stops re-typing and starts scaling.
-          </p>
-          <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center">
-            <SignedIn>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-6 py-3 text-sm font-semibold transition-colors"
-              >
-                Go to Dashboard
-              </Link>
-            </SignedIn>
-            <SignedOut>
-              <Link
-                href="/sign-up"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-6 py-3 text-sm font-semibold transition-colors"
-              >
-                Get Started
-              </Link>
-            </SignedOut>
-          </div>
-        </ScrollSection>
-
-        <ScrollSection>
+        <MotionScrollSection className="mb-14">
           <TrustBar />
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 border-t-teal-accent/30">
+        <MotionScrollSection className="mb-14 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 border-t-teal-accent/30">
           <p className="text-center text-slate-200 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
             <span className="text-white font-semibold">What it does:</span> VeloDoc is an AI Architect that turns complex PDFs into structured data for QuickBooks, Excel, and Zapier.
           </p>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8">
-          <p className="text-center text-slate-200 text-lg max-w-3xl mx-auto">
-            Most apps just search for text. <span className="text-white font-semibold">VeloDoc understands it.</span> Whether you&apos;re a solo freelancer or a busy dispatcher, our AI eliminates manual entry forever.
-          </p>
-        </ScrollSection>
+        <MotionScrollSection className="mb-14">
+          <ComparisonSection />
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14">
-          <Industries />
-        </ScrollSection>
+        <MotionScrollSection className="mb-14">
+          <IndustrySwitcher />
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14">
-          <BenefitsBento />
-        </ScrollSection>
+        <MotionScrollSection className="mb-14">
+          <FeaturesBento />
+        </MotionScrollSection>
 
-        <ScrollSection className="flex justify-center mb-14">
+        <MotionScrollSection className="flex justify-center mb-14">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl justify-items-center">
             <div className="flex flex-col items-center text-center p-5 rounded-xl bg-white/5 border border-white/10 w-full max-w-[260px]">
               <FileUp className="h-10 w-10 text-teal-accent mb-3" />
@@ -185,9 +150,9 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14">
+        <MotionScrollSection className="mb-14">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
             Who is VeloDoc for?
           </h2>
@@ -207,9 +172,9 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14">
+        <MotionScrollSection className="mb-14">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
             Quantified Wins
           </h2>
@@ -225,17 +190,17 @@ export default function Home() {
               <p className="text-slate-500 text-sm mt-1">Estimated annualized</p>
             </div>
           </div>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection>
+        <MotionScrollSection>
           <CaseStudies />
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection>
+        <MotionScrollSection>
           <Testimonials />
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14 text-center">
+        <MotionScrollSection className="mb-14 text-center">
           <p className="text-slate-300 mb-4">
             Sign in to access the Architect. Buy credits to extract data from your PDFs.
           </p>
@@ -247,9 +212,9 @@ export default function Home() {
               Get Started
             </Link>
           </SignedOut>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection id="pricing" className="mb-14 scroll-mt-24">
+        <MotionScrollSection id="pricing" className="mb-14 scroll-mt-24">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
             Simple pricing
           </h2>
@@ -348,9 +313,9 @@ export default function Home() {
               {error}
             </p>
           )}
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="mb-14">
+        <MotionScrollSection className="mb-14">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
             Integrations
           </h2>
@@ -374,9 +339,9 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </ScrollSection>
+        </MotionScrollSection>
 
-        <ScrollSection className="text-center">
+        <MotionScrollSection className="text-center">
           <p className="text-sm text-slate-400 mb-4">Works with your favorite tools</p>
           <div className="flex flex-wrap items-center justify-center gap-8 grayscale opacity-80">
             <div className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 border border-white/10">
@@ -389,7 +354,7 @@ export default function Home() {
               <span className="text-sm font-medium text-white">QuickBooks</span>
             </div>
           </div>
-        </ScrollSection>
+        </MotionScrollSection>
       </div>
     </main>
   );
