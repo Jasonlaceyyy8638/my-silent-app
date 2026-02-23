@@ -7,7 +7,7 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export function HeroCinematic() {
   return (
-    <section className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-6 py-20">
+    <section className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-6 py-12 sm:py-16">
       {/* Subtle looping background: gradient + animated lines */}
       <div className="absolute inset-0 bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/40" aria-hidden />
       <div className="absolute inset-0 hero-particles" aria-hidden />
@@ -18,7 +18,7 @@ export function HeroCinematic() {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
+          className="mb-3"
         >
           <Image
             src="/logo-png.png"
@@ -30,7 +30,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.p
-          className="mb-4 text-base sm:text-lg font-semibold text-teal-accent"
+          className="mb-2 text-base sm:text-lg font-semibold text-teal-accent"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -48,7 +48,7 @@ export function HeroCinematic() {
         </motion.h1>
 
         <motion.p
-          className="mt-8 text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium"
+          className="mt-5 text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.9 }}
@@ -57,7 +57,7 @@ export function HeroCinematic() {
         </motion.p>
 
         <motion.div
-          className="mt-12 flex flex-col items-center gap-3"
+          className="mt-8 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 1.2 }}
