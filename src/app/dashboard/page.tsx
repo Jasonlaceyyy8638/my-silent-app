@@ -73,6 +73,7 @@ export default function DashboardPage() {
   const [rows, setRows] = useState<ExtractedRow[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const stats = useUsageStats(rows, credits);
 
@@ -131,6 +132,7 @@ export default function DashboardPage() {
         let data: {
           extracted?: ExtractedRow;
           remaining?: number;
+          creditsUsed?: number;
           error?: string;
           saveFailed?: boolean;
           saveError?: string;
@@ -163,13 +165,23 @@ export default function DashboardPage() {
           setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
           fetchSavedDocuments();
+          const creditsMsg =
+            typeof data.creditsUsed === "number" && data.creditsUsed > 0
+              ? data.creditsUsed === 1
+                ? "Extraction complete. 1 credit used."
+                : `Extraction complete. ${data.creditsUsed} credits used.`
+              : "Extraction complete.";
+          setSuccessMessage(creditsMsg);
+          setTimeout(() => setSuccessMessage(null), 5000);
           if (data.saveFailed) {
             const friendly = data.saveError && data.supabaseErrorCode === "PGRST205"
               ? "Saved to this session. To also save to Supabase, create the documents table (see docs/DATABASE.md)."
               : (data.supabaseErrorCode || data.supabaseErrorMessage)
                 ? `Saved locally. Database save failed: ${data.supabaseErrorCode ?? ""} ${data.supabaseErrorMessage ?? ""}`.trim()
                 : null;
-            if (friendly) setError(friendly);
+            setError(friendly ?? null);
+          } else {
+            setError(null);
           }
         }
       } catch (e) {
@@ -301,6 +313,11 @@ export default function DashboardPage() {
                 {error && (
                   <p className="mt-3 text-sm text-red-300 text-center" role="alert">
                     {error}
+                  </p>
+                )}
+                {successMessage && (
+                  <p className="mt-3 text-sm text-teal-accent text-center" role="status">
+                    {successMessage}
                   </p>
                 )}
               </div>

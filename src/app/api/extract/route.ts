@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
-import { deductCredit, ensureWelcomeCredits } from "@/lib/credits";
+import { deductCredits, ensureWelcomeCredits, getCredits } from "@/lib/credits";
 import type { ExtractedRow, LineItem } from "@/types";
 
 function getSupabase() {
@@ -90,9 +90,40 @@ export async function POST(request: NextRequest) {
       type: file.type,
     });
 
+    let text: string;
+    let numPages: number;
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const pdfData = await pdfParse(buffer);
+      text = pdfData.text?.trim() || "";
+      numPages = typeof pdfData.numpages === "number" ? pdfData.numpages : 1;
+    } catch (pdfErr) {
+      const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+      return NextResponse.json(
+        { error: `PDF parse failed: ${msg}. Try a different PDF.` },
+        { status: 400 }
+      );
+    }
+    console.log("[extract] PDF parsed:", {
+      numPages,
+      textLength: text.length,
+      preview: text.slice(0, 200) + (text.length > 200 ? "..." : ""),
+    });
+
+    const creditsNeeded =
+      numPages <= 5 ? 1 : 1 + Math.ceil((numPages - 5) / 5);
+
+    const balance = await getCredits(userId);
+    if (balance < creditsNeeded) {
+      return NextResponse.json(
+        { error: "Insufficient credits for this document size." },
+        { status: 402 }
+      );
+    }
+
     let result: { ok: boolean; remaining: number };
     try {
-      result = await deductCredit(userId);
+      result = await deductCredits(userId, creditsNeeded);
     } catch (creditsErr) {
       const msg = creditsErr instanceof Error ? creditsErr.message : String(creditsErr);
       return NextResponse.json(
@@ -102,30 +133,14 @@ export async function POST(request: NextRequest) {
     }
     if (!result.ok) {
       return NextResponse.json(
-        { error: "No credits left. Buy more credits to extract." },
+        { error: "Insufficient credits for this document size." },
         { status: 402 }
       );
     }
 
-    let text: string;
-    try {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const pdfData = await pdfParse(buffer);
-      text = pdfData.text?.trim() || "";
-    } catch (pdfErr) {
-      const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
-      return NextResponse.json(
-        { error: `PDF parse failed: ${msg}. Try a different PDF.` },
-        { status: 400 }
-      );
-    }
-    console.log("[extract] PDF parsed:", {
-      textLength: text.length,
-      preview: text.slice(0, 200) + (text.length > 200 ? "..." : ""),
-    });
     if (!text) {
       const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, 1);
+      await addCredits(userId, creditsNeeded);
       return NextResponse.json(
         { error: "No text could be extracted from this PDF." },
         { status: 400 }
@@ -151,7 +166,7 @@ export async function POST(request: NextRequest) {
       const isQuota = /429|quota|exceeded/i.test(msg);
       if (isQuota) {
         const { addCredits } = await import("@/lib/credits");
-        await addCredits(userId, 1); // refund: extraction didn't complete
+        await addCredits(userId, creditsNeeded); // refund: extraction didn't complete
         return NextResponse.json(
           {
             error:
@@ -174,7 +189,7 @@ export async function POST(request: NextRequest) {
     });
     if (!raw) {
       const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, 1);
+      await addCredits(userId, creditsNeeded);
       return NextResponse.json(
         { error: "AI did not return extraction data." },
         { status: 500 }
@@ -198,7 +213,7 @@ export async function POST(request: NextRequest) {
       parsed = JSON.parse(raw);
     } catch (parseErr) {
       const { addCredits } = await import("@/lib/credits");
-      await addCredits(userId, 1);
+      await addCredits(userId, creditsNeeded);
       const msg = parseErr instanceof Error ? parseErr.message : "Invalid JSON";
       return NextResponse.json(
         {
@@ -271,6 +286,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           extracted: row,
           remaining: result.remaining,
+          creditsUsed: creditsNeeded,
           saveFailed: true,
           saveError: isTableMissing
             ? "Cloud save is optional. The 'documents' table was not found in Supabase."
@@ -283,6 +299,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         extracted,
         remaining: result.remaining,
+        creditsUsed: creditsNeeded,
       });
     }
 
@@ -290,6 +307,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       extracted: row,
       remaining: result.remaining,
+      creditsUsed: creditsNeeded,
     });
   } catch (err) {
     console.error("Extract error:", err);

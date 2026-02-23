@@ -95,7 +95,13 @@ export function Footer() {
               </div>
             ))}
           </div>
-          <nav className="flex flex-wrap items-center gap-4 sm:gap-6 border-t border-white/10 pt-6 sm:pt-0 sm:border-t-0">
+          <nav
+            className="flex flex-wrap items-center gap-4 sm:gap-6 border-t border-white/10 pt-6 sm:pt-0 sm:border-t-0"
+            aria-label="Trust and legal"
+          >
+            <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-widest text-slate-500 mr-1">
+              Trust &amp; legal
+            </span>
             {TRUST_LEGAL_LINKS.map(({ href, label }) => (
               <Link
                 key={href}

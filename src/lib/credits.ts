@@ -48,14 +48,26 @@ export async function addCredits(userId: string, amount: number): Promise<number
 }
 
 export async function deductCredit(userId: string): Promise<{ ok: boolean; remaining: number }> {
+  return deductCredits(userId, 1);
+}
+
+export async function deductCredits(
+  userId: string,
+  amount: number
+): Promise<{ ok: boolean; remaining: number }> {
+  const a = Math.max(0, Math.round(amount));
+  if (a === 0) {
+    const current = await getCredits(userId);
+    return { ok: true, remaining: current };
+  }
   const current = await getCredits(userId);
-  if (current < 1) return { ok: false, remaining: 0 };
+  if (current < a) return { ok: false, remaining: current };
   const all = await prisma.userCredits.findMany();
   const row = all.find((r) => matchUserId(r.userId, userId));
-  if (!row) return { ok: false, remaining: 0 };
+  if (!row) return { ok: false, remaining: current };
   const updated = await prisma.userCredits.update({
     where: { id: row.id },
-    data: { credits: { decrement: 1 } },
+    data: { credits: { decrement: a } },
   });
   return { ok: true, remaining: updated.credits };
 }

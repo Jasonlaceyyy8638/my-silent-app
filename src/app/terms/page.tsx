@@ -7,9 +7,10 @@ const LAST_UPDATED = "February 2025";
 
 const TOC_ITEMS = [
   { id: "acceptance", label: "Acceptance of Terms" },
-  { id: "credit-system", label: "Credit System" },
+  { id: "credit-usage", label: "Credit Usage Policy" },
+  { id: "fair-use", label: "Enterprise Fair Use" },
   { id: "acceptable-use", label: "Acceptable Use" },
-  { id: "limit-of-liability", label: "Limit of Liability" },
+  { id: "limit-of-liability", label: "Liability & Accuracy" },
   { id: "general", label: "General" },
 ] as const;
 
@@ -19,7 +20,7 @@ export default function TermsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum print:bg-white">
+    <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/20 print:bg-white">
       <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           <aside className="lg:w-56 shrink-0 print:hidden">
@@ -75,23 +76,36 @@ export default function TermsPage() {
                   </p>
                 </section>
 
-                <section id="credit-system" className="scroll-mt-28">
+                <section id="credit-usage" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    2. Credit System
+                    2. Credit Usage Policy
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
-                    VeloDoc operates on a credit-based system. One (1) credit equals one (1) document extraction. Credits are consumed when an extraction is completed. Credits are <strong className="text-white/90 print:text-slate-900">non-refundable</strong> once an extraction has been completed, regardless of the outcome or your satisfaction with the result.
+                    One (1) credit allows for the architecture of one (1) document up to five (5) pages. Documents exceeding this limit will consume one (1) additional credit per five (5)-page block (e.g., 6–10 pages = 2 credits; 11–15 pages = 3 credits).
+                  </p>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    Credits are deducted upon successful data extraction. Credits are <strong className="text-white/90 print:text-slate-900">non-refundable</strong> once the Architect has processed the file, regardless of the outcome or your satisfaction with the result.
                   </p>
                   <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
                     Unused credits do not expire for the duration of your account. Purchase terms and pricing are displayed at the point of purchase and may be updated from time to time.
                   </p>
                 </section>
 
+                <section id="fair-use" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    3. Enterprise Fair Use
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                    VeloDoc reserves the right to rate-limit accounts that exhibit unusual or automated, bot-like behavior. This ensures institutional-grade performance and fairness for all users. We may temporarily or permanently restrict access for accounts that abuse the Service or negatively impact system stability.
+                  </p>
+                </section>
+
                 <section id="acceptable-use" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    3. Acceptable Use
+                    4. Acceptable Use
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
                     You agree to use the Service only for lawful purposes and in accordance with these Terms. You must not use the Service to process documents or data in any way that:
@@ -110,10 +124,18 @@ export default function TermsPage() {
                 <section id="limit-of-liability" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    4. Limit of Liability
+                    5. Liability &amp; Accuracy
                   </h2>
+                  <div className="rounded-xl border border-teal-accent/20 bg-teal-accent/5 p-4 mb-4 print:border-slate-300 print:bg-slate-50">
+                    <p className="text-slate-200 text-sm font-medium mb-1 print:text-slate-800">
+                      Professional Disclaimer
+                    </p>
+                    <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                      VeloDoc utilizes advanced AI for data extraction. While highly accurate, users are responsible for final verification of data before importing into financial systems such as QuickBooks or other accounting or ERP systems.
+                    </p>
+                  </div>
                   <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
-                    The Service is an AI-based document extraction tool. While we strive for accuracy, extraction results are provided &quot;as is&quot; and we do not guarantee that outputs are complete, error-free, or fit for any particular purpose. You are responsible for verifying and using extracted data appropriately.
+                    The Service is an AI-based document extraction tool. Extraction results are provided &quot;as is&quot; and we do not guarantee that outputs are complete, error-free, or fit for any particular purpose. You are responsible for verifying and using extracted data appropriately.
                   </p>
                   <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
                     To the maximum extent permitted by law, VeloDoc and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss of profits, data, or business opportunity, arising out of or in connection with your use of the Service. Our total liability for any claims arising from these Terms or the Service shall not exceed the amount you paid to us in the twelve (12) months preceding the claim.
@@ -123,7 +145,7 @@ export default function TermsPage() {
                 <section id="general" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    5. General
+                    6. General
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
                     We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. For questions, contact us at support@velodoc.app. Our{" "}

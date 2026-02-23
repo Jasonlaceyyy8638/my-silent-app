@@ -69,6 +69,9 @@ export function UploadZone({ onFileSelect, isUploading }: UploadZoneProps) {
           ? "Extracting data…"
           : "Drop any PDF here—Invoices, Contracts, Records, or Quotes."}
       </span>
+      <span className="text-slate-500 text-center text-xs max-w-sm">
+        Enterprise note: Documents over 5 pages utilize 1 credit per 5-page block.
+      </span>
     </label>
   );
 }
