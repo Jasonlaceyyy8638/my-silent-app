@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 const CHATBASE_EMBED_URL = "https://www.chatbase.co/embed.min.js";
 const DOMAIN = "www.chatbase.co";
@@ -12,7 +13,7 @@ const CHATBOT_ID =
     ? process.env.NEXT_PUBLIC_CHATBOT_ID.trim()
     : "7RFDPJoo-X5H0MuLzhDgY";
 
-function loadChatbase() {
+function injectChatbaseScript() {
   if (typeof window === "undefined") return;
   if (document.getElementById("chatbase-embed")) return;
   if (!CHATBOT_ID) return;
@@ -28,6 +29,7 @@ function loadChatbase() {
   script.setAttribute("data-chatbot-id", CHATBOT_ID);
   script.setAttribute("domain", DOMAIN);
   script.setAttribute("data-domain", DOMAIN);
+  script.setAttribute("data-no-optimize", "true");
   script.defer = true;
   script.async = true;
 
@@ -48,15 +50,22 @@ function loadChatbase() {
 }
 
 export function ChatbaseWidget() {
+  const { isLoaded } = useAuth();
+  const injected = useRef(false);
+
   useEffect(() => {
-    const run = () => loadChatbase();
+    if (!isLoaded) return;
+    if (injected.current) return;
+    injected.current = true;
+
+    const run = () => injectChatbaseScript();
     if (document.readyState === "complete") {
       const t = setTimeout(run, 0);
       return () => clearTimeout(t);
     }
     window.addEventListener("load", run);
     return () => window.removeEventListener("load", run);
-  }, []);
+  }, [isLoaded]);
 
   return null;
 }
