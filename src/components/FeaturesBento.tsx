@@ -121,6 +121,7 @@ export function FeaturesBento() {
               muted
               playsInline
               preload="auto"
+              controls
               className="w-full h-full object-cover"
             />
             <p className="absolute bottom-0 left-0 right-0 py-2 px-3 text-center text-xs font-medium text-white/90 bg-gradient-to-t from-black/70 to-transparent rounded-b-xl">

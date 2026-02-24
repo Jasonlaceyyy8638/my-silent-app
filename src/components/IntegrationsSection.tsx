@@ -141,6 +141,7 @@ export function IntegrationsSection() {
               muted
               playsInline
               preload="auto"
+              controls
               className="w-full h-full object-cover"
               aria-label="VeloDoc demo: paper-to-digital workflow and sync"
             />
