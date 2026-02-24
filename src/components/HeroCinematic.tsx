@@ -1,11 +1,29 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
+const WINDOWS_DOWNLOAD_URL = "/downloads/VeloDoc-Setup.exe";
+const MAC_DOWNLOAD_URL = "/downloads/VeloDoc-Setup.dmg";
+
 export function HeroCinematic() {
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
+        setDownloadOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <section className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-6 py-12 sm:py-16">
       {/* Subtle looping background: gradient + animated lines */}
@@ -27,6 +45,53 @@ export function HeroCinematic() {
             height={192}
             className="w-[340px] sm:w-[400px] lg:w-[460px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
           />
+        </motion.div>
+
+        <motion.div
+          ref={downloadRef}
+          className="hidden md:flex justify-center mb-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDownloadOpen((o) => !o)}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-[#22d3ee] bg-[#22d3ee]/10 px-6 py-3.5 text-base font-bold text-[#22d3ee] shadow-[0_0_24px_rgba(34,211,238,0.4)] hover:bg-[#22d3ee]/20 hover:shadow-[0_0_32px_rgba(34,211,238,0.5)] transition-all"
+              aria-expanded={downloadOpen}
+              aria-haspopup="true"
+              aria-label="Download Desktop Architect — choose OS"
+            >
+              Download Desktop Architect
+              <ChevronDown className={`w-5 h-5 transition-transform ${downloadOpen ? "rotate-180" : ""}`} aria-hidden />
+            </button>
+            {downloadOpen && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 min-w-[220px] rounded-xl border border-[#22d3ee]/40 bg-[#0b172a]/98 backdrop-blur-xl shadow-xl py-2 border-t-[#22d3ee]/60 z-20"
+                role="menu"
+              >
+                <a
+                  href={WINDOWS_DOWNLOAD_URL}
+                  download="VeloDoc-Setup.exe"
+                  role="menuitem"
+                  className="block px-4 py-3 text-sm font-medium text-slate-200 hover:text-[#22d3ee] hover:bg-[#22d3ee]/10 transition-colors"
+                  onClick={() => setDownloadOpen(false)}
+                >
+                  Download for Windows
+                </a>
+                <a
+                  href={MAC_DOWNLOAD_URL}
+                  download="VeloDoc-Setup.dmg"
+                  role="menuitem"
+                  className="block px-4 py-3 text-sm font-medium text-slate-200 hover:text-[#22d3ee] hover:bg-[#22d3ee]/10 transition-colors"
+                  onClick={() => setDownloadOpen(false)}
+                >
+                  Download for Mac
+                </a>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         <motion.div
