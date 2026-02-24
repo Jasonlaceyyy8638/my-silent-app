@@ -25,18 +25,18 @@ export function HeroCinematic() {
   }, []);
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col items-center justify-start overflow-hidden px-6 pt-8 pb-12 sm:pb-16">
+    <section className="relative flex flex-col items-center justify-start overflow-hidden px-6 pt-12 pb-12 sm:pb-16">
       {/* Subtle looping background: gradient + animated lines */}
       <div className="absolute inset-0 bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/40" aria-hidden />
       <div className="absolute inset-0 hero-particles" aria-hidden />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.12),transparent)]" aria-hidden />
 
-      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-start w-full">
+      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-start w-full gap-y-4">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col items-center justify-center mb-0"
+          className="flex flex-col items-center justify-center m-0"
         >
           <Image
             src="/logo-png.png"
@@ -49,7 +49,7 @@ export function HeroCinematic() {
 
         <motion.div
           ref={downloadRef}
-          className="hidden md:flex flex-col items-center justify-center mt-2 mb-4"
+          className="hidden md:flex flex-col items-center justify-center m-0"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -95,7 +95,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.div
-          className="mt-4 mb-2 min-h-[1.75rem] flex items-center justify-center"
+          className="m-0 min-h-[1.75rem] flex items-center justify-center"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -111,7 +111,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.h1
-          className="mt-4 text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tighter text-white leading-[1.05]"
+          className="m-0 text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tighter text-white leading-[1.05]"
           initial={{ opacity: 0, y: 48 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -120,7 +120,7 @@ export function HeroCinematic() {
         </motion.h1>
 
         <motion.p
-          className="mt-5 text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium"
+          className="m-0 text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.9 }}
@@ -129,7 +129,7 @@ export function HeroCinematic() {
         </motion.p>
 
         <motion.div
-          className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm"
+          className="m-0 flex flex-wrap items-center justify-center gap-2 text-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 1 }}
@@ -140,7 +140,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.div
-          className="mt-8 flex flex-col items-center gap-3"
+          className="m-0 flex flex-col items-center gap-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 1.2 }}
