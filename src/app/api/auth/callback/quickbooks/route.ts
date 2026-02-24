@@ -1,9 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { Resend } from "resend";
 import { getSupabase } from "@/lib/supabase";
 
 /** Production token endpoint (aligns with https://developer.intuit.com/.well-known/openid_configuration) */
 const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
+
+async function sendErrorLogToAdmin(reason: string, detail: string, userId?: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
+  try {
+    const resend = new Resend(key);
+    const from = process.env.WEEKLY_REPORT_FROM_EMAIL ?? process.env.FROM_EMAIL ?? "Phillip McKenzie <admin@velodoc.app>";
+    await resend.emails.send({
+      from,
+      to: ADMIN_EMAIL,
+      reply_to: process.env.REPLY_TO ?? "billing@velodoc.app",
+      subject: `[VeloDoc] QuickBooks callback error: ${reason}`,
+      text: `QuickBooks OAuth callback failed.\nReason: ${reason}\nDetail: ${detail}\nUser ID: ${userId ?? "unknown"}\n`,
+    });
+  } catch {
+    // ignore send failure
+  }
+}
 
 /**
  * GET: QuickBooks OAuth callback at /api/auth/callback/quickbooks.
@@ -23,6 +44,7 @@ export async function GET(request: NextRequest) {
   const realmId = request.nextUrl.searchParams.get("realmId")?.trim() ?? null;
 
   if (!code || !code.trim()) {
+    await sendErrorLogToAdmin("no_code", "Missing or empty code in callback", userId);
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_code`);
   }
 
@@ -43,6 +65,7 @@ export async function GET(request: NextRequest) {
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;
   const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
+    await sendErrorLogToAdmin("config", "QUICKBOOKS_CLIENT_ID or QUICKBOOKS_CLIENT_SECRET missing", userId);
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=config`);
   }
 
@@ -71,6 +94,7 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const errText = await tokenRes.text();
       console.error("[quickbooks/callback] token exchange failed:", tokenRes.status, errText);
+      await sendErrorLogToAdmin("exchange", `${tokenRes.status}: ${errText.slice(0, 200)}`, userId);
       return NextResponse.redirect(`${base}/dashboard?qb=error&reason=exchange`);
     }
 
@@ -81,10 +105,12 @@ export async function GET(request: NextRequest) {
     accessToken = tokenData.access_token ?? "";
     refreshToken = tokenData.refresh_token ?? "";
     if (!accessToken || !refreshToken) {
+      await sendErrorLogToAdmin("no_tokens", "Token response missing access_token or refresh_token", userId);
       return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_tokens`);
     }
   } catch (err) {
     console.error("[quickbooks/callback] token request error:", err);
+    await sendErrorLogToAdmin("exchange", err instanceof Error ? err.message : String(err), userId);
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=exchange`);
   }
 

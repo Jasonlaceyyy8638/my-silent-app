@@ -207,7 +207,7 @@ export default function PricingPage() {
                 href="mailto:sales@velodoc.app?subject=VeloPack%20credits%20inquiry"
                 className="text-teal-accent hover:underline font-medium"
               >
-                Contact Sales
+                Contact Jason Lacey — Sales
               </a>
             </p>
           </div>

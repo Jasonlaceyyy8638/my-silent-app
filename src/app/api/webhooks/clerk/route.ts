@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { Resend } from "resend";
 import { ensureWelcomeCredits } from "@/lib/credits";
+import { getEmailSignature } from "@/lib/email-signature";
 
-const FROM_EMAIL = "jason@velodoc.app";
+const FROM_EMAIL = process.env.FROM_EMAIL ?? process.env.WEEKLY_REPORT_FROM_EMAIL ?? "noreply@velodoc.app";
+const REPLY_TO_EMAIL = process.env.REPLY_TO ?? "billing@velodoc.app";
 const WELCOME_SUBJECT = "Welcome to VeloDoc";
 const DASHBOARD_URL = "https://velodoc.app/dashboard";
 
@@ -11,7 +13,7 @@ function getWelcomeBody(firstName: string): string {
   const first_name = firstName || "there";
   return `Hello ${first_name},
 
-I'm Jason, founder of VeloDoc. I built this tool to solve a universal problem: the hours we lose to manual data entry. Whether you're processing a stack of business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files—it understands them. You're no longer just storing PDFs; you're unlocking them.
+Welcome to VeloDoc—the Universal Data Engine. We built this to solve a universal problem: the hours we lose to manual data entry. Whether you're processing business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files; it understands them.
 
 The Architecture of Your Data Starts Now.
 
@@ -19,9 +21,7 @@ Getting started: 1) Upload any PDF 2) Architect the data (our AI reads the conte
 
 Launch your dashboard: ${DASHBOARD_URL}
 
-Welcome to the future of the PDF.
-
-— Jason Lacey, Founder`.trim();
+Welcome to the future of the PDF.`.trim();
 }
 
 function getWelcomeHtml(firstName: string): string {
@@ -54,7 +54,7 @@ function getWelcomeHtml(firstName: string): string {
                 Hello ${first_name},
               </p>
               <p style="margin:0 0 32px; font-size:17px; color:#374151; line-height:1.7;">
-                I'm Jason, founder of VeloDoc. I built this tool to solve a universal problem: the hours we lose to manual data entry. Whether you're processing a stack of business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files—it understands them. You're no longer just storing PDFs; you're unlocking them.
+                Welcome to VeloDoc—the Universal Data Engine. We built this to solve a universal problem: the hours we lose to manual data entry. Whether you're processing business invoices, academic research, or personal records, VeloDoc's AI doesn't just scan your files; it understands them.
               </p>
               <h2 style="margin:0 0 24px; font-size:15px; font-weight:700; color:#0f172a; letter-spacing:0.02em; text-transform:uppercase;">
                 Getting Started
@@ -118,9 +118,7 @@ function getWelcomeHtml(firstName: string): string {
               <p style="margin:0; font-size:17px; color:#374151; line-height:1.7;">
                 Welcome to the future of the PDF.
               </p>
-              <p style="margin:6px 0 0; font-size:17px; color:#374151; line-height:1.7;">
-                — Jason Lacey, Founder
-              </p>
+              ${getEmailSignature("support")}
             </td>
           </tr>
         </table>
@@ -237,7 +235,7 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: toEmail,
-      replyTo: "service@bgrdayton.com",
+      reply_to: REPLY_TO_EMAIL,
       subject: WELCOME_SUBJECT,
       text: textBody,
       html: htmlBody,

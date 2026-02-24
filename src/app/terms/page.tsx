@@ -135,6 +135,9 @@ export default function TermsPage() {
                     <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
                       We do not share your data with third parties. When you use QuickBooks integration, we store only the tokens and identifiers required to perform the sync. We do not sell, rent, or disclose your Intuit data, extracted document data, or personally identifiable information to third parties for marketing, advertising, or any other purpose. Data sent to Intuit is limited to what you explicitly authorize (e.g. creating a Bill in your QuickBooks company).
                     </p>
+                    <p className="text-slate-300 text-sm leading-relaxed mt-2 print:text-slate-700">
+                      For QuickBooks or Intuit app support inquiries, contact Sharon Ferguson at support@velodoc.app.
+                    </p>
                   </div>
                 </section>
 
@@ -183,7 +186,7 @@ export default function TermsPage() {
                     8. General
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
-                    We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. For questions, contact us at support@velodoc.app. Our{" "}
+                    We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. For questions, contact Sharon Ferguson at support@velodoc.app. Our{" "}
                     <Link href="/security" className="text-teal-accent hover:underline print:text-slate-900 print:no-underline">
                       Security & Trust
                     </Link>{" "}

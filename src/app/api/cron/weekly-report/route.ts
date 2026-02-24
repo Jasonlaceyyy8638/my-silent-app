@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getSupabase } from "@/lib/supabase";
+import { getEmailSignature } from "@/lib/email-signature";
 import type { ExtractedRow } from "@/types";
 
-const FROM_EMAIL = process.env.WEEKLY_REPORT_FROM_EMAIL ?? process.env.FROM_EMAIL ?? "reports@velodoc.app";
+const FROM_EMAIL = process.env.WEEKLY_REPORT_FROM_EMAIL ?? process.env.FROM_EMAIL ?? "Phillip McKenzie <admin@velodoc.app>";
+const ARCHITECTURAL_LOGS_URL = "https://velodoc.app/dashboard/sync-history";
 
 type DocRow = {
   id?: string;
@@ -133,24 +135,50 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
       if (email) recipients.push(email);
     }
   }
-  // Optional env override: if set, add it only when we have at least one pro/enterprise profile (so cron stays gated)
-  const envEmail = process.env.WEEKLY_REPORT_EMAIL?.trim();
-  if (envEmail && recipients.length > 0 && !recipients.includes(envEmail)) {
-    recipients.push(envEmail);
-  }
-
+  // Env override or default admin: always send CSV to admin@velodoc.app when no pro/enterprise recipients
+  const adminEmail = (process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app").trim();
   if (recipients.length === 0) {
-    return NextResponse.json({
-      ok: true,
-      documentsCount: count,
-      message: "No pro/enterprise recipients; report not sent.",
-    });
+    recipients.push(adminEmail);
+  } else {
+    const envEmail = process.env.WEEKLY_REPORT_EMAIL?.trim();
+    if (envEmail && !recipients.includes(envEmail)) recipients.push(envEmail);
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {
     return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
   }
+
+  const replyTo = process.env.REPLY_TO ?? "billing@velodoc.app";
+  const adminSignature = getEmailSignature("admin");
+  const htmlBody = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0; padding:0; background-color:#f5f5f7; font-family: Inter, Helvetica, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f7;">
+    <tr>
+      <td align="center" style="padding:32px 24px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+          <tr>
+            <td style="background:#22d3ee; padding:32px 40px; text-align:center;">
+              <h1 style="margin:0; font-size:22px; font-weight:700; color:#0f172a; letter-spacing:-0.02em;">Weekly Architectural Sync Report</h1>
+              <p style="margin:8px 0 0; font-size:15px; color:rgba(15,23,42,0.9);">${count} document(s) synced in the last 7 days. CSV attached.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px;">
+              <p style="margin:0 0 24px; font-size:16px; color:#374151; line-height:1.6;">Your weekly QuickBooks sync summary is ready. Open the attachment for the full architectural log.</p>
+              <a href="${ARCHITECTURAL_LOGS_URL}" style="display:inline-block; padding:14px 28px; background:#22d3ee; color:#0f172a; font-size:15px; font-weight:600; text-decoration:none; border-radius:10px;">View Architectural Logs</a>
+              ${adminSignature}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
   const resend = new Resend(resendApiKey);
   const sent: string[] = [];
@@ -159,9 +187,10 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
       await resend.emails.send({
         from: FROM_EMAIL,
         to: toEmail,
+        reply_to: replyTo,
         subject: `VeloDoc Weekly Sync Report – ${count} document(s)`,
-        text: `Weekly QuickBooks sync report: ${count} document(s) with qb_sync_status = synced in the last 7 days. CSV attached.`,
-        html: `<p>Weekly QuickBooks sync report: <strong>${count}</strong> document(s) synced in the last 7 days.</p><p>CSV attached.</p>`,
+        text: `Weekly QuickBooks sync report: ${count} document(s) with qb_sync_status = synced in the last 7 days. CSV attached.\n\nView Architectural Logs: ${ARCHITECTURAL_LOGS_URL}`,
+        html: htmlBody,
         attachments: [
           {
             filename,

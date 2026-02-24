@@ -129,6 +129,15 @@ export function Footer() {
         <p className="mt-6 text-center text-slate-500 text-[10px] font-mono">
           © {new Date().getFullYear()} VeloDoc. All rights reserved.
         </p>
+        <p className="mt-3 text-center">
+          <a
+            href="mailto:support@velodoc.app"
+            className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
+            title="Sharon Ferguson — Support"
+          >
+            Sharon Ferguson — support@velodoc.app
+          </a>
+        </p>
       </div>
     </footer>
   );

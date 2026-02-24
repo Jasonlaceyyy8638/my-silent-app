@@ -3,6 +3,7 @@
 import { Mail } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@velodoc.app";
+const SUPPORT_CONTACT = "Sharon Ferguson";
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
@@ -166,9 +167,10 @@ export default function SecurityPage() {
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-6 py-3 text-sm font-semibold transition-colors"
+            title={`${SUPPORT_CONTACT} — ${SUPPORT_EMAIL}`}
           >
             <Mail className="w-5 h-5" aria-hidden />
-            Contact Security Team
+            Contact {SUPPORT_CONTACT}
           </a>
         </div>
       </div>

@@ -94,9 +94,33 @@ ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS updated_at timestamptz DEF
 
 The app sets `updated_at` when a document is marked as synced to QuickBooks. If the column is missing, the weekly report falls back to `created_at`.
 
-### 7. Optional: profiles.email for weekly report recipient
+### 7a. Create the profiles table (required for QuickBooks + 3-tier plans)
 
-To send the weekly CSV to an admin email from the database instead of env:
+If you see `relation "public.profiles" does not exist`, create the table first. Run this in the Supabase SQL Editor:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.profiles (
+  user_id text PRIMARY KEY,
+  qb_access_token text,
+  qb_refresh_token text,
+  qb_realm_id text,
+  email text,
+  plan_type text DEFAULT 'starter',
+  automation_count integer DEFAULT 0
+);
+
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+```
+
+- `user_id`: Clerk user ID (unique per user).
+- `qb_*`: QuickBooks OAuth tokens and realm; set when the user connects QuickBooks (Pro/Enterprise only).
+- `email`: Used as the weekly report recipient for Pro/Enterprise.
+- `plan_type`: 'starter' | 'pro' | 'enterprise'. Pro and Enterprise can connect QuickBooks and receive the weekly CSV.
+- `automation_count`: Monthly automation usage; reset in your billing cron.
+
+### 7. Optional: profiles.email (if table existed before 7a)
+
+If you already had a `profiles` table without `email`, add it:
 
 ```sql
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
@@ -104,18 +128,17 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
 
 Then set `email` on the profile that should receive the report. Otherwise set `WEEKLY_REPORT_EMAIL` in your environment.
 
-### 7b. Subscription tiers: profiles.plan_type and profiles.automation_count
+### 7b. Subscription tiers: plan_type and automation_count (if table existed before 7a)
 
-For the 3-tier monthly subscription model (starter, pro, enterprise):
+If you created `profiles` before adding subscription columns, add them:
 
 ```sql
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_type text DEFAULT 'starter';
--- Allowed values: 'starter', 'pro', 'enterprise'
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS automation_count integer DEFAULT 0;
 ```
 
-- `plan_type`: 'starter' = manual PDF only; 'pro' and 'enterprise' = QuickBooks bridge + weekly CSV report. Set to 'pro' or 'enterprise' for accounts that may connect QuickBooks and receive the weekly report.
-- `automation_count`: Tracks monthly automation usage (e.g. weekly report sends, syncs). Reset each billing period in your own job or via Stripe webhook.
+- `plan_type`: 'starter' = manual PDF only; 'pro' and 'enterprise' = QuickBooks bridge + weekly CSV report.
+- `automation_count`: Tracks monthly automation usage. Reset each billing period in your own job or via Stripe webhook.
 
 ### 8. Optional: api_logs columns for QuickBooks sync troubleshooting
 
