@@ -10,10 +10,6 @@ import {
   Home as HomeIcon,
   GraduationCap,
   Truck,
-  Plug,
-  Zap,
-  FolderSync,
-  FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
@@ -28,6 +24,7 @@ import { IndustrySwitcher } from "@/components/IndustrySwitcher";
 import { TemplatesGallery } from "@/components/TemplatesGallery";
 import { SignupSection } from "@/components/SignupSection";
 import { AboutSection } from "@/components/AboutSection";
+import { IntegrationsSection } from "@/components/IntegrationsSection";
 
 const MIN_BULK_CREDITS = 20;
 const MAX_BULK_CREDITS = 10000;
@@ -89,13 +86,6 @@ export default function Home() {
       setCheckoutPlan(null);
     }
   }, [bulkCredits]);
-
-  const integrations = [
-    { name: "QuickBooks", icon: Plug, description: "Sync extracted data to your books." },
-    { name: "Zapier", icon: Zap, description: "Connect to 5,000+ apps automatically." },
-    { name: "Google Drive", icon: FolderSync, description: "Import and export from Drive." },
-    { name: "Excel Online", icon: FileSpreadsheet, description: "Open and edit spreadsheets in the cloud." },
-  ];
 
   const audiences = [
     {
@@ -358,31 +348,7 @@ min={MIN_BULK_CREDITS}
           )}
         </MotionScrollSection>
 
-        <MotionScrollSection className="mb-14">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Integrations
-          </h2>
-          <p className="text-slate-300 text-center text-sm max-w-xl mx-auto mb-8">
-            VeloDoc fits into your ecosystem. More integrations are on the way.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {integrations.map(({ name, icon: Icon, description }) => (
-              <div
-                key={name}
-                className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 flex flex-col items-center text-center shadow-[0_8px_32px_rgba(15,23,42,0.4)] border-t-teal-accent/30"
-              >
-                <div className="w-12 h-12 rounded-xl bg-teal-accent/20 flex items-center justify-center mb-4">
-                  <Icon className="h-6 w-6 text-teal-accent" />
-                </div>
-                <h3 className="font-semibold text-white">{name}</h3>
-                <p className="text-slate-400 text-sm mt-1">{description}</p>
-                <span className="mt-4 inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-3 py-1 text-xs font-medium text-teal-accent">
-                  Coming Soon
-                </span>
-              </div>
-            ))}
-          </div>
-        </MotionScrollSection>
+        <IntegrationsSection />
 
         <MotionScrollSection className="text-center">
           <p className="text-sm text-slate-400 mb-4">Works with your favorite tools</p>

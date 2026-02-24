@@ -18,20 +18,28 @@ export async function GET(request: NextRequest) {
 
   const code = request.nextUrl.searchParams.get("code");
   const realmId = request.nextUrl.searchParams.get("realmId")?.trim() ?? null;
+
+  // Temporary: verify live Intuit callback receives code and realmId (remove after testing)
+  console.log("[quickbooks/callback] Intuit callback received:", {
+    hasCode: !!code?.trim(),
+    codeLength: code?.trim().length ?? 0,
+    realmId: realmId ?? "(none)",
+  });
+
   if (!code || !code.trim()) {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_code`);
   }
 
-  const clientId = process.env.QB_CLIENT_ID;
-  const clientSecret = process.env.QB_CLIENT_SECRET;
+  const clientId = process.env.QUICKBOOKS_CLIENT_ID;
+  const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=config`);
   }
 
   const redirectUri =
-    process.env.QB_REDIRECT_URI ??
+    process.env.QUICKBOOKS_REDIRECT_URI ??
     `${process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin}/api/quickbooks/callback`;
   const body = new URLSearchParams({
     grant_type: "authorization_code",
