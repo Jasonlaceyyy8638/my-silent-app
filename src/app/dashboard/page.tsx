@@ -204,7 +204,6 @@ export default function DashboardPage() {
           throw new Error(`${msg}${supabaseInfo} [HTTP ${res.status}]`);
         }
         if (data.extracted) {
-          setRows((prev) => [...prev, data.extracted as ExtractedRow]);
           if (typeof data.remaining === "number") setCredits(data.remaining);
           fetchSavedDocuments();
           fetchApiLogs();
