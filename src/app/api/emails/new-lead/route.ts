@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: SALES_INBOX,
-      reply_to: leadEmail,
+      replyTo: leadEmail,
       subject: `New Lead: ${name !== "—" ? name : leadEmail}`,
       text: `New lead\nEmail: ${leadEmail}\nName: ${name}\nSource: ${source}\nMessage: ${message}`,
       html,

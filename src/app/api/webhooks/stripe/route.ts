@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
       await resend.emails.send({
         from: BILLING_FROM,
         to: customerEmail,
-        reply_to: BILLING_REPLY_TO,
+        replyTo: BILLING_REPLY_TO,
         subject: "VeloDoc — Payment received",
         text: `Payment received. Plan: ${planLabel}. Amount: $${amountPaid}. Credits added: ${amount}. Thank you.`,
         html,

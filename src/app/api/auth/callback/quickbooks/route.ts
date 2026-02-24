@@ -17,7 +17,7 @@ async function sendErrorLogToAdmin(reason: string, detail: string, userId?: stri
     await resend.emails.send({
       from,
       to: ADMIN_EMAIL,
-      reply_to: process.env.REPLY_TO ?? "billing@velodoc.app",
+      replyTo: process.env.REPLY_TO ?? "billing@velodoc.app",
       subject: `[VeloDoc] QuickBooks callback error: ${reason}`,
       text: `QuickBooks OAuth callback failed.\nReason: ${reason}\nDetail: ${detail}\nUser ID: ${userId ?? "unknown"}\n`,
     });

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      reply_to: REPLY_TO,
+      replyTo: REPLY_TO,
       subject: body.subject ?? `Ticket Received – ${ticketId}`,
       text: `We've received your request. Reference: ${ticketId}. Our team will respond as soon as possible.`,
       html,

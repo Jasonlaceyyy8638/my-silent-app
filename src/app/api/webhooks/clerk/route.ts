@@ -235,7 +235,7 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: toEmail,
-      reply_to: REPLY_TO_EMAIL,
+      replyTo: REPLY_TO_EMAIL,
       subject: WELCOME_SUBJECT,
       text: textBody,
       html: htmlBody,

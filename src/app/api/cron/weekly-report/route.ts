@@ -169,7 +169,7 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
       await resend.emails.send({
         from: FROM_EMAIL,
         to: toEmail,
-        reply_to: replyTo,
+        replyTo,
         subject: `VeloDoc Weekly Sync Report – ${count} document(s)`,
         text: `Weekly QuickBooks sync report: ${count} document(s) with qb_sync_status = synced in the last 7 days. CSV attached.\n\nView Architectural Logs: ${ARCHITECTURAL_LOGS_URL}`,
         html: htmlBody,
