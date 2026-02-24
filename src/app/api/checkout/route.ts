@@ -63,8 +63,6 @@ export async function POST(request: NextRequest) {
       // default to starter
     }
 
-    const logoUrl = `${baseUrlClean}/logo-png.png`;
-
     // Use Netlify env Price IDs when set (firewalled tiers from VeloDoc Stripe account).
     const priceIdStarter = process.env.STRIPE_PRICE_ID_STARTER?.trim();
     const priceIdPro = process.env.STRIPE_PRICE_ID_PRO?.trim();
@@ -108,10 +106,6 @@ export async function POST(request: NextRequest) {
       cancel_url: baseUrlClean,
       subscription_data: {
         metadata: orgId && orgId.trim() ? { plan, userId, organizationId: orgId } : { plan, userId },
-      },
-      branding_settings: {
-        display_name: "VeloDoc",
-        logo: { type: "url", url: logoUrl },
       },
     };
 
