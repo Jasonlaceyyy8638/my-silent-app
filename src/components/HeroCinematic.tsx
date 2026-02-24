@@ -25,18 +25,18 @@ export function HeroCinematic() {
   }, []);
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col items-center justify-start overflow-hidden px-6 pt-6 sm:pt-8 pb-12 sm:pb-16">
+    <section className="relative min-h-[85vh] flex flex-col items-center justify-start overflow-hidden px-6 pt-8 pb-12 sm:pb-16">
       {/* Subtle looping background: gradient + animated lines */}
       <div className="absolute inset-0 bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/40" aria-hidden />
       <div className="absolute inset-0 hero-particles" aria-hidden />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.12),transparent)]" aria-hidden />
 
-      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-start w-full pt-4">
+      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-start w-full">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col items-center justify-center"
+          className="flex flex-col items-center justify-center mb-0"
         >
           <Image
             src="/logo-png.png"
@@ -49,7 +49,7 @@ export function HeroCinematic() {
 
         <motion.div
           ref={downloadRef}
-          className="hidden md:flex flex-col items-center justify-center mt-4 mb-4"
+          className="hidden md:flex flex-col items-center justify-center mt-2 mb-4"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
