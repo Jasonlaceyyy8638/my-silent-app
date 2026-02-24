@@ -6,7 +6,6 @@ import {
   SignedIn,
   SignedOut,
   UserButton,
-  OrganizationSwitcher,
 } from "@clerk/nextjs";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { Laptop } from "lucide-react";
@@ -24,8 +23,6 @@ const actionGroupAppearance = {
     ...clerkAppearance.elements,
     rootBox: "rounded-xl",
     card: "rounded-2xl border border-white/20 bg-[#0b172a]/95 backdrop-blur-xl border-t-[#22d3ee]/40 shadow-xl",
-    organizationSwitcherTrigger:
-      "rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-2.5 py-1.5 h-8 text-sm font-medium",
     avatarBox: "h-9 w-9",
     userButtonPopoverCard:
       "rounded-2xl border border-white/20 bg-[#0b172a]/95 backdrop-blur-xl border-t-[#22d3ee]/40 shadow-xl",
@@ -33,7 +30,8 @@ const actionGroupAppearance = {
 };
 
 /**
- * User Action Group: Buy Credits (primary CTA), Organization Switcher, User Profile.
+ * User Action Group: Buy Credits (primary CTA), User Profile.
+ * Organization switcher lives in WorkspaceBadge (left of navbar).
  * "Download Desktop" is in the User profile dropdown with a Laptop icon.
  */
 export function UserActions() {
@@ -46,16 +44,6 @@ export function UserActions() {
       >
         Buy Credits
       </Link>
-
-      {/* Org switcher between Buy Credits and User Profile (signed in only) */}
-      <SignedIn>
-        <OrganizationSwitcher
-          hidePersonal
-          afterCreateOrganizationUrl="/dashboard"
-          afterSelectOrganizationUrl="/dashboard"
-          appearance={actionGroupAppearance}
-        />
-      </SignedIn>
 
       <SignedOut>
         <SignInButton mode="modal">
