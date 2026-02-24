@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe } from "lucide-react";
+import { Download, Globe } from "lucide-react";
 
 const TRUST_SIGNALS = [
   { label: "Enterprise-Grade Security" },
@@ -131,6 +131,20 @@ export function Footer() {
             Contact
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-8">
+            <Link
+              href="/download"
+              className="hidden md:inline-flex items-center gap-2 text-[#22d3ee] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] border border-[#22d3ee]/50 hover:bg-[#22d3ee]/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-colors"
+              title="Download Desktop App"
+            >
+              <Download className="w-4 h-4 shrink-0" aria-hidden />
+              Download Desktop App
+            </Link>
+            <span
+              className="md:hidden inline-flex items-center gap-2 text-slate-500 text-sm py-3 px-4 rounded-xl border border-white/15"
+              title="Coming soon"
+            >
+              Get Mobile App <span className="text-[10px]">(Coming Soon)</span>
+            </span>
             <a
               href="mailto:sales@velodoc.app"
               className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"

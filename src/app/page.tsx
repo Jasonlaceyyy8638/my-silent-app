@@ -228,7 +228,7 @@ export default function Home() {
           </SignedOut>
         </MotionScrollSection>
 
-        <MotionScrollSection id="pricing" className="mb-14 scroll-mt-24">
+        <MotionScrollSection id="pricing" className="mb-14 scroll-mt-24 pb-24 md:pb-20">
           <h2 className="text-2xl font-bold text-white text-center mb-2">
             Monthly Subscription
           </h2>
@@ -238,7 +238,7 @@ export default function Home() {
           <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
             Three tiers with automation limits. Upgrade anytime.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-1 sm:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-1 sm:px-0 mb-12 md:mb-10">
             {PRICING_TIERS.map(({ plan, name, price, automationLimit, description, cta }) => (
               <div
                 key={plan}
@@ -307,68 +307,68 @@ export default function Home() {
             </p>
           )}
 
-          <section className="mt-12 max-w-4xl mx-auto px-1 sm:px-0" aria-labelledby="compare-tiers-heading">
+          <section className="mt-12 max-w-4xl mx-auto px-1 sm:px-0 mb-20 md:mb-16" aria-labelledby="compare-tiers-heading">
             <h2 id="compare-tiers-heading" className="text-xl font-bold text-white text-center mb-6">
               Compare Tiers
             </h2>
-            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl overflow-hidden border-t-teal-accent/30">
-              <table className="w-full text-left text-sm">
+            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl border-t-teal-accent/30 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full text-left text-sm min-w-[520px]">
                 <thead>
                   <tr className="border-b border-white/20 bg-white/5">
-                    <th className="px-4 py-3 text-slate-400 font-semibold uppercase tracking-wider">Feature</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium">Free</th>
-                    <th className="px-4 py-3 text-white font-medium">Starter</th>
-                    <th className="px-4 pt-6 pb-3 text-white font-medium border-l border-r border-[#22d3ee]/30 bg-[#22d3ee]/5 relative shadow-[inset_0_0_24px_rgba(34,211,238,0.06)]">
+                    <th className="sticky left-0 z-10 min-w-[120px] px-4 py-3 text-slate-400 font-semibold uppercase tracking-wider bg-[#0f172a]/95 backdrop-blur-sm border-r border-white/10">Feature</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium whitespace-nowrap md:whitespace-normal"><span className="md:hidden">Free</span><span className="hidden md:inline">Free</span></th>
+                    <th className="px-3 py-3 text-white font-medium whitespace-nowrap"><span className="md:hidden">Start</span><span className="hidden md:inline">Starter</span></th>
+                    <th className="px-3 pt-6 pb-3 text-white font-medium border-l border-r border-[#22d3ee]/30 bg-[#22d3ee]/5 relative shadow-[inset_0_0_24px_rgba(34,211,238,0.06)] whitespace-nowrap">
                       <span className="absolute top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2 py-0.5 text-[9px] font-medium text-[#22d3ee] uppercase tracking-wider whitespace-nowrap">
                         Popular
                       </span>
-                      Professional
+                      <span className="md:hidden">Pro</span><span className="hidden md:inline">Professional</span>
                     </th>
-                    <th className="px-4 py-3 text-white font-medium">Enterprise</th>
+                    <th className="px-3 py-3 text-white font-medium whitespace-nowrap"><span className="md:hidden">Ent</span><span className="hidden md:inline">Enterprise</span></th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">Extractions</td>
-                    <td className="px-4 py-3">5</td>
-                    <td className="px-4 py-3">20</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">50</td>
-                    <td className="px-4 py-3 text-teal-accent">Unlimited</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-white/[0.03] border-r border-white/10">Extractions</td>
+                    <td className="px-3 py-3">5</td>
+                    <td className="px-3 py-3">20</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">50</td>
+                    <td className="px-3 py-3 text-teal-accent">Unlimited</td>
                   </tr>
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">Data Retention</td>
-                    <td className="px-4 py-3">24-hr</td>
-                    <td className="px-4 py-3">Permanent</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">Permanent</td>
-                    <td className="px-4 py-3">Permanent</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-white/[0.03] border-r border-white/10">Data Retention</td>
+                    <td className="px-3 py-3">24-hr</td>
+                    <td className="px-3 py-3">Permanent</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">Permanent</td>
+                    <td className="px-3 py-3">Permanent</td>
                   </tr>
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">CSV / Excel Export</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3 text-teal-accent">✓</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
-                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-white/[0.03] border-r border-white/10">CSV / Excel Export</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3 text-teal-accent">✓</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
+                    <td className="px-3 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">QuickBooks Sync</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
-                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-white/[0.03] border-r border-white/10">QuickBooks Sync</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
+                    <td className="px-3 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">Dedicated Support</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
-                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-white/[0.03] border-r border-white/10">Dedicated Support</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
+                    <td className="px-3 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10 last:border-b-0">
-                    <td className="px-4 py-3 font-medium">Institutional API Access</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
-                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="sticky left-0 z-10 px-4 py-3 font-medium bg-slate-900/80 border-r border-white/10 backdrop-blur-sm">Institutional API Access</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3">—</td>
+                    <td className="px-3 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
+                    <td className="px-3 py-3 text-teal-accent">✓</td>
                   </tr>
                 </tbody>
               </table>

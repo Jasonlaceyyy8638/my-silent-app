@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SignedIn } from "@clerk/nextjs";
-import { ChevronDown, Users } from "lucide-react";
+import { ChevronDown, Download, Users } from "lucide-react";
 import { UserActions } from "@/components/UserActions";
 import { WorkspaceBadge } from "@/components/WorkspaceBadge";
 
@@ -118,7 +118,21 @@ export function Header() {
             </SignedIn>
           </nav>
         </div>
-        <div className="flex items-center shrink-0 min-w-0">
+        <div className="flex items-center shrink-0 min-w-0 gap-2">
+          <Link
+            href="/download"
+            className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#22d3ee] border border-[#22d3ee]/50 rounded-lg hover:bg-[#22d3ee]/10 hover:shadow-[0_0_16px_rgba(34,211,238,0.25)] transition-colors"
+            title="Download Desktop App"
+          >
+            <Download className="w-4 h-4" aria-hidden />
+            <span>Download Desktop App</span>
+          </Link>
+          <span
+            className="md:hidden inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 border border-white/15 rounded-lg cursor-default"
+            title="Coming soon"
+          >
+            Get Mobile App <span className="text-[10px] text-slate-500">(Coming Soon)</span>
+          </span>
           <UserActions />
         </div>
       </div>
