@@ -16,6 +16,8 @@ import {
   Users,
   ChevronRight,
   HelpCircle,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useOrganization, useUser } from "@clerk/nextjs";
@@ -136,6 +138,8 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<MeRole>(null);
   const [plan, setPlan] = useState<MePlan>("starter");
   const [qbUpsellOpen, setQbUpsellOpen] = useState(false);
+  const [billingPortalLoading, setBillingPortalLoading] = useState(false);
+  const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncSuccessToast, setSyncSuccessToast] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
@@ -171,6 +175,24 @@ export default function DashboardPage() {
 
   const handleJoinWaitlist = useCallback((id: string) => {
     setWaitlistJoined((prev) => new Set(prev).add(id));
+  }, []);
+
+  const handleManageBilling = useCallback(async () => {
+    setBillingPortalLoading(true);
+    setBillingPortalError(null);
+    try {
+      const res = await fetch("/api/portal", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      setBillingPortalError(data?.error ?? "Could not open billing portal.");
+    } catch {
+      setBillingPortalError("Could not open billing portal.");
+    } finally {
+      setBillingPortalLoading(false);
+    }
   }, []);
 
   const fetchCredits = useCallback(async () => {
@@ -654,13 +676,38 @@ export default function DashboardPage() {
                 <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
                   Invite team members, assign roles, and manage access. Built for enterprises that need audit trails and SSO.
                 </p>
-                <Link
-                  href="/settings/team"
-                  className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
-                >
-                  Open Team Settings
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    href="/settings/team"
+                    className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
+                  >
+                    Open Team Settings
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleManageBilling}
+                    disabled={billingPortalLoading}
+                    className="inline-flex items-center gap-2 rounded-xl bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-5 py-2.5 font-semibold transition-colors disabled:opacity-70 disabled:pointer-events-none"
+                  >
+                    {billingPortalLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                        Opening…
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4" aria-hidden />
+                        Manage Billing
+                      </>
+                    )}
+                  </button>
+                </div>
+                {billingPortalError && (
+                  <p className="mt-4 text-sm text-red-300 text-center" role="alert">
+                    {billingPortalError}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
                 <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">

@@ -27,10 +27,23 @@ const LOGO_URL = "https://velodoc.app/logo-png.png";
 const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
 const BILLING_REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 const ADMIN_EMAIL = process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
+const BILLING_NOTIFY_EMAIL = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
+
+function priceIdToPlanType(priceId: string | undefined): "starter" | "pro" | "enterprise" | null {
+  if (!priceId) return null;
+  const starter = process.env.STRIPE_PRICE_ID_STARTER?.trim();
+  const pro = process.env.STRIPE_PRICE_ID_PRO?.trim();
+  const enterprise = process.env.STRIPE_PRICE_ID_ENTERPRISE?.trim();
+  if (starter && priceId === starter) return "starter";
+  if (pro && priceId === pro) return "pro";
+  if (enterprise && priceId === enterprise) return "enterprise";
+  return null;
+}
 
 /**
  * Stripe webhook: signature-verified, ready for team-managed Stripe roles.
- * Handles checkout.session.completed (credits + billing receipt). Other event types acknowledged with 200.
+ * Handles checkout.session.completed (credits + billing receipt) and customer.subscription.updated (portal plan changes).
+ * Other event types acknowledged with 200.
  */
 export async function POST(request: NextRequest) {
   if (!webhookSecret) {
@@ -57,6 +70,66 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Webhook signature verification failed.";
     return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId = (subscription.metadata?.userId as string)?.trim();
+    const firstItem = subscription.items?.data?.[0];
+    const priceId = firstItem?.price?.id;
+    const planType = priceIdToPlanType(priceId);
+
+    if (userId && planType) {
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          const { data: existing } = await supabase
+            .from("profiles")
+            .select("plan_type")
+            .eq("user_id", userId)
+            .maybeSingle();
+          const previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
+          await supabase.from("profiles").upsert(
+            { user_id: userId, plan_type: planType },
+            { onConflict: "user_id" }
+          );
+          if (planType === "pro" || planType === "enterprise") {
+            try {
+              await supabase.from("plan_change_log").insert({
+                user_id: userId,
+                customer_email: null,
+                from_plan: previousPlan ?? null,
+                to_plan: planType,
+                stripe_session_id: subscription.id,
+              });
+            } catch {
+              // ignore
+            }
+          }
+          if (planType === "enterprise" && previousPlan !== "enterprise") {
+            const resendKey = process.env.RESEND_API_KEY;
+            if (resendKey) {
+              try {
+                const resend = new Resend(resendKey);
+                await resend.emails.send({
+                  from: BILLING_FROM,
+                  to: BILLING_NOTIFY_EMAIL,
+                  replyTo: BILLING_REPLY_TO,
+                  subject: "VeloDoc — User upgraded to Enterprise (high-touch support)",
+                  text: `A user has upgraded to Enterprise via the Customer Portal.\nSubscription: ${subscription.id}\nUser ID: ${userId}\nPrevious plan: ${previousPlan ?? "—"}\nPlease provide the high-touch support promised for Enterprise.`,
+                  html: `<p>A user has upgraded to <strong>Enterprise</strong> via the Customer Portal.</p><p><strong>Subscription:</strong> ${subscription.id}<br/><strong>User ID:</strong> ${userId}<br/><strong>Previous plan:</strong> ${previousPlan ?? "—"}</p><p>Please provide the high-touch support promised for Enterprise.</p>`,
+                });
+              } catch (err) {
+                console.error("Stripe webhook: Enterprise upgrade notification to Alissa failed", err);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Stripe webhook: customer.subscription.updated profiles update failed", err);
+        }
+      }
+    }
+    return NextResponse.json({ received: true });
   }
 
   if (event.type !== "checkout.session.completed") {
@@ -134,8 +207,14 @@ export async function POST(request: NextRequest) {
         .eq("user_id", userId)
         .maybeSingle();
       previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
+      const stripeCustomerId =
+        typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
       await supabase.from("profiles").upsert(
-        { user_id: userId, plan_type: planForTier },
+        {
+          user_id: userId,
+          plan_type: planForTier,
+          ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+        },
         { onConflict: "user_id" }
       );
     } catch (e) {
@@ -231,25 +310,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Notify Phillip McKenzie when an Enterprise subscription is initiated.
+  // Notify admin and Alissa when an Enterprise subscription is initiated (checkout or high-touch).
   if (planForTier === "enterprise" && resendKey) {
     const customerEmail =
       (session.customer_details?.email as string | undefined)?.trim() ??
       (session.customer_email as string | undefined)?.trim() ??
       "—";
     const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
+    const payload = {
+      from: BILLING_FROM as string,
+      replyTo: BILLING_REPLY_TO,
+      subject: "VeloDoc — Enterprise subscription initiated",
+      text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmail}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
+      html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmail}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
+    };
+    try {
+      const resend = new Resend(resendKey);
+      await resend.emails.send({ ...payload, to: ADMIN_EMAIL });
+    } catch (err) {
+      console.error("Stripe webhook: Enterprise notification to admin failed", err);
+    }
     try {
       const resend = new Resend(resendKey);
       await resend.emails.send({
-        from: BILLING_FROM,
-        to: ADMIN_EMAIL,
-        replyTo: BILLING_REPLY_TO,
-        subject: "VeloDoc — Enterprise subscription initiated",
-        text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmail}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
-        html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmail}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
+        ...payload,
+        to: BILLING_NOTIFY_EMAIL,
+        subject: "VeloDoc — Enterprise subscription initiated (high-touch support)",
       });
     } catch (err) {
-      console.error("Stripe webhook: Enterprise notification to admin failed", err);
+      console.error("Stripe webhook: Enterprise notification to Alissa failed", err);
     }
   }
 
