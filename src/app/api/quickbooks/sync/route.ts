@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
 
   const result = await syncDocumentToQuickBooks(documentId, {
     userId,
-    orgId,
-    orgRole,
+    orgId: orgId ?? null,
+    orgRole: orgRole ?? null,
     isAdmin,
     isEditor,
   });
