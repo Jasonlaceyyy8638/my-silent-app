@@ -29,14 +29,21 @@ export function HeroCinematic() {
           />
         </motion.div>
 
-        <motion.p
-          className="mb-2 text-base sm:text-lg font-semibold text-teal-accent"
+        <motion.div
+          className="mb-2 min-h-[1.75rem] flex items-center justify-center"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          Start Architecting for Free — Get 5 Credits on Signup
-        </motion.p>
+          <SignedOut>
+            <p className="text-base sm:text-lg font-semibold text-teal-accent">
+              Start Architecting for Free — Get 5 Credits on Signup
+            </p>
+          </SignedOut>
+          <SignedIn>
+            <p className="text-sm font-medium text-slate-400">Welcome back</p>
+          </SignedIn>
+        </motion.div>
 
         <motion.h1
           className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter text-white leading-[1.05]"
