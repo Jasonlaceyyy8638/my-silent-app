@@ -25,13 +25,13 @@ export function HeroCinematic() {
   }, []);
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-6 py-12 sm:py-16">
+    <section className="relative min-h-[85vh] flex flex-col items-center justify-start overflow-hidden px-6 pt-6 sm:pt-8 pb-12 sm:pb-16">
       {/* Subtle looping background: gradient + animated lines */}
       <div className="absolute inset-0 bg-gradient-to-br from-petroleum via-slate-900 to-teal-950/40" aria-hidden />
       <div className="absolute inset-0 hero-particles" aria-hidden />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.12),transparent)]" aria-hidden />
 
-      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-center w-full">
+      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-start w-full pt-4">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
@@ -49,7 +49,7 @@ export function HeroCinematic() {
 
         <motion.div
           ref={downloadRef}
-          className="hidden md:flex flex-col items-center justify-center mt-6 mb-4"
+          className="hidden md:flex flex-col items-center justify-center mt-4 mb-4"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -95,7 +95,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.div
-          className="mb-2 min-h-[1.75rem] flex items-center justify-center"
+          className="mt-4 mb-2 min-h-[1.75rem] flex items-center justify-center"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -111,7 +111,7 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.h1
-          className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tighter text-white leading-[1.05]"
+          className="mt-4 text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tighter text-white leading-[1.05]"
           initial={{ opacity: 0, y: 48 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
