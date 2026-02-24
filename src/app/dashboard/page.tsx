@@ -30,6 +30,8 @@ import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
 import type { MeRole, MePlan } from "@/app/api/me/route";
 import type { UserTierEntry } from "@/app/api/admin/user-tiers/route";
+import type { PlanChangeEntry } from "@/app/api/admin/plan-changes/route";
+import { planDisplayName } from "@/lib/plan-display";
 import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
 
 const CUSTOM_CATEGORIES_KEY = "velodoc_custom_categories";
@@ -129,6 +131,7 @@ export default function DashboardPage() {
   const [usage, setUsage] = useState<UsageEntry[]>([]);
   const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
   const [userTiers, setUserTiers] = useState<UserTierEntry[]>([]);
+  const [planChanges, setPlanChanges] = useState<PlanChangeEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<MeRole>(null);
   const [plan, setPlan] = useState<MePlan>("starter");
@@ -224,6 +227,17 @@ export default function DashboardPage() {
     }
   }, [userRole]);
 
+  const fetchPlanChanges = useCallback(async () => {
+    if (userRole !== "admin") return;
+    try {
+      const res = await fetch("/api/admin/plan-changes?limit=30");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.changes)) setPlanChanges(data.changes);
+    } catch {
+      setPlanChanges([]);
+    }
+  }, [userRole]);
+
   const fetchMe = useCallback(async () => {
     try {
       const res = await fetch("/api/me");
@@ -248,8 +262,9 @@ export default function DashboardPage() {
     if (userRole === "admin") {
       fetchApiLogs();
       fetchUserTiers();
+      fetchPlanChanges();
     }
-  }, [userRole, fetchApiLogs, fetchUserTiers]);
+  }, [userRole, fetchApiLogs, fetchUserTiers, fetchPlanChanges]);
 
   useEffect(() => {
     if (searchParams.get("sync") === "success") {
@@ -407,6 +422,9 @@ export default function DashboardPage() {
                 {tab === "integrations" && "Connect VeloDoc to your stack"}
                 {tab === "team" && "Manage your organization"}
               </p>
+              <span className="inline-flex mt-2 rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent" aria-label="Current plan">
+                Plan: {planDisplayName(plan)}
+              </span>
             </div>
             {credits !== null && tab === "architect" && (
               <p className="text-slate-300 flex items-center gap-2">
@@ -460,7 +478,7 @@ export default function DashboardPage() {
                           <span className="mt-3 inline-block rounded-full bg-lime-500/20 border border-lime-400/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-lime-300 w-fit">
                             Active
                           </span>
-                          {/* Professional and Enterprise tiers unlock QuickBooks sync */}
+                          {/* QuickBooks Sync button hidden unless plan_type is Professional or Enterprise */}
                           {(plan === "pro" || plan === "enterprise") ? (
                             <Link
                               href="/api/quickbooks/auth"
@@ -469,13 +487,16 @@ export default function DashboardPage() {
                               Connect
                             </Link>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => setQbUpsellOpen(true)}
-                              className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors"
-                            >
-                              Connect
-                            </button>
+                            <div className="mt-4 space-y-2">
+                              <p className="text-slate-500 text-xs">Upgrade to Professional or Enterprise to connect QuickBooks.</p>
+                              <button
+                                type="button"
+                                onClick={() => setQbUpsellOpen(true)}
+                                className="w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors"
+                              >
+                                Upgrade
+                              </button>
+                            </div>
                           )}
                         </>
                       ) : (
@@ -554,9 +575,47 @@ export default function DashboardPage() {
                               {entry.email ?? `${entry.user_id.slice(0, 12)}…`}
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="inline-flex rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent capitalize">
-                                {entry.plan_type}
+                              <span className="inline-flex rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent">
+                                {planDisplayName(entry.plan_type)}
                               </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+            {userRole === "admin" && (
+              <section className="mb-8 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/30">
+                <h2 className="text-lg font-semibold text-white mb-2">Recent plan changes (Pro / Enterprise)</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  Logged when a user upgrades to Pro or Enterprise so Phillip McKenzie can see new signups in his admin view.
+                </p>
+                {planChanges.length === 0 ? (
+                  <p className="text-slate-500 text-sm">No plan changes yet, or table not loaded.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-petroleum/40">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="px-4 py-3 text-slate-400 font-medium">Date</th>
+                          <th className="px-4 py-3 text-slate-400 font-medium">Email / User</th>
+                          <th className="px-4 py-3 text-slate-400 font-medium">From → To</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {planChanges.map((entry) => (
+                          <tr key={entry.id} className="border-b border-white/5 last:border-0">
+                            <td className="px-4 py-2.5 text-slate-300 whitespace-nowrap">
+                              {entry.created_at ? new Date(entry.created_at).toLocaleString() : "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-white font-mono truncate max-w-[200px]" title={entry.user_id}>
+                              {entry.customer_email ?? `${entry.user_id.slice(0, 10)}…`}
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-300">
+                              {(entry.from_plan ? planDisplayName(entry.from_plan) : "—")} → <span className="text-teal-accent font-medium">{planDisplayName(entry.to_plan)}</span>
                             </td>
                           </tr>
                         ))}

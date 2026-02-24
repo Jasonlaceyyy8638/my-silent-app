@@ -222,6 +222,7 @@ async function buildAndSendReport(
       });
       sent.push(toEmail);
       // Track monthly automation usage (reset automation_count in your billing cron)
+      // Connection audit: filter by email (recipient); cron uses getSupabase() service role for RLS.
       if (supabaseClient) {
         const { data: prof } = await supabaseClient.from("profiles").select("automation_count").eq("email", toEmail).maybeSingle();
         const current = (prof as { automation_count?: number } | null)?.automation_count ?? 0;

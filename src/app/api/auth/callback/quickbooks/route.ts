@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
   // Block starter plans from connecting QuickBooks; show upgrade modal on dashboard
   const supabaseForPlan = getSupabase();
   if (supabaseForPlan) {
+    // Connection audit: profiles filtered by user_id (RLS-compatible).
     const { data: profile } = await supabaseForPlan
       .from("profiles")
       .select("plan_type")

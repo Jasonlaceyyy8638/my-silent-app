@@ -32,6 +32,7 @@ export async function GET(request: Request) {
     let plan: MePlan = "starter";
     const supabase = getSupabase();
     if (supabase) {
+      // Connection audit: profiles filtered by user_id (RLS-compatible).
       const { data: profile } = await supabase
         .from("profiles")
         .select("plan_type")

@@ -1,5 +1,23 @@
 # Prisma + Supabase Postgres
 
+## Connection audit: `profiles` and RLS
+
+All `supabase.from('profiles')` calls in the Next.js app use `getSupabase()` (service role). Where access is per-user, queries filter by **user_id** so they align with RLS policies:
+
+| Location | Filter | Note |
+|----------|--------|------|
+| `/api/me` | `.eq("user_id", userId)` | Current user's plan_type |
+| `/api/webhooks/stripe` | `.eq("user_id", userId)` | Select + upsert by user_id |
+| `/api/auth/callback/quickbooks` | `.eq("user_id", userId)` | Select + upsert by user_id |
+| `/api/quickbooks/callback` | row contains user_id | Upsert by user_id |
+| `lib/quickbooks-sync.ts` | `.eq("user_id", userId)` | Select by user_id |
+| `/api/admin/user-tiers` | none | Admin list; service role |
+| `/api/cron/weekly-report` | `.eq("email", toEmail)` | Cron recipient by email |
+
+The UI displays the **Starter**, **Professional**, or **Enterprise** badge from the locked `plan_type` column via `/api/me` and `planDisplayName()`.
+
+---
+
 ## If you get P1000 (Authentication failed)
 
 Supabase recommends a **dedicated database user for Prisma** instead of the default `postgres` user. The pooler can reject `postgres` while accepting a custom user.
@@ -139,6 +157,13 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS automation_count integer DE
 
 - `plan_type`: 'starter' = manual PDF only; 'pro' and 'enterprise' = QuickBooks bridge + weekly CSV report.
 - `automation_count`: Tracks monthly automation usage. Reset each billing period in your own job or via Stripe webhook.
+
+### 7c. plan_type enum constraint and plan_change_log (migration)
+
+To enforce that `plan_type` only accepts `'starter'`, `'pro'`, or `'enterprise'`, and to add the `plan_change_log` table for Phillip's admin view, run the migration in **Supabase SQL Editor** (or apply `supabase/migrations/20250221000000_add_plan_type_and_constraints.sql`):
+
+- Adds `plan_type` if missing and adds `CHECK (plan_type IN ('starter', 'pro', 'enterprise'))`.
+- Creates `plan_change_log` (user_id, customer_email, from_plan, to_plan, stripe_session_id, created_at) so the Stripe webhook can log Pro/Enterprise upgrades for the admin view.
 
 ### 8. stripe_payments — for Phillip’s Monday morning CSV / weekly report
 

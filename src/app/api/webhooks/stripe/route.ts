@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { addCredits } from "@/lib/credits";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
+import { planDisplayName } from "@/lib/plan-display";
 import { getSupabase } from "@/lib/supabase";
 
 function getStripe(): Stripe | null {
@@ -69,7 +70,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing user" }, { status: 400 });
   }
 
-  const plan = (session.metadata?.plan as string) ?? "starter";
+  // Webhook mapping: Price IDs from Netlify env -> database plan_type values.
+  // STRIPE_PRICE_ID_STARTER -> 'starter'
+  // STRIPE_PRICE_ID_PRO -> 'pro'
+  // STRIPE_PRICE_ID_ENTERPRISE -> 'enterprise'
+  const priceIdStarter = process.env.STRIPE_PRICE_ID_STARTER?.trim();
+  const priceIdPro = process.env.STRIPE_PRICE_ID_PRO?.trim();
+  const priceIdEnterprise = process.env.STRIPE_PRICE_ID_ENTERPRISE?.trim();
+  let planFromPrice: "starter" | "pro" | "enterprise" | null = null;
+  try {
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const firstPriceId = lineItems.data[0]?.price?.id;
+    if (firstPriceId) {
+      if (priceIdStarter && firstPriceId === priceIdStarter) planFromPrice = "starter";
+      else if (priceIdPro && firstPriceId === priceIdPro) planFromPrice = "pro";
+      else if (priceIdEnterprise && firstPriceId === priceIdEnterprise) planFromPrice = "enterprise";
+    }
+  } catch (e) {
+    console.error("Stripe webhook: listLineItems failed", e);
+  }
+  const plan = (planFromPrice ?? (session.metadata?.plan as string) ?? "starter") as string;
   const metadataCredits = session.metadata?.credits;
   const fromMetadata =
     metadataCredits != null && String(metadataCredits).trim() !== ""
@@ -102,16 +122,41 @@ export async function POST(request: NextRequest) {
   }
 
   // Update profile tier so /api/me and QuickBooks access reflect the purchased plan.
+  // Connection audit: profiles filtered by user_id (RLS-compatible).
   const supabase = getSupabase();
-  const planForTier = (session.metadata?.plan as string) ?? plan;
+  const planForTier = (planFromPrice ?? (session.metadata?.plan as string) ?? plan) as string;
+  let previousPlan: string | null = null;
   if (supabase && (planForTier === "starter" || planForTier === "pro" || planForTier === "enterprise")) {
     try {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("plan_type")
+        .eq("user_id", userId)
+        .maybeSingle();
+      previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
       await supabase.from("profiles").upsert(
         { user_id: userId, plan_type: planForTier },
         { onConflict: "user_id" }
       );
     } catch (e) {
       console.error("Stripe webhook: profiles plan_type update failed", e);
+    }
+    // Team notification: log pro/enterprise updates for Phillip McKenzie's admin view.
+    if ((planForTier === "pro" || planForTier === "enterprise") && supabase) {
+      const customerEmail =
+        (session.customer_details?.email as string | undefined)?.trim() ??
+        (session.customer_email as string | undefined) ?? null;
+      try {
+        await supabase.from("plan_change_log").insert({
+          user_id: userId,
+          customer_email: customerEmail ?? null,
+          from_plan: previousPlan ?? null,
+          to_plan: planForTier,
+          stripe_session_id: session.id,
+        });
+      } catch (e) {
+        console.error("Stripe webhook: plan_change_log insert failed", e);
+      }
     }
   }
 
@@ -136,7 +181,7 @@ export async function POST(request: NextRequest) {
     (session.customer_email as string | undefined)?.trim();
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey && customerEmail) {
-    const planLabel = (session.metadata?.plan as string) ?? plan;
+    const planLabel = planDisplayName(planForTier);
     const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
     const billingSignature = getEmailSignature("billing");
     const html = `

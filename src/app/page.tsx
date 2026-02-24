@@ -25,6 +25,7 @@ import { TemplatesGallery } from "@/components/TemplatesGallery";
 import { SignupSection } from "@/components/SignupSection";
 import { AboutSection } from "@/components/AboutSection";
 import { IntegrationsSection } from "@/components/IntegrationsSection";
+import { planDisplayName } from "@/lib/plan-display";
 
 type Plan = "starter" | "pro" | "enterprise";
 
@@ -250,7 +251,7 @@ export default function Home() {
                   </span>
                 )}
                 <span className={`text-[10px] font-mono uppercase tracking-wider ${plan === "pro" ? "text-[#22d3ee]" : "text-slate-500"}`}>
-                  {plan}
+                  {planDisplayName(plan)}
                 </span>
                 <h3 className="text-lg font-semibold text-white mt-0.5">{name}</h3>
                 <p className="mt-1 text-3xl font-bold text-white">{price}</p>
@@ -268,7 +269,7 @@ export default function Home() {
                     }`}
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : plan === "pro" ? "Get Pro" : "Get Enterprise"}
+                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : plan === "pro" ? "Get Professional" : "Get Enterprise"}
                   </button>
                 ) : (
                   <a

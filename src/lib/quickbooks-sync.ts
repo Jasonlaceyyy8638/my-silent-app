@@ -98,6 +98,7 @@ export async function syncDocumentToQuickBooks(
     return { ok: false, error: "Service unavailable." };
   }
 
+  // Connection audit: profiles filtered by user_id (RLS-compatible).
   const profileRes = await supabase
     .from("profiles")
     .select("qb_access_token, qb_realm_id")

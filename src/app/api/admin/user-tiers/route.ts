@@ -11,6 +11,7 @@ export type UserTierEntry = {
 /**
  * GET: return all profiles with user_id, email, plan_type for admin visibility.
  * Phillip McKenzie (and any org admin) can see which tier each user is on in the master admin view.
+ * Connection audit: no user_id filter — intentional; uses getSupabase() (service role) so RLS allows admin list.
  */
 export async function GET() {
   const { userId, orgRole } = await auth();

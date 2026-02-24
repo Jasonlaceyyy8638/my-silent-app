@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download, Eye, History } from "lucide-react";
 import type { SyncedDocumentEntry, FailedSyncEntry } from "@/app/api/sync-history/route";
-import type { MeRole } from "@/app/api/me/route";
+import type { MeRole, MePlan } from "@/app/api/me/route";
 
 function escapeCsvCell(value: string): string {
   const s = String(value ?? "");
@@ -58,6 +58,7 @@ export default function SyncHistoryPage() {
   const [syncedDocuments, setSyncedDocuments] = useState<SyncedDocumentEntry[]>([]);
   const [failedSyncs, setFailedSyncs] = useState<FailedSyncEntry[]>([]);
   const [userRole, setUserRole] = useState<MeRole>(null);
+  const [plan, setPlan] = useState<MePlan>("starter");
   const [loading, setLoading] = useState(true);
   const [expandedFailedId, setExpandedFailedId] = useState<string | null>(null);
 
@@ -74,7 +75,10 @@ export default function SyncHistoryPage() {
         if (Array.isArray(historyData.syncedDocuments)) setSyncedDocuments(historyData.syncedDocuments);
         if (Array.isArray(historyData.failedSyncs)) setFailedSyncs(historyData.failedSyncs);
       }
-      if (meRes.ok && meData.role !== undefined) setUserRole(meData.role as MeRole);
+      if (meRes.ok) {
+        if (meData.role !== undefined) setUserRole(meData.role as MeRole);
+        if (meData.plan === "starter" || meData.plan === "pro" || meData.plan === "enterprise") setPlan(meData.plan);
+      }
     } catch {
       setSyncedDocuments([]);
       setFailedSyncs([]);
@@ -88,6 +92,7 @@ export default function SyncHistoryPage() {
   }, [fetchData]);
 
   const isAdmin = userRole === "admin";
+  const canExportWeeklyCsv = isAdmin || plan === "enterprise";
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
@@ -123,7 +128,7 @@ export default function SyncHistoryPage() {
                   <h2 className="text-lg font-semibold text-white">Synced to QuickBooks</h2>
                   <p className="text-slate-400 text-xs mt-0.5">Documents with qb_sync_status = synced</p>
                 </div>
-                {isAdmin && (
+                {canExportWeeklyCsv && (
                   <button
                     type="button"
                     onClick={() => exportSyncHistoryToCSV(syncedDocuments)}
