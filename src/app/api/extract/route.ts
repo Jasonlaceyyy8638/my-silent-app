@@ -200,6 +200,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Low Credit alert for Enterprise: notify Alissa so she can offer bulk credit packages.
+    if (result.remaining <= 5 && supabase) {
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("plan_type")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const planType = (profile as { plan_type?: string } | null)?.plan_type ?? null;
+        if (planType === "enterprise") {
+          const resendKey = process.env.RESEND_API_KEY;
+          const billingNotify = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
+          const billingFrom = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
+          if (resendKey) {
+            const resend = new Resend(resendKey);
+            await resend.emails.send({
+              from: billingFrom,
+              to: billingNotify,
+              subject: "VeloDoc — Low Credit alert (Enterprise user)",
+              text: `Enterprise user ${userId} has ${result.remaining} credits remaining. Consider reaching out to offer bulk credit packages.`,
+              html: `<p>Enterprise user <strong>${userId}</strong> has <strong>${result.remaining}</strong> credits remaining.</p><p>Consider reaching out to offer bulk credit packages.</p>`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[extract] Low Credit (Enterprise) notification failed:", err);
+      }
+    }
+
     if (!text) {
       await addCreditsForAuth(userId, creditsNeeded, orgId);
       await insertApiLog(supabase, {

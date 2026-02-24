@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   FileUp,
@@ -142,9 +142,15 @@ export default function DashboardPage() {
   const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncSuccessToast, setSyncSuccessToast] = useState(false);
+  const [showLowCreditPopup, setShowLowCreditPopup] = useState(false);
+  const lowCreditPopupShownRef = useRef(false);
   const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
   const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories(orgId));
   const searchParams = useSearchParams();
+
+  const isPaidPlan = plan === "starter" || plan === "pro" || plan === "enterprise";
+  const LOW_CREDIT_THRESHOLD = 5;
+  const LOW_CREDIT_SESSION_KEY = "velodoc_low_credit_popup_shown";
 
   const isPhillipMcKenzie = userRole === "admin" && userEmail === TEAM_ADMIN_EMAIL;
   const isAlissaWilson = userRole === "admin" && userEmail === TEAM_BILLING_EMAIL;
@@ -279,6 +285,22 @@ export default function DashboardPage() {
     fetchSavedDocuments();
     fetchMe();
   }, [fetchCredits, fetchSavedDocuments, fetchMe]);
+
+  // Low Credit warning: once per session, only for paid subscribers when balance < 5
+  useEffect(() => {
+    if (
+      credits !== null &&
+      credits < LOW_CREDIT_THRESHOLD &&
+      isPaidPlan &&
+      !lowCreditPopupShownRef.current &&
+      typeof window !== "undefined" &&
+      !sessionStorage.getItem(LOW_CREDIT_SESSION_KEY)
+    ) {
+      lowCreditPopupShownRef.current = true;
+      sessionStorage.setItem(LOW_CREDIT_SESSION_KEY, "1");
+      setShowLowCreditPopup(true);
+    }
+  }, [credits, isPaidPlan]);
 
   useEffect(() => {
     if (userRole === "admin") {
@@ -431,6 +453,13 @@ export default function DashboardPage() {
               <HelpCircle className="h-5 w-5 flex-shrink-0" aria-hidden />
               Help
             </a>
+            <a
+              href="mailto:support@velodoc.app?subject=Credit%20Top-up"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors w-full whitespace-nowrap"
+              title="Credit Top-ups — Sharon Ferguson, support@velodoc.app"
+            >
+              Credit Top-ups
+            </a>
           </nav>
         </aside>
         <div className="flex-1 mx-auto w-full max-w-4xl px-6 py-8 md:py-12">
@@ -444,21 +473,28 @@ export default function DashboardPage() {
                 {tab === "integrations" && "Connect VeloDoc to your stack"}
                 {tab === "team" && "Manage your organization"}
               </p>
-              <span className="inline-flex mt-2 rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent" aria-label="Current plan">
-                Plan: {planDisplayName(plan)}
-              </span>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="inline-flex rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent" aria-label="Current plan">
+                  Plan: {planDisplayName(plan)}
+                </span>
+                {credits !== null && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                    Credit balance: <span className="font-semibold text-teal-accent tabular-nums">{credits}</span>
+                    <button
+                      type="button"
+                      onClick={() => fetchCredits()}
+                      className="text-slate-500 hover:text-teal-accent text-xs underline"
+                      aria-label="Refresh credit balance"
+                    >
+                      Refresh
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
-            {credits !== null && tab === "architect" && (
-              <p className="text-slate-300 flex items-center gap-2">
-                <span className="font-medium text-teal-accent">{credits}</span>
-                credits
-                <button
-                  type="button"
-                  onClick={() => fetchCredits()}
-                  className="text-slate-500 hover:text-teal-accent text-xs underline"
-                >
-                  Refresh
-                </button>
+            {credits !== null && (plan === "starter" || plan === "pro" || plan === "enterprise") && credits < 1 && (
+              <p className="text-slate-300 text-sm flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-3 py-2" role="status">
+                Infrastructure Active. Please add credits to resume processing.
               </p>
             )}
           </div>
@@ -802,7 +838,9 @@ export default function DashboardPage() {
                 {credits !== null && credits < 1 && (
                   <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <p className="text-amber-200 text-sm font-medium">
-                      Insufficient credits. Add credits to extract documents.
+                      {(plan === "starter" || plan === "pro" || plan === "enterprise")
+                        ? "Infrastructure Active. Please add credits to resume processing."
+                        : "Insufficient credits. Add credits to extract documents."}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <Link
@@ -940,6 +978,52 @@ export default function DashboardPage() {
                 aria-live="polite"
               >
                 VeloDoc is now architecting your QuickBooks data
+              </div>
+            )}
+
+            {showLowCreditPopup && credits !== null && isPaidPlan && credits < LOW_CREDIT_THRESHOLD && (
+              <div
+                className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4 rounded-2xl border border-amber-500/40 bg-slate-900/98 backdrop-blur-xl shadow-[0_8px_32px_rgba(15,23,42,0.5)] border-t-teal-accent/30"
+                role="alert"
+                aria-live="polite"
+              >
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-white uppercase tracking-wider text-slate-200">
+                        Low Balance
+                      </h3>
+                      <p className="mt-2 text-slate-300 text-sm leading-relaxed">
+                        You have {credits} extraction{credits === 1 ? "" : "s"} remaining. Add credits to avoid service interruption.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowLowCreditPopup(false)}
+                      className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                      aria-label="Dismiss"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-4 py-2.5 text-sm transition-colors"
+                    >
+                      Purchase Credits
+                    </Link>
+                    {plan === "enterprise" && credits === 0 && (
+                      <a
+                        href="mailto:support@velodoc.app?subject=Bulk%20credit%20top-up%20(Enterprise)"
+                        className="inline-flex items-center justify-center rounded-xl border border-white/20 hover:bg-white/10 text-slate-200 font-medium px-4 py-2.5 text-sm transition-colors"
+                        title="Sharon Ferguson — support@velodoc.app"
+                      >
+                        Contact Support
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

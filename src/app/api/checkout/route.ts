@@ -13,19 +13,19 @@ function getStripe(): Stripe | null {
 const PLANS = {
   starter: {
     name: "Starter — Monthly",
-    description: "Subscription for VeloDoc Starter access. Credits sold separately.",
+    description: "VeloDoc Starter - Platform Access & Support. Credits not included.",
     unit_amount: 2900, // $29
     quantity: 1,
   },
   pro: {
     name: "Professional — Monthly",
-    description: "Subscription for VeloDoc Professional access. Credits sold separately.",
+    description: "VeloDoc Professional - Platform Access & Support. Credits not included.",
     unit_amount: 7900, // $79
     quantity: 1,
   },
   enterprise: {
     name: "Enterprise — Monthly",
-    description: "Subscription for VeloDoc Enterprise access. Credits sold separately.",
+    description: "VeloDoc Enterprise - Platform Access & Support. Credits not included.",
     unit_amount: 24900, // $249
     quantity: 1,
   },

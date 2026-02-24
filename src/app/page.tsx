@@ -10,7 +10,6 @@ import {
   Home as HomeIcon,
   GraduationCap,
   Truck,
-  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
@@ -234,7 +233,7 @@ export default function Home() {
             Monthly Subscription
           </h2>
           <p className="text-amber-200/90 text-center text-sm max-w-xl mx-auto mb-2 px-2" role="status">
-            Plans provide platform access and integrations. Document processing requires a separate credit balance.
+            Platform Note: Plans provide infrastructure and integrations. Credits are purchased separately for document extractions.
           </p>
           <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
             Three tiers with automation limits. Upgrade anytime.
@@ -260,13 +259,21 @@ export default function Home() {
                 <h3 className="text-lg font-semibold text-white mt-0.5">{name}</h3>
                 <p className="mt-1 text-3xl font-bold text-white">{price}</p>
                 <p className="text-slate-300 text-sm mt-1 font-medium">{automationLimit}</p>
-                <p className="text-slate-400 text-sm mt-2 flex-1">{description}</p>
-                {(plan === "pro" || plan === "enterprise") && (
-                  <p className="text-slate-500 text-xs mt-2 flex items-start gap-1.5" title="Credits are consumed per extraction.">
-                    <Info className="h-3.5 w-3.5 text-teal-accent/70 flex-shrink-0 mt-0.5" aria-hidden />
-                    <span>QuickBooks bridge unlocked; credits still consumed per extraction.</span>
-                  </p>
-                )}
+                <p className="text-slate-400 text-sm mt-2 flex-1">
+                  {plan === "pro" && (
+                    <>
+                      <span title="Integration unlocked; extraction still consumes credits." className="border-b border-dotted border-slate-500 cursor-help">QuickBooks Bridge</span>
+                      {" "}+ weekly CSV report. 50 automations/month.
+                    </>
+                  )}
+                  {plan === "enterprise" && (
+                    <>
+                      Full access, dedicated support, unlimited automations.{" "}
+                      <span title="Integration unlocked; extraction still consumes credits." className="border-b border-dotted border-slate-500 cursor-help">QuickBooks Bridge</span> included.
+                    </>
+                  )}
+                  {plan === "starter" && description}
+                </p>
                 {cta === "checkout" ? (
                   <button
                     type="button"
