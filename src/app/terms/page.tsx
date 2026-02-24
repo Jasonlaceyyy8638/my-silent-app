@@ -10,6 +10,8 @@ const TOC_ITEMS = [
   { id: "credit-usage", label: "Credit Usage Policy" },
   { id: "fair-use", label: "Enterprise Fair Use" },
   { id: "acceptable-use", label: "Acceptable Use" },
+  { id: "intuit-data", label: "Intuit / QuickBooks Data" },
+  { id: "institutional-management", label: "Institutional Management" },
   { id: "limit-of-liability", label: "Liability & Accuracy" },
   { id: "general", label: "General" },
 ] as const;
@@ -121,10 +123,43 @@ export default function TermsPage() {
                   </p>
                 </section>
 
+                <section id="intuit-data" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    5. Intuit / QuickBooks Data
+                  </h2>
+                  <div className="rounded-xl border border-teal-accent/20 bg-teal-accent/5 p-4 mb-4 print:border-slate-300 print:bg-slate-50">
+                    <p className="text-slate-200 text-sm font-medium mb-1 print:text-slate-800">
+                      No Third-Party Sharing
+                    </p>
+                    <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
+                      We do not share your data with third parties. When you use QuickBooks integration, we store only the tokens and identifiers required to perform the sync. We do not sell, rent, or disclose your Intuit data, extracted document data, or personally identifiable information to third parties for marketing, advertising, or any other purpose. Data sent to Intuit is limited to what you explicitly authorize (e.g. creating a Bill in your QuickBooks company).
+                    </p>
+                  </div>
+                </section>
+
+                <section id="institutional-management" className="scroll-mt-28">
+                  <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
+                    6. Institutional Management
+                  </h2>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4 print:text-slate-700">
+                    For organizations, we provide role-based access and data permissions to support institutional control over financial and document data:
+                  </p>
+                  <ul className="space-y-2 text-sm text-slate-300 list-disc pl-6 print:text-slate-700">
+                    <li><strong className="text-white/90 print:text-slate-900">Admins</strong> have full access to credits, team management, all organization documents, sync history, API logs, and exports.</li>
+                    <li><strong className="text-white/90 print:text-slate-900">Editors</strong> can upload, edit all org documents, and delete only their own uploads; they can trigger QuickBooks sync for documents they are permitted to edit.</li>
+                    <li><strong className="text-white/90 print:text-slate-900">Viewers</strong> have read-only access; they cannot edit, delete, or sync.</li>
+                  </ul>
+                  <p className="text-slate-300 text-sm leading-relaxed mt-4 print:text-slate-700">
+                    Data visibility and export are restricted by role so that only authorized users access or export organizational data, in line with institutional management and compliance expectations.
+                  </p>
+                </section>
+
                 <section id="limit-of-liability" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    5. Liability &amp; Accuracy
+                    7. Liability &amp; Accuracy
                   </h2>
                   <div className="rounded-xl border border-teal-accent/20 bg-teal-accent/5 p-4 mb-4 print:border-slate-300 print:bg-slate-50">
                     <p className="text-slate-200 text-sm font-medium mb-1 print:text-slate-800">
@@ -145,7 +180,7 @@ export default function TermsPage() {
                 <section id="general" className="scroll-mt-28">
                   <h2 className="text-lg font-semibold text-white print:text-slate-900 mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-teal-accent shrink-0" aria-hidden />
-                    6. General
+                    8. General
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
                     We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. For questions, contact us at support@velodoc.app. Our{" "}

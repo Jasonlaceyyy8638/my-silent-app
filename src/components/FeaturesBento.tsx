@@ -7,7 +7,7 @@ import { Zap, CheckCircle, Plug, Play, Volume2 } from "lucide-react";
 const FEATURES = [
   {
     icon: Zap,
-    title: "Institutional Speed",
+    title: "Enterprise-Grade Speed",
     description: "Extract 100 pages in under 60 seconds. Batch process without waiting.",
     span: 2 as const,
   },
@@ -123,6 +123,9 @@ export function FeaturesBento() {
               preload="auto"
               className="w-full h-full object-cover"
             />
+            <p className="absolute bottom-0 left-0 right-0 py-2 px-3 text-center text-xs font-medium text-white/90 bg-gradient-to-t from-black/70 to-transparent rounded-b-xl">
+              Any Paper-to-Digital Workflow
+            </p>
             {isInView && !audioUnlocked && (
               <button
                 type="button"

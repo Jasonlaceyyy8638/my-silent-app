@@ -17,16 +17,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_URL = "https://velodoc.app";
-const OG_TITLE = "VeloDoc | The Universal AI PDF Architect";
+const OG_TITLE = "VeloDoc | Enterprise-Grade Universal Data Engine";
 const OG_DESCRIPTION =
-  "Stop manual data entry. Our AI understands the context of your invoices, contracts, and records—so you don't have to.";
+  "The Universal Data Engine for messy documents. Enterprise-grade extraction with nationwide compliance—BOLs, contracts, intake forms, and any paper-to-digital workflow.";
 const OG_IMAGE = "/logo-png.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "VeloDoc – Your PDFs, finally organized.",
+  title: "VeloDoc – Enterprise-Grade Universal Data Engine",
   description:
-    "The AI Architect for your documents. From invoices to medical records, transcripts, and contracts—VeloDoc reads any PDF and hands you the data you need.",
+    "Enterprise-grade document architecture with nationwide compliance. Turn any PDF—invoices, BOLs, contracts, intake forms—into structured data with the Universal Data Engine.",
   openGraph: {
     title: OG_TITLE,
     description: OG_DESCRIPTION,
@@ -37,10 +37,10 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "VeloDoc – The Universal AI PDF Architect",
+        alt: "VeloDoc – Enterprise-Grade Universal Data Engine",
       },
     ],
-    locale: "en_US",
+    locale: "en",
     type: "website",
   },
   twitter: {

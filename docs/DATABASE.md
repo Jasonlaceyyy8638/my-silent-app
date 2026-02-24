@@ -84,6 +84,36 @@ If you already have a `documents` table without `org_id`, add it: `ALTER TABLE p
 
 The app inserts into this table when Supabase is configured. When the user is in an organization, `org_id` is set so documents can be listed and managed org-wide (Admin/Editor roles). If the table doesn't exist, extraction still works and data is returned to the browser; you'll see a note that cloud save was skipped.
 
+### 6. Optional: documents.updated_at for weekly sync report
+
+For the weekly cron report to filter by “synced in the last 7 days,” add:
+
+```sql
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT NOW();
+```
+
+The app sets `updated_at` when a document is marked as synced to QuickBooks. If the column is missing, the weekly report falls back to `created_at`.
+
+### 7. Optional: profiles.email for weekly report recipient
+
+To send the weekly CSV to an admin email from the database instead of env:
+
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
+```
+
+Then set `email` on the profile that should receive the report. Otherwise set `WEEKLY_REPORT_EMAIL` in your environment.
+
+### 8. Optional: api_logs columns for QuickBooks sync troubleshooting
+
+To store failed sync details and show them on the Sync History page (Admin Eye icon), add optional columns to `api_logs`:
+
+```sql
+ALTER TABLE public.api_logs ADD COLUMN IF NOT EXISTS document_id text;
+ALTER TABLE public.api_logs ADD COLUMN IF NOT EXISTS intuit_tid text;
+ALTER TABLE public.api_logs ADD COLUMN IF NOT EXISTS error_message text;
+```
+
 ### Session pooler format (reference)
 
 - **User:** `prisma.[project-ref]` (e.g. `prisma.hupsfpzhdrkmvlskqxbg`)

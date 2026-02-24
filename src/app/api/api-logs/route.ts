@@ -12,11 +12,17 @@ export type ApiLogEntry = {
 
 /**
  * GET: return api_logs for the current user (and their active org) for the Security Log dashboard section.
+ * Only Admins can see the full api_logs table; Editors and Viewers receive an empty list (403 for explicit denial).
  */
 export async function GET() {
-  const { userId, orgId } = await auth();
+  const { userId, orgId, orgRole } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  const isAdmin = orgRole === "org:admin" || orgRole === "admin";
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Only Admins can view API logs", logs: [] }, { status: 403 });
   }
 
   const supabase = getSupabase();

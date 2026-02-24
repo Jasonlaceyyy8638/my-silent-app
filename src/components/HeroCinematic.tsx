@@ -46,12 +46,12 @@ export function HeroCinematic() {
         </motion.div>
 
         <motion.h1
-          className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter text-white leading-[1.05]"
+          className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tighter text-white leading-[1.05]"
           initial={{ opacity: 0, y: 48 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          Architect Your Data
+          The Universal AI Engine for Messy Data
         </motion.h1>
 
         <motion.p
@@ -60,8 +60,19 @@ export function HeroCinematic() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.9 }}
         >
-          VeloDoc is the enterprise AI that turns unstructured PDFs into structured, queryable data—invoices, BOLs, contracts, and transcripts—with one-click export.
+          Architect your documents—BOLs, contracts, forms, and any paper-to-digital workflow—into structured, queryable data with one-click export.
         </motion.p>
+
+        <motion.div
+          className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1 }}
+        >
+          <span className="rounded-full border border-[#22d3ee]/40 bg-[#22d3ee]/10 px-3 py-1 text-[#22d3ee] font-medium">BOLs</span>
+          <span className="rounded-full border border-[#22d3ee]/40 bg-[#22d3ee]/10 px-3 py-1 text-[#22d3ee] font-medium">Contracts</span>
+          <span className="rounded-full border border-[#22d3ee]/40 bg-[#22d3ee]/10 px-3 py-1 text-[#22d3ee] font-medium">Forms</span>
+        </motion.div>
 
         <motion.div
           className="mt-8 flex flex-col items-center gap-3"
@@ -85,7 +96,7 @@ export function HeroCinematic() {
               Create Free Account
             </Link>
             <p className="text-slate-400 text-sm text-center max-w-md">
-              No credit card required. Experience institutional-grade extraction in seconds.
+              No credit card required. Enterprise-grade extraction with nationwide compliance.
             </p>
           </SignedOut>
         </motion.div>

@@ -25,6 +25,7 @@ import { HeroCinematic } from "@/components/HeroCinematic";
 import { ComparisonSection } from "@/components/ComparisonSection";
 import { FeaturesBento } from "@/components/FeaturesBento";
 import { IndustrySwitcher } from "@/components/IndustrySwitcher";
+import { TemplatesGallery } from "@/components/TemplatesGallery";
 import { SignupSection } from "@/components/SignupSection";
 import { AboutSection } from "@/components/AboutSection";
 
@@ -115,7 +116,7 @@ export default function Home() {
     {
       icon: Truck,
       title: "Logistics & Trade",
-      description: "Automate invoices, BOLs, and work orders.",
+      description: "Architect BOLs, rate confirmations, and shipping documents.",
     },
   ];
 
@@ -130,7 +131,7 @@ export default function Home() {
 
         <MotionScrollSection className="mb-14 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 border-t-teal-accent/30">
           <p className="text-center text-slate-200 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
-            <span className="text-white font-semibold">What it does:</span> VeloDoc is an AI Architect that turns complex PDFs into structured data for QuickBooks, Excel, and Zapier.
+            <span className="text-white font-semibold">What it does:</span> VeloDoc is the Enterprise-Grade Universal Data Engine—turning any PDF into structured data with nationwide compliance. QuickBooks, Sheets, Slack, and more.
           </p>
         </MotionScrollSection>
 
@@ -142,6 +143,10 @@ export default function Home() {
 
         <MotionScrollSection className="mb-14">
           <IndustrySwitcher />
+        </MotionScrollSection>
+
+        <MotionScrollSection className="mb-14">
+          <TemplatesGallery />
         </MotionScrollSection>
 
         <MotionScrollSection className="mb-14">
@@ -158,7 +163,7 @@ export default function Home() {
               <FileUp className="h-10 w-10 text-teal-accent mb-3" />
               <h3 className="font-semibold text-white">Upload</h3>
               <p className="text-sm text-slate-300 mt-2">
-                Drop any PDF—invoices, contracts, records, or quotes.
+                BOLs, contracts, forms—any document type.
               </p>
             </div>
             <div className="flex flex-col items-center text-center p-5 rounded-xl bg-white/5 border border-white/10 w-full max-w-[260px]">
@@ -208,12 +213,12 @@ export default function Home() {
             <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 text-center border-t-teal-accent/30">
               <p className="text-4xl sm:text-5xl font-extrabold text-teal-accent tabular-nums">2M+</p>
               <p className="text-slate-300 font-medium mt-2">Documents Processed</p>
-              <p className="text-slate-500 text-sm mt-1">Across enterprises and teams</p>
+              <p className="text-slate-500 text-sm mt-1">Enterprise-grade, nationwide</p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 text-center border-t-teal-accent/30">
               <p className="text-4xl sm:text-5xl font-extrabold text-teal-accent tabular-nums">500K+</p>
               <p className="text-slate-300 font-medium mt-2">Hours Saved</p>
-              <p className="text-slate-500 text-sm mt-1">Estimated annualized</p>
+              <p className="text-slate-500 text-sm mt-1">Universal Data Engine at scale</p>
             </div>
           </div>
         </MotionScrollSection>

@@ -12,6 +12,10 @@ export type DocumentWithRow = {
   credit_cost?: number;
   /** Uploader's user id (for role-based delete: Editors can only delete own uploads). */
   user_id: string;
+  /** QuickBooks sync state: 'synced' when pushed to QB; otherwise absent or pending. */
+  qb_sync_status?: string | null;
+  /** QuickBooks Bill Id after successful sync. */
+  intuit_tid?: string | null;
 };
 
 /**
@@ -32,7 +36,7 @@ export async function GET() {
   try {
     let query = supabase
       .from("documents")
-      .select("id, user_id, extracted_data, file_name, created_at, page_count, credit_cost, org_id")
+      .select("id, user_id, extracted_data, file_name, created_at, page_count, credit_cost, org_id, qb_sync_status, intuit_tid")
       .order("created_at", { ascending: false });
 
     if (orgId && String(orgId).trim()) {
@@ -50,7 +54,7 @@ export async function GET() {
       if ((error.message ?? "").includes("org_id") || (error.message ?? "").includes("column")) {
         const fallback = await supabase
           .from("documents")
-          .select("id, user_id, extracted_data, file_name, created_at, page_count, credit_cost")
+          .select("id, user_id, extracted_data, file_name, created_at, page_count, credit_cost, qb_sync_status, intuit_tid")
           .eq("user_id", userId)
           .order("created_at", { ascending: false });
         if (!fallback.error && fallback.data) {
@@ -65,6 +69,8 @@ export async function GET() {
               page_count: r.page_count,
               credit_cost: r.credit_cost,
               user_id: (r as { user_id?: string }).user_id ?? userId,
+              qb_sync_status: (r as { qb_sync_status?: string | null }).qb_sync_status ?? null,
+              intuit_tid: (r as { intuit_tid?: string | null }).intuit_tid ?? null,
             }));
           const usage = raw.map((r) => ({
             file_name: r.file_name ?? "Document",
@@ -89,6 +95,8 @@ export async function GET() {
         page_count: r.page_count,
         credit_cost: r.credit_cost,
         user_id: (r as { user_id?: string }).user_id ?? userId,
+        qb_sync_status: (r as { qb_sync_status?: string | null }).qb_sync_status ?? null,
+        intuit_tid: (r as { intuit_tid?: string | null }).intuit_tid ?? null,
       }));
 
     const usage = raw.map((r) => ({

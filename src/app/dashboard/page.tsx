@@ -9,20 +9,47 @@ import {
   FileText,
   Layers,
   Clock,
+  History,
   Plug,
   LayoutGrid,
   Users,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { useOrganization } from "@clerk/nextjs";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
+import { DashboardCategorySidebar, type FolderId } from "@/components/DashboardCategorySidebar";
 import { UsageHistory, type UsageEntry } from "@/components/UsageHistory";
 import { SecurityLog, type SecurityLogEntry } from "@/components/SecurityLog";
 import { QuickBooksIcon, ExcelIcon, ZapierIcon, GoogleDriveIcon } from "@/components/integration-icons";
+import { identifyDocumentType } from "@/lib/identify-document-type";
 import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
 import type { MeRole } from "@/app/api/me/route";
+
+const CUSTOM_CATEGORIES_KEY = "velodoc_custom_categories";
+function getCustomCategoriesStorageKey(orgId: string | null): string {
+  return orgId ? `${CUSTOM_CATEGORIES_KEY}_${orgId}` : `${CUSTOM_CATEGORIES_KEY}_personal`;
+}
+function loadCustomCategories(orgId: string | null): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(getCustomCategoriesStorageKey(orgId));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function saveCustomCategories(orgId: string | null, list: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(getCustomCategoriesStorageKey(orgId), JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
 
 type DashboardTab = "architect" | "integrations" | "team";
 
@@ -73,7 +100,16 @@ const GETTING_STARTED_STEPS = [
   },
 ] as const;
 
+function getDocumentCategory(doc: DocumentWithRow): string {
+  const cat = doc.extracted_data?.category;
+  if (cat) return cat;
+  return identifyDocumentType(doc.extracted_data?.documentType);
+}
+
 export default function DashboardPage() {
+  const { organization } = useOrganization();
+  const orgId = organization?.id ?? null;
+
   const [tab, setTab] = useState<DashboardTab>("architect");
   const [waitlistJoined, setWaitlistJoined] = useState<Set<string>>(new Set());
   const [documents, setDocuments] = useState<DocumentWithRow[]>([]);
@@ -85,8 +121,33 @@ export default function DashboardPage() {
   const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<MeRole>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
+  const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories(orgId));
+
+  useEffect(() => {
+    setCustomCategories(loadCustomCategories(orgId));
+  }, [orgId]);
+
   const rows = useMemo(() => documents.map((d) => d.extracted_data), [documents]);
   const stats = useUsageStats(rows, credits);
+
+  const documentCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: documents.length };
+    for (const doc of documents) {
+      const cat = getDocumentCategory(doc);
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    for (const name of customCategories) {
+      if (counts[name] == null) counts[name] = 0;
+    }
+    return counts;
+  }, [documents, customCategories]);
+
+  const filteredDocuments = useMemo(() => {
+    if (selectedFolder === "all") return documents;
+    return documents.filter((d) => getDocumentCategory(d) === selectedFolder);
+  }, [documents, selectedFolder]);
 
   const handleJoinWaitlist = useCallback((id: string) => {
     setWaitlistJoined((prev) => new Set(prev).add(id));
@@ -125,6 +186,7 @@ export default function DashboardPage() {
   }, []);
 
   const fetchApiLogs = useCallback(async () => {
+    if (userRole !== "admin") return;
     try {
       const res = await fetch("/api/api-logs");
       const data = await res.json();
@@ -132,7 +194,7 @@ export default function DashboardPage() {
     } catch {
       setSecurityLogs([]);
     }
-  }, []);
+  }, [userRole]);
 
   const fetchMe = useCallback(async () => {
     try {
@@ -150,9 +212,12 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchCredits();
     fetchSavedDocuments();
-    fetchApiLogs();
     fetchMe();
-  }, [fetchCredits, fetchSavedDocuments, fetchApiLogs, fetchMe]);
+  }, [fetchCredits, fetchSavedDocuments, fetchMe]);
+
+  useEffect(() => {
+    if (userRole === "admin") fetchApiLogs();
+  }, [userRole, fetchApiLogs]);
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -240,6 +305,7 @@ export default function DashboardPage() {
     { id: "integrations", label: "Integrations", icon: Plug },
     { id: "team", label: "Team Management", icon: Users },
   ];
+  const SyncHistoryIcon = History;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
@@ -261,6 +327,13 @@ export default function DashboardPage() {
                 {label}
               </button>
             ))}
+            <Link
+              href="/dashboard/sync-history"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors w-full whitespace-nowrap"
+            >
+              <SyncHistoryIcon className="h-5 w-5 flex-shrink-0" />
+              Sync history
+            </Link>
           </nav>
         </aside>
         <div className="flex-1 mx-auto w-full max-w-4xl px-6 py-8 md:py-12">
@@ -334,36 +407,105 @@ export default function DashboardPage() {
         )}
 
         {tab === "team" && (
-          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 border-t-teal-accent/30">
-            <div className="text-center mb-8">
-              <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-white mb-2">Project Team</h2>
-              <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
-                Invite team members, assign roles, and manage access. Built for enterprises that need audit trails and SSO.
-              </p>
-              <Link
-                href="/settings/team"
-                className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
-              >
-                Open Team Settings
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
-                <span className="text-sm font-semibold text-teal-accent">Admin</span>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Full access to credits, team management, and all uploads.</p>
+          <>
+            <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 border-t-teal-accent/30">
+              <div className="text-center mb-8">
+                <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-white mb-2">Project Team</h2>
+                <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
+                  Invite team members, assign roles, and manage access. Built for enterprises that need audit trails and SSO.
+                </p>
+                <Link
+                  href="/settings/team"
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
+                >
+                  Open Team Settings
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
-              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
-                <span className="text-sm font-semibold text-cyan-400">Editor</span>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Can upload, edit, and delete their own files.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                  <span className="text-sm font-semibold text-teal-accent">Admin</span>
+                  <p className="text-slate-400 text-xs mt-2 leading-relaxed">Full access to credits, team management, and all uploads.</p>
+                </div>
+                <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                  <span className="text-sm font-semibold text-cyan-400">Editor</span>
+                  <p className="text-slate-400 text-xs mt-2 leading-relaxed">Can upload, edit, and delete their own files.</p>
+                </div>
+                <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                  <span className="text-sm font-semibold text-slate-400">Viewer</span>
+                  <p className="text-slate-400 text-xs mt-2 leading-relaxed">Read-only access to processed data.</p>
+                </div>
               </div>
-              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
-                <span className="text-sm font-semibold text-slate-400">Viewer</span>
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Read-only access to processed data.</p>
-              </div>
-            </div>
-          </section>
+            </section>
+            {userRole === "admin" && (
+              <section className="mt-8 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/30 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
+                <h2 className="text-lg font-semibold text-white mb-1">Institutional Management</h2>
+                <p className="text-slate-400 text-sm mb-6">
+                  Nationwide branding: create custom categories for your business. They appear as folders in the Architect sidebar.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Category name (e.g. Healthcare, HR)"
+                    className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-[#22d3ee] focus:outline-none focus:ring-1 focus:ring-[#22d3ee] min-w-[180px]"
+                    id="custom-category-input"
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      const input = e.currentTarget;
+                      const name = input.value?.trim();
+                      if (!name || customCategories.includes(name)) return;
+                      const next = [...customCategories, name];
+                      setCustomCategories(next);
+                      saveCustomCategories(orgId, next);
+                      input.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById("custom-category-input") as HTMLInputElement | null;
+                      const name = input?.value?.trim();
+                      if (!name || customCategories.includes(name)) return;
+                      const next = [...customCategories, name];
+                      setCustomCategories(next);
+                      saveCustomCategories(orgId, next);
+                      if (input) input.value = "";
+                    }}
+                    className="rounded-lg bg-[#22d3ee]/20 hover:bg-[#22d3ee]/30 text-[#22d3ee] border border-[#22d3ee]/40 px-4 py-2 text-sm font-medium transition-colors"
+                  >
+                    Add category
+                  </button>
+                </div>
+                {customCategories.length > 0 ? (
+                  <ul className="flex flex-wrap gap-2">
+                    {customCategories.map((name) => (
+                      <li
+                        key={name}
+                        className="inline-flex items-center gap-2 rounded-xl border border-[#22d3ee]/30 bg-[#22d3ee]/10 px-3 py-1.5 text-sm text-white"
+                      >
+                        {name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = customCategories.filter((c) => c !== name);
+                            setCustomCategories(next);
+                            saveCustomCategories(orgId, next);
+                          }}
+                          className="rounded p-0.5 text-slate-400 hover:text-red-400 hover:bg-white/10 transition-colors"
+                          aria-label={`Remove ${name}`}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-500 text-sm">No custom categories yet. Add one to show it in the Architect sidebar.</p>
+                )}
+              </section>
+            )}
+          </>
         )}
 
         {tab === "architect" && (
@@ -474,24 +616,57 @@ export default function DashboardPage() {
               <UsageHistory usage={usage} />
             </section>
 
-            <section className="rounded-2xl mb-6">
-              <SecurityLog logs={securityLogs} />
-            </section>
+            {userRole === "admin" && (
+              <section className="rounded-2xl mb-6">
+                <SecurityLog logs={securityLogs} />
+              </section>
+            )}
 
-            <section className="rounded-2xl">
-              <ResultsTable
-                documents={documents}
-                currentUserId={currentUserId}
-                userRole={userRole}
-                onDelete={async (id) => {
-                  const res = await fetch("/api/documents", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-                  if (res.ok) fetchSavedDocuments();
-                }}
-                onEdit={async (id, updates) => {
-                  const res = await fetch("/api/documents", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) });
-                  if (res.ok) fetchSavedDocuments();
-                }}
+            {syncError && (
+              <div
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md rounded-xl border-2 border-[#22d3ee]/60 bg-[#0f172a]/95 backdrop-blur-xl px-4 py-3 shadow-[0_0_24px_rgba(34,211,238,0.25)] text-[#22d3ee] text-sm flex items-center justify-between gap-4"
+                role="alert"
+              >
+                <span className="flex-1">{syncError}</span>
+                <button
+                  type="button"
+                  onClick={() => setSyncError(null)}
+                  className="shrink-0 rounded-lg border border-[#22d3ee]/40 px-2 py-1 text-xs font-medium hover:bg-[#22d3ee]/10 transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            <section className="rounded-2xl flex flex-col sm:flex-row gap-6 items-start">
+              <DashboardCategorySidebar
+                selectedId={selectedFolder}
+                onSelect={setSelectedFolder}
+                customCategories={customCategories}
+                documentCounts={documentCounts}
               />
+              <div className="flex-1 min-w-0 w-full">
+                <ResultsTable
+                  documents={filteredDocuments}
+                  currentUserId={currentUserId}
+                  userRole={userRole}
+                  onDelete={async (id) => {
+                    const res = await fetch("/api/documents", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                    if (res.ok) fetchSavedDocuments();
+                  }}
+                  onEdit={async (id, updates) => {
+                    const res = await fetch("/api/documents", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) });
+                    if (res.ok) fetchSavedDocuments();
+                  }}
+                  onSyncSuccess={fetchSavedDocuments}
+                  onSyncError={(message) => {
+                    setSyncError(message);
+                    setTimeout(() => setSyncError(null), 8000);
+                  }}
+                  onSyncStart={() => setSyncError(null)}
+                  selectedFolder={selectedFolder}
+                />
+              </div>
             </section>
           </>
         )}

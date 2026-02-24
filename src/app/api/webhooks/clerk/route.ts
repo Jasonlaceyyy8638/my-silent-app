@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import { ensureWelcomeCredits } from "@/lib/credits";
 
 const FROM_EMAIL = "jason@velodoc.app";
@@ -148,10 +148,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.SENDGRID_API_KEY;
-  if (!apiKey) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
     return NextResponse.json(
-      { error: "SENDGRID_API_KEY not set" },
+      { error: "RESEND_API_KEY not set" },
       { status: 500 }
     );
   }
@@ -229,22 +229,21 @@ export async function POST(request: Request) {
   }
 
   const firstName = data.first_name?.trim() || "";
-
-  sgMail.setApiKey(apiKey);
   const textBody = getWelcomeBody(firstName);
   const htmlBody = getWelcomeHtml(firstName);
 
+  const resend = new Resend(resendApiKey);
   try {
-    await sgMail.send({
-      to: toEmail,
+    await resend.emails.send({
       from: FROM_EMAIL,
-      replyTo: "service@bgrdayton.com",
+      to: toEmail,
+      reply_to: "service@bgrdayton.com",
       subject: WELCOME_SUBJECT,
       text: textBody,
       html: htmlBody,
     });
   } catch (err) {
-    console.error("SendGrid welcome email failed:", err);
+    console.error("Resend welcome email failed:", err);
     return NextResponse.json(
       { error: "Failed to send welcome email" },
       { status: 500 }

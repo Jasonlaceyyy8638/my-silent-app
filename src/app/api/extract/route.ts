@@ -10,6 +10,7 @@ import {
   addCreditsForAuth,
 } from "@/lib/credits-auth";
 import { insertApiLog } from "@/lib/api-log";
+import { identifyDocumentType } from "@/lib/identify-document-type";
 import type { ExtractedRow, LineItem } from "@/types";
 
 const EXTRACT_ENDPOINT = "/api/extract";
@@ -27,6 +28,7 @@ Reply with ONLY a valid JSON object (no markdown, no code block). Use exactly th
 - vendorName (string)
 - totalAmount (string, e.g. "1,234.56" or "€ 99.00")
 - date (string, e.g. "2024-01-15" or "Jan 15, 2024")
+- referenceNumber (string, optional): for BOLs/shipping docs—pro number, load ID, or reference #
 - lineItems (array of objects)
 
 Each item in lineItems must have:
@@ -251,6 +253,7 @@ export async function POST(request: NextRequest) {
       vendorName?: string;
       totalAmount?: string;
       date?: string;
+      referenceNumber?: string;
       lineItems?: Array<{
         sku?: string;
         partDescription?: string;
@@ -297,11 +300,17 @@ export async function POST(request: NextRequest) {
         }))
       : [];
 
+    const category = identifyDocumentType(documentType);
+    const referenceNumber =
+      typeof parsed.referenceNumber === "string" ? parsed.referenceNumber.trim() : undefined;
+
     const row: ExtractedRow = {
       vendorName: String(parsed.vendorName ?? "").trim(),
       totalAmount: String(parsed.totalAmount ?? "").trim(),
       date: String(parsed.date ?? "").trim(),
       documentType,
+      category,
+      ...(referenceNumber ? { referenceNumber } : {}),
       lineItems: lineItems.length > 0 ? lineItems : undefined,
     };
 

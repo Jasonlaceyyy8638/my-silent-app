@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
 import type { MeRole } from "@/app/api/me/route";
+import { SyncDestinationModal } from "@/components/SyncDestinationModal";
+import type { FolderId } from "@/components/DashboardCategorySidebar";
 
 type ResultsTableProps = {
   documents: DocumentWithRow[];
@@ -13,6 +15,11 @@ type ResultsTableProps = {
   userRole: MeRole;
   onDelete: (id: string) => Promise<void>;
   onEdit: (id: string, updates: { file_name?: string; extracted_data?: ExtractedRow }) => Promise<void>;
+  onSyncSuccess?: () => void;
+  onSyncError?: (message: string) => void;
+  onSyncStart?: () => void;
+  /** When set, table shows folder-specific columns (e.g. Intuit TID for Financial, Reference Number for Logistics). */
+  selectedFolder?: FolderId;
 };
 
 function escapeCsvCell(value: string): string {
@@ -140,10 +147,31 @@ function downloadExcel(rows: ExtractedRow[], filename?: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit }: ResultsTableProps) {
+export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit, onSyncSuccess, onSyncError, onSyncStart, selectedFolder }: ResultsTableProps) {
   const [editDoc, setEditDoc] = useState<DocumentWithRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [syncModalDocId, setSyncModalDocId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isViewer = userRole === "viewer";
+  const showIntuitTid = selectedFolder === "Financial";
+  const showReferenceNumber = selectedFolder === "Logistics";
+
+  const handlePushToQuickBooks = async (documentId: string) => {
+    const res = await fetch("/api/quickbooks/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documentId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok === true) {
+      onSyncSuccess?.();
+    } else {
+      const message = typeof data?.error === "string" ? data.error : "Sync to QuickBooks failed.";
+      onSyncError?.(message);
+      throw new Error(message);
+    }
+  };
 
   const rows = documents.map((d) => d.extracted_data);
   const canEdit = userRole === "admin" || userRole === "editor" || userRole === null;
@@ -218,7 +246,7 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
           return (
             <div key={doc.id} className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm flex-1 min-w-0">
+                <div className={`grid grid-cols-1 gap-3 text-sm flex-1 min-w-0 ${showIntuitTid || showReferenceNumber ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
                   <div>
                     <span className="text-slate-400 uppercase tracking-wider text-xs">Vendor</span>
                     <p className="text-white font-medium mt-0.5">{row.vendorName || "—"}</p>
@@ -231,6 +259,18 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
                     <span className="text-slate-400 uppercase tracking-wider text-xs">Date</span>
                     <p className="text-white font-medium mt-0.5">{row.date || "—"}</p>
                   </div>
+                  {showIntuitTid && (
+                    <div>
+                      <span className="text-slate-400 uppercase tracking-wider text-xs">Intuit TID</span>
+                      <p className="text-[#22d3ee] font-mono text-xs mt-0.5">{doc.intuit_tid || "—"}</p>
+                    </div>
+                  )}
+                  {showReferenceNumber && (
+                    <div>
+                      <span className="text-slate-400 uppercase tracking-wider text-xs">Reference #</span>
+                      <p className="text-white font-medium mt-0.5">{row.referenceNumber || "—"}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -250,6 +290,36 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
+                  )}
+                  {doc.extracted_data && (
+                    <>
+                      {isViewer ? (
+                        <span
+                          className="inline-flex items-center rounded-lg border border-white/20 bg-white/5 backdrop-blur-sm px-2.5 py-1.5 text-xs font-medium text-slate-400"
+                          title="Viewers have read-only access"
+                        >
+                          Read-only
+                        </span>
+                      ) : doc.qb_sync_status === "synced" ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#22d3ee]/50 bg-[#22d3ee]/10 backdrop-blur-sm px-2.5 py-1.5 text-[#22d3ee] shadow-[0_0_12px_rgba(34,211,238,0.4)]"
+                          title={doc.intuit_tid ? `Synced (Bill Id: ${doc.intuit_tid})` : "Synced to QuickBooks"}
+                        >
+                          <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          <span className="text-xs font-medium">Synced</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setSyncModalDocId(doc.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#22d3ee]/50 bg-[#22d3ee]/10 backdrop-blur-sm px-2.5 py-1.5 text-[#22d3ee] shadow-[0_0_12px_rgba(34,211,238,0.2)] transition-all hover:bg-[#22d3ee]/20 hover:shadow-[0_0_16px_rgba(34,211,238,0.35)]"
+                          aria-label="Choose sync destination"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          <span className="text-xs font-medium">Sync</span>
+                        </button>
+                      )}
+                    </>
                   )}
                   {canDelete(doc) && (
                     <button
@@ -327,6 +397,16 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
             </form>
           </div>
         </div>
+      )}
+
+      {syncModalDocId && (
+        <SyncDestinationModal
+          documentId={syncModalDocId}
+          onClose={() => setSyncModalDocId(null)}
+          onPushToQuickBooks={handlePushToQuickBooks}
+          onSyncError={onSyncError}
+          onSyncStart={onSyncStart}
+        />
       )}
 
       {/* Delete confirmation modal */}

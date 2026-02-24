@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Globe } from "lucide-react";
 
 const TRUST_SIGNALS = [
-  { label: "Enterprise Grade Security" },
-  { label: "256-bit Encryption" },
-  { label: "Trusted by Pros Worldwide" },
+  { label: "Enterprise-Grade Security" },
+  { label: "Nationwide Compliance" },
+  { label: "Universal Data Engine" },
 ] as const;
 
 function ShieldIcon({ className }: { className?: string }) {
@@ -74,6 +74,7 @@ const SECURITY_BADGES = [
 const TRUST_LEGAL_LINKS = [
   { href: "/security", label: "Security & Trust" },
   { href: "/dpa", label: "Data Processing Agreement" },
+  { href: "/privacy", label: "Privacy Policy" },
   { href: "/terms", label: "Terms of Service" },
 ] as const;
 
