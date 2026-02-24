@@ -237,7 +237,7 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: toEmail,
-      reply_to: "service@bgrdayton.com",
+      replyTo: "service@bgrdayton.com",
       subject: WELCOME_SUBJECT,
       text: textBody,
       html: htmlBody,
