@@ -4,24 +4,28 @@ import { Resend } from "resend";
 import { addCredits } from "@/lib/credits";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
+import { getSupabase } from "@/lib/supabase";
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
   return new Stripe(key);
 }
+// Validates all incoming Stripe events; set STRIPE_WEBHOOK_SECRET in Netlify to your webhook signing secret.
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 const CREDITS_BY_PLAN: Record<string, number> = {
   starter: 1,
   velopack: 20,
   pro: 1,
+  enterprise: 100,
 };
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
 // Subscription/billing receipts: signed by Alissa Wilson at billing@velodoc.app
 const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
 const BILLING_REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
+const ADMIN_EMAIL = process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
 
 /**
  * Stripe webhook: signature-verified, ready for team-managed Stripe roles.
@@ -97,7 +101,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Billing receipt: logo + Alissa Wilson signature
+  // Update profile tier so /api/me and QuickBooks access reflect the purchased plan.
+  const supabase = getSupabase();
+  const planForTier = (session.metadata?.plan as string) ?? plan;
+  if (supabase && (planForTier === "starter" || planForTier === "pro" || planForTier === "enterprise")) {
+    try {
+      await supabase.from("profiles").upsert(
+        { user_id: userId, plan_type: planForTier },
+        { onConflict: "user_id" }
+      );
+    } catch (e) {
+      console.error("Stripe webhook: profiles plan_type update failed", e);
+    }
+  }
+
+  // Log payment for Phillip McKenzie's Monday morning CSV report (weekly-report reads stripe_payments).
+  if (supabase) {
+    try {
+      await supabase.from("stripe_payments").insert({
+        stripe_session_id: session.id,
+        user_id: userId,
+        plan: planForTier,
+        amount_total_cents: session.amount_total ?? 0,
+        customer_email: (session.customer_details?.email ?? session.customer_email) ?? null,
+      });
+    } catch (e) {
+      console.error("Stripe webhook: stripe_payments insert failed (table may not exist yet)", e);
+    }
+  }
+
+  // Billing receipt: automated notification from Alissa Wilson at billing@velodoc.app
   const customerEmail =
     (session.customer_details?.email as string | undefined)?.trim() ??
     (session.customer_email as string | undefined)?.trim();
@@ -150,6 +183,28 @@ export async function POST(request: NextRequest) {
       });
     } catch (err) {
       console.error("Stripe webhook: billing receipt email failed", err);
+    }
+  }
+
+  // Notify Phillip McKenzie when an Enterprise subscription is initiated.
+  if (planForTier === "enterprise" && resendKey) {
+    const customerEmail =
+      (session.customer_details?.email as string | undefined)?.trim() ??
+      (session.customer_email as string | undefined)?.trim() ??
+      "—";
+    const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
+    try {
+      const resend = new Resend(resendKey);
+      await resend.emails.send({
+        from: BILLING_FROM,
+        to: ADMIN_EMAIL,
+        replyTo: BILLING_REPLY_TO,
+        subject: "VeloDoc — Enterprise subscription initiated",
+        text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmail}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
+        html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmail}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
+      });
+    } catch (err) {
+      console.error("Stripe webhook: Enterprise notification to admin failed", err);
     }
   }
 

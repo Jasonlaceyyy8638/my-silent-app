@@ -8,18 +8,28 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
+// Pricing cards map to Stripe Price IDs via env: STRIPE_PRICE_ID_STARTER, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_ENTERPRISE.
 const PLANS = {
   starter: {
     name: "Starter — Monthly",
     description: "Manual PDF processing only.",
-    unit_amount: 900, // $9.00
+    unit_amount: 2900, // $29
     quantity: 1,
+    priceId: process.env.STRIPE_PRICE_ID_STARTER as string | undefined,
   },
   pro: {
-    name: "Pro — Monthly",
+    name: "Professional — Monthly",
     description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
-    unit_amount: 4900, // $49.00
+    unit_amount: 7900, // $79
     quantity: 1,
+    priceId: process.env.STRIPE_PRICE_ID_PRO as string | undefined,
+  },
+  enterprise: {
+    name: "Enterprise — Monthly",
+    description: "Full access, dedicated support, unlimited automations.",
+    unit_amount: 24900, // $249
+    quantity: 1,
+    priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE as string | undefined,
   },
 } as const;
 
@@ -48,10 +58,10 @@ export async function POST(request: NextRequest) {
       "http://localhost:3000";
     const baseUrlClean = baseUrl.replace(/\/$/, "");
 
-    let plan: "starter" | "pro" = "starter";
+    let plan: "starter" | "pro" | "enterprise" = "starter";
     try {
       const body = await request.json();
-      if (body?.plan === "pro") plan = "pro";
+      if (body?.plan === "pro" || body?.plan === "enterprise") plan = body.plan;
     } catch {
       // default to starter
     }
@@ -60,20 +70,27 @@ export async function POST(request: NextRequest) {
 
     const config = PLANS[plan];
     const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
-      {
-        price_data: {
-          currency: "usd" as const,
-          product_data: {
-            name: config.name,
-            description: config.description,
+      config.priceId
+        ? { price: config.priceId, quantity: config.quantity }
+        : {
+            price_data: {
+              currency: "usd" as const,
+              product_data: {
+                name: config.name,
+                description: config.description,
+              },
+              unit_amount: config.unit_amount,
+            },
+            quantity: config.quantity,
           },
-          unit_amount: config.unit_amount,
-        },
-        quantity: config.quantity,
-      },
     ];
     const successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`;
-    const metadata: Record<string, string> = { plan, userId };
+    const metadata: Record<string, string> = {
+      plan,
+      userId,
+      billing_contact_email: process.env.BILLING_CONTACT_EMAIL ?? "billing@velodoc.app",
+      billing_contact_name: process.env.BILLING_CONTACT_NAME ?? "Alissa Wilson",
+    };
     if (orgId && orgId.trim()) metadata.organizationId = orgId;
 
     const sessionParams = {

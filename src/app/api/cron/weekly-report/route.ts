@@ -48,6 +48,14 @@ function escapeCsvCell(value: string): string {
   return s;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 async function runWeeklyReport(request: Request): Promise<NextResponse> {
   const secret = process.env.CRON_SECRET;
   const provided = getCronSecret(request);
@@ -96,10 +104,29 @@ async function runWeeklyReport(request: Request): Promise<NextResponse> {
     rows = (dataWithUpdated ?? []) as DocRow[];
   }
 
-  return await buildAndSendReport(rows, request);
+  return await buildAndSendReport(rows, supabase, request);
 }
 
-async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<NextResponse> {
+type PaymentRow = { plan?: string; amount_total_cents?: number; customer_email?: string | null; created_at?: string | null };
+
+async function buildAndSendReport(
+  rows: DocRow[],
+  supabase: NonNullable<Awaited<ReturnType<typeof getSupabase>>>,
+  _request: Request
+): Promise<NextResponse> {
+  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  let paymentRows: PaymentRow[] = [];
+  try {
+    const { data } = await supabase
+      .from("stripe_payments")
+      .select("plan, amount_total_cents, customer_email, created_at")
+      .gte("created_at", sevenDaysAgoIso)
+      .order("created_at", { ascending: false });
+    paymentRows = (data ?? []) as PaymentRow[];
+  } catch {
+    // Table may not exist yet; report continues without payments section.
+  }
+
   const header = ["File", "Vendor", "Total", "Date", "Bill Id", "Document Id", "Synced / Updated at"];
   const body = rows
     .filter((r) => r.id && r.extracted_data != null)
@@ -152,6 +179,19 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
             <td style="padding:32px 40px;">
               <p style="margin:0 0 24px; font-size:16px; color:#374151; line-height:1.6;">Your weekly QuickBooks sync summary is ready. Open the attachment for the full architectural log.</p>
               <a href="${ARCHITECTURAL_LOGS_URL}" style="display:inline-block; padding:14px 28px; background:#22d3ee; color:#0f172a; font-size:15px; font-weight:600; text-decoration:none; border-radius:10px;">View Architectural Logs</a>
+              ${paymentRows.length > 0 ? `
+              <div style="margin-top:24px;">
+                <p style="margin:0 0 8px; font-size:14px; font-weight:600; color:#0f172a;">Payments this week (${paymentRows.length})</p>
+                <table role="presentation" style="width:100%; border-collapse:collapse; font-size:13px;">
+                  <tr style="border-bottom:1px solid #e5e7eb;"><th style="text-align:left; padding:6px 0;">Plan</th><th style="text-align:right; padding:6px 0;">Amount</th><th style="text-align:left; padding:6px 0;">Date</th></tr>
+                  ${paymentRows.slice(0, 20).map((p) => {
+                    const amt = p.amount_total_cents != null ? `$${(p.amount_total_cents / 100).toFixed(2)}` : "—";
+                    const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : "—";
+                    return `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 0;">${escapeHtml(String(p.plan ?? "—"))}</td><td style="text-align:right; padding:6px 0;">${amt}</td><td style="padding:6px 0;">${date}</td></tr>`;
+                  }).join("")}
+                </table>
+              </div>
+              ` : ""}
               ${adminSignature}
             </td>
           </tr>

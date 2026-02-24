@@ -140,7 +140,31 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS automation_count integer DE
 - `plan_type`: 'starter' = manual PDF only; 'pro' and 'enterprise' = QuickBooks bridge + weekly CSV report.
 - `automation_count`: Tracks monthly automation usage. Reset each billing period in your own job or via Stripe webhook.
 
-### 8. Optional: api_logs columns for QuickBooks sync troubleshooting
+### 8. stripe_payments — for Phillip’s Monday morning CSV / weekly report
+
+The Stripe webhook logs each successful payment here so the weekly report (to Phillip at admin@velodoc.app) can include “Payments this week.” Run in SQL Editor:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.stripe_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  stripe_session_id text NOT NULL,
+  user_id text NOT NULL,
+  plan text NOT NULL,
+  amount_total_cents integer NOT NULL DEFAULT 0,
+  customer_email text,
+  created_at timestamptz DEFAULT NOW()
+);
+
+ALTER TABLE public.stripe_payments DISABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS idx_stripe_payments_created_at ON public.stripe_payments(created_at);
+```
+
+- `stripe_session_id`: Stripe Checkout Session ID.
+- `plan`: 'starter' | 'pro' | 'enterprise'.
+- `amount_total_cents`: Session total in cents.
+- `customer_email`: From session for reference.
+
+### 9. Optional: api_logs columns for QuickBooks sync troubleshooting
 
 To store failed sync details and show them on the Sync History page (Admin Eye icon), add optional columns to `api_logs`:
 

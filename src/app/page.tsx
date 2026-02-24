@@ -32,15 +32,15 @@ const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit:
   {
     plan: "starter",
     name: "Starter",
-    price: "$9",
+    price: "$29",
     automationLimit: "0 automations/month",
     description: "Manual PDF processing only. Perfect for trying VeloDoc.",
     cta: "checkout",
   },
   {
     plan: "pro",
-    name: "Pro",
-    price: "$49",
+    name: "Professional",
+    price: "$79",
     automationLimit: "50 automations/month",
     description: "QuickBooks bridge + automated weekly CSV report. For growing teams.",
     cta: "checkout",
@@ -48,10 +48,10 @@ const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit:
   {
     plan: "enterprise",
     name: "Enterprise",
-    price: "Custom",
+    price: "$249",
     automationLimit: "Unlimited automations",
     description: "Full access, dedicated support, and custom limits.",
-    cta: "contact",
+    cta: "checkout",
   },
 ];
 
@@ -267,7 +267,7 @@ export default function Home() {
                     }`}
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : "Get Pro"}
+                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : plan === "pro" ? "Get Pro" : "Get Enterprise"}
                   </button>
                 ) : (
                   <a
