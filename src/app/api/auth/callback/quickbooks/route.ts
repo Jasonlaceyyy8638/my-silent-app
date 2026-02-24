@@ -2,46 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabase } from "@/lib/supabase";
 
+/** Production token endpoint (aligns with https://developer.intuit.com/.well-known/openid_configuration) */
 const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
 
 /**
- * GET: QuickBooks OAuth callback. Exchange code for access_token and refresh_token,
- * then save to profiles table for the current user.
- * Query: code (required), redirect_uri (optional, defaults to this route URL).
+ * GET: QuickBooks OAuth callback at /api/auth/callback/quickbooks.
+ * Set QUICKBOOKS_REDIRECT_URI to https://velodoc.app/api/auth/callback/quickbooks in Netlify.
+ * Exchange code for access_token and refresh_token, then save to profiles.
  */
 export async function GET(request: NextRequest) {
   const { userId } = await auth();
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
+
   if (!userId) {
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/sign-in?redirect_url=${encodeURIComponent(request.url)}`);
   }
 
   const code = request.nextUrl.searchParams.get("code");
   const realmId = request.nextUrl.searchParams.get("realmId")?.trim() ?? null;
 
-  // Temporary: verify live Intuit callback receives code and realmId (remove after testing)
-  console.log("[quickbooks/callback] Intuit callback received:", {
-    hasCode: !!code?.trim(),
-    codeLength: code?.trim().length ?? 0,
-    realmId: realmId ?? "(none)",
-  });
-
   if (!code || !code.trim()) {
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_code`);
   }
 
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;
   const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=config`);
   }
 
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const redirectUri =
     (process.env.QUICKBOOKS_REDIRECT_URI ?? "").trim() ||
     `${base}/api/auth/callback/quickbooks`;
+
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code: code.trim(),
@@ -63,7 +56,6 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const errText = await tokenRes.text();
       console.error("[quickbooks/callback] token exchange failed:", tokenRes.status, errText);
-      const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
       return NextResponse.redirect(`${base}/dashboard?qb=error&reason=exchange`);
     }
 
@@ -74,12 +66,10 @@ export async function GET(request: NextRequest) {
     accessToken = tokenData.access_token ?? "";
     refreshToken = tokenData.refresh_token ?? "";
     if (!accessToken || !refreshToken) {
-      const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
       return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_tokens`);
     }
   } catch (err) {
     console.error("[quickbooks/callback] token request error:", err);
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=exchange`);
   }
 

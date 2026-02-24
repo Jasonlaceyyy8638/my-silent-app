@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
+/** Production: https://developer.intuit.com/.well-known/openid_configuration */
 const INTUIT_AUTH_URL = "https://appcenter.intuit.com/connect/oauth2";
+
+/** Only these four scopes; no leading or trailing spaces. */
+const QUICKBOOKS_SCOPES = "com.intuit.quickbooks.accounting openid profile email";
 
 /**
  * GET: Redirect to Intuit QuickBooks OAuth 2.0 authorization (production).
@@ -20,8 +24,8 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;
   const redirectUri =
-    process.env.QUICKBOOKS_REDIRECT_URI ??
-    `${base}/api/quickbooks/callback`;
+    (process.env.QUICKBOOKS_REDIRECT_URI ?? "").trim() ||
+    `${base}/api/auth/callback/quickbooks`;
 
   if (!clientId) {
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=config`);
@@ -31,7 +35,7 @@ export async function GET(request: NextRequest) {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "com.intuit.quickbooks.account",
+    scope: QUICKBOOKS_SCOPES,
     state: "velodoc",
   });
 
