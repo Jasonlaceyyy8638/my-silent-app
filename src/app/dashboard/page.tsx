@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   Users,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useOrganization } from "@clerk/nextjs";
@@ -361,6 +362,14 @@ export default function DashboardPage() {
               <SyncHistoryIcon className="h-5 w-5 flex-shrink-0" />
               Sync history
             </Link>
+            <a
+              href="mailto:support@velodoc.app?subject=Dashboard%20Help"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors w-full whitespace-nowrap"
+              title="Sharon Ferguson — support@velodoc.app"
+            >
+              <HelpCircle className="h-5 w-5 flex-shrink-0" aria-hidden />
+              Help
+            </a>
           </nav>
         </aside>
         <div className="flex-1 mx-auto w-full max-w-4xl px-6 py-8 md:py-12">

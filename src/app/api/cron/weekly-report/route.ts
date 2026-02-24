@@ -164,6 +164,7 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
             <td style="background:#22d3ee; padding:32px 40px; text-align:center;">
               <h1 style="margin:0; font-size:22px; font-weight:700; color:#0f172a; letter-spacing:-0.02em;">Weekly Architectural Sync Report</h1>
               <p style="margin:8px 0 0; font-size:15px; color:rgba(15,23,42,0.9);">${count} document(s) synced in the last 7 days. CSV attached.</p>
+              <p style="margin:12px 0 0; font-size:13px; color:rgba(15,23,42,0.8);">Addressed to Phillip McKenzie, Admin.</p>
             </td>
           </tr>
           <tr>

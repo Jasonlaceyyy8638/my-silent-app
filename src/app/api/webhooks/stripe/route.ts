@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { Resend } from "resend";
 import { addCredits } from "@/lib/credits";
 import { addCreditsForAuth } from "@/lib/credits-auth";
+import { getEmailSignature } from "@/lib/email-signature";
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -13,7 +15,11 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 const CREDITS_BY_PLAN: Record<string, number> = {
   starter: 1,
   velopack: 20,
+  pro: 1,
 };
+
+const LOGO_URL = "https://velodoc.app/logo-png.png";
+const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
 
 export async function POST(request: NextRequest) {
   if (!webhookSecret) {
@@ -83,6 +89,62 @@ export async function POST(request: NextRequest) {
       { error: "Failed to add credits" },
       { status: 500 }
     );
+  }
+
+  // Billing receipt: logo + Alissa Wilson signature
+  const customerEmail =
+    (session.customer_details?.email as string | undefined)?.trim() ??
+    (session.customer_email as string | undefined)?.trim();
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey && customerEmail) {
+    const planLabel = (session.metadata?.plan as string) ?? plan;
+    const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
+    const billingSignature = getEmailSignature("billing");
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0; padding:0; background-color:#f5f5f7; font-family: Inter, Helvetica, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f7;">
+    <tr>
+      <td align="center" style="padding:32px 24px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+          <tr>
+            <td style="padding:32px 40px; text-align:center;">
+              <img src="${LOGO_URL}" alt="VeloDoc" width="150" style="display:block; margin:0 auto 20px; height:auto;" />
+              <h1 style="margin:0 0 8px; font-size:20px; font-weight:700; color:#0f172a;">Payment received</h1>
+              <p style="margin:0; font-size:15px; color:#374151;">Thank you for your purchase.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
+                <tr><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;"><strong>Plan</strong></td><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;">${planLabel}</td></tr>
+                <tr><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;"><strong>Amount</strong></td><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;">$${amountPaid}</td></tr>
+                <tr><td style="padding:8px 0;"><strong>Credits added</strong></td><td style="padding:8px 0;">${amount}</td></tr>
+              </table>
+              ${billingSignature}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+    try {
+      const resend = new Resend(resendKey);
+      await resend.emails.send({
+        from: BILLING_FROM,
+        to: customerEmail,
+        reply_to: process.env.REPLY_TO ?? "billing@velodoc.app",
+        subject: "VeloDoc — Payment received",
+        text: `Payment received. Plan: ${planLabel}. Amount: $${amountPaid}. Credits added: ${amount}. Thank you.`,
+        html,
+      });
+    } catch (err) {
+      console.error("Stripe webhook: billing receipt email failed", err);
+    }
   }
 
   return NextResponse.json({ received: true });
