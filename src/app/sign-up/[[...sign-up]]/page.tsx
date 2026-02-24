@@ -3,10 +3,13 @@ import { Suspense } from "react";
 import { clerkAppearance, PASSWORD_REQUIREMENT_HINT } from "@/lib/clerk-appearance";
 import { OAuthErrorLogger } from "@/components/OAuthErrorLogger";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+
 /**
  * Sign-up uses Clerk's prebuilt form only. No custom captcha, Turnstile, or hidden
  * verification fields—Attack Protection/captcha is controlled in Clerk Dashboard.
  * Single redirect (afterSignUpUrl) to avoid Apple OAuth secondary security challenges.
+ * Absolute redirect URLs (when NEXT_PUBLIC_APP_URL is set) help mobile/external browser redirects.
  */
 export default function SignUpPage() {
   return (
@@ -18,8 +21,8 @@ export default function SignUpPage() {
         {PASSWORD_REQUIREMENT_HINT}
       </p>
       <SignUp
-        afterSignUpUrl="/dashboard"
-        signInUrl="/sign-in"
+        afterSignUpUrl={baseUrl ? `${baseUrl}/dashboard` : "/dashboard"}
+        signInUrl={baseUrl ? `${baseUrl}/sign-in` : "/sign-in"}
         appearance={clerkAppearance}
       />
     </main>

@@ -235,11 +235,11 @@ export default function Home() {
           <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
             Three tiers with automation limits. Upgrade anytime.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-1 sm:px-0">
             {PRICING_TIERS.map(({ plan, name, price, automationLimit, description, cta }) => (
               <div
                 key={plan}
-                className={`rounded-2xl border backdrop-blur-xl p-6 flex flex-col shadow-[0_8px_32px_rgba(15,23,42,0.4)] ${
+                className={`rounded-2xl border backdrop-blur-xl p-5 sm:p-6 flex flex-col shadow-[0_8px_32px_rgba(15,23,42,0.4)] min-w-0 ${
                   plan === "pro"
                     ? "border-[#22d3ee]/40 bg-[#22d3ee]/5 border-t-[#22d3ee]/50 relative"
                     : "border-white/20 bg-white/[0.07] border-t-teal-accent/30"
@@ -262,19 +262,21 @@ export default function Home() {
                     type="button"
                     onClick={() => handleCheckout(plan)}
                     disabled={checkoutPlan !== null}
-                    className={`mt-6 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors ${
+                    className={`mt-6 w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors touch-manipulation ${
                       plan === "pro"
-                        ? "bg-[#22d3ee] hover:bg-[#22d3ee]/90 text-petroleum"
-                        : "bg-teal-accent hover:bg-lime-accent text-petroleum"
+                        ? "bg-[#22d3ee] hover:bg-[#22d3ee]/90 text-petroleum active:bg-[#22d3ee]/80"
+                        : "bg-teal-accent hover:bg-lime-accent text-petroleum active:opacity-90"
                     }`}
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                   >
-                    <ShoppingCart className="h-4 w-4" />
+                    <ShoppingCart className="h-4 w-4 flex-shrink-0" aria-hidden />
                     {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : plan === "pro" ? "Get Professional" : "Get Enterprise"}
                   </button>
                 ) : (
                   <a
                     href="mailto:sales@velodoc.app?subject=Enterprise%20plan%20inquiry"
-                    className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+                    className="mt-6 w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-3.5 text-sm font-medium transition-colors touch-manipulation"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
                   >
                     Contact Jason Lacey — Sales
                   </a>
