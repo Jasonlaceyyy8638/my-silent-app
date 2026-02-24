@@ -143,6 +143,7 @@ export default function DashboardPage() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncSuccessToast, setSyncSuccessToast] = useState(false);
   const [showLowCreditPopup, setShowLowCreditPopup] = useState(false);
+  const [showFreeUpgradePopup, setShowFreeUpgradePopup] = useState(false);
   const lowCreditPopupShownRef = useRef(false);
   const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
   const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories(orgId));
@@ -352,6 +353,8 @@ export default function DashboardPage() {
           remaining?: number;
           creditsUsed?: number;
           error?: string;
+          code?: string;
+          monthlyLimitReached?: boolean;
           saveFailed?: boolean;
           saveError?: string;
           supabaseErrorCode?: string | null;
@@ -367,6 +370,12 @@ export default function DashboardPage() {
           );
         }
         if (!res.ok) {
+          if (res.status === 402 && data.code === "FREE_MONTHLY_LIMIT") {
+            setShowFreeUpgradePopup(true);
+            setError(data.error ?? "Monthly limit reached.");
+            setIsUploading(false);
+            return;
+          }
           const rawMsg = data.error || "";
           const hasDetail = rawMsg && rawMsg !== "Extraction failed.";
           const msg =
@@ -383,6 +392,7 @@ export default function DashboardPage() {
           if (typeof data.remaining === "number") setCredits(data.remaining);
           fetchSavedDocuments();
           fetchApiLogs();
+          if (data.monthlyLimitReached) setShowFreeUpgradePopup(true);
           const creditsMsg =
             typeof data.creditsUsed === "number" && data.creditsUsed > 0
               ? data.creditsUsed === 1
@@ -448,7 +458,7 @@ export default function DashboardPage() {
             <a
               href="mailto:support@velodoc.app?subject=Dashboard%20Help"
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors w-full whitespace-nowrap"
-              title="Sharon Ferguson — support@velodoc.app"
+              title="VeloDoc Support — support@velodoc.app"
             >
               <HelpCircle className="h-5 w-5 flex-shrink-0" aria-hidden />
               Help
@@ -456,7 +466,7 @@ export default function DashboardPage() {
             <a
               href="mailto:support@velodoc.app?subject=Credit%20Top-up"
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors w-full whitespace-nowrap"
-              title="Credit Top-ups — Sharon Ferguson, support@velodoc.app"
+              title="Credit Top-ups — support@velodoc.app"
             >
               Credit Top-ups
             </a>
@@ -613,7 +623,7 @@ export default function DashboardPage() {
               <section className="mb-8 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/30">
                 <h2 className="text-lg font-semibold text-white mb-2">User Tiers (Master Admin View)</h2>
                 <p className="text-slate-400 text-sm mb-4">
-                  Which tier each user is on. Phillip McKenzie can use this to see Starter, Professional, and Enterprise assignments.
+                  Which tier each user is on. Admins can use this to see Starter, Professional, and Enterprise assignments.
                 </p>
                 {userTiers.length === 0 ? (
                   <p className="text-slate-500 text-sm">No profile data yet, or table not loaded.</p>
@@ -653,7 +663,7 @@ export default function DashboardPage() {
               <section className="mb-8 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/30">
                 <h2 className="text-lg font-semibold text-white mb-2">Recent plan changes (Pro / Enterprise)</h2>
                 <p className="text-slate-400 text-sm mb-4">
-                  Logged when a user upgrades to Pro or Enterprise so Phillip McKenzie can see new signups in his admin view.
+                  Logged when a user upgrades to Pro or Enterprise for admin visibility.
                 </p>
                 {planChanges.length === 0 ? (
                   <p className="text-slate-500 text-sm">No plan changes yet, or table not loaded.</p>
@@ -698,7 +708,7 @@ export default function DashboardPage() {
                   <a
                     href="mailto:billing@velodoc.app?subject=Stripe%20revenue%20data"
                     className="mt-4 text-[#22d3ee] text-sm font-medium hover:underline"
-                    title="Alissa Wilson — billing@velodoc.app"
+                    title="Billing — billing@velodoc.app"
                   >
                     Contact Billing
                   </a>
@@ -852,7 +862,7 @@ export default function DashboardPage() {
                       <a
                         href="mailto:billing@velodoc.app?subject=Billing%20inquiry"
                         className="inline-flex items-center justify-center rounded-lg border border-white/20 hover:bg-white/10 text-white px-4 py-2.5 text-sm font-medium transition-colors"
-                        title="Alissa Wilson — billing@velodoc.app"
+                        title="Billing — billing@velodoc.app"
                       >
                         Contact Billing
                       </a>
@@ -981,6 +991,39 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {showFreeUpgradePopup && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                role="dialog"
+                aria-labelledby="free-upgrade-title"
+                aria-modal="true"
+              >
+                <div className="rounded-2xl border border-amber-500/40 bg-slate-900/98 backdrop-blur-xl shadow-xl max-w-md w-full p-6 border-t-teal-accent/30">
+                  <h2 id="free-upgrade-title" className="text-lg font-semibold text-white uppercase tracking-wider">
+                    Monthly limit reached
+                  </h2>
+                  <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                    Upgrade to Starter for 20 extractions and professional exports.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 text-sm transition-colors"
+                    >
+                      Upgrade to Starter
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setShowFreeUpgradePopup(false)}
+                      className="inline-flex items-center justify-center rounded-xl border border-white/20 hover:bg-white/10 text-slate-300 px-5 py-2.5 text-sm font-medium transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showLowCreditPopup && credits !== null && isPaidPlan && credits < LOW_CREDIT_THRESHOLD && (
               <div
                 className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-4 rounded-2xl border border-amber-500/40 bg-slate-900/98 backdrop-blur-xl shadow-[0_8px_32px_rgba(15,23,42,0.5)] border-t-teal-accent/30"
@@ -1014,16 +1057,22 @@ export default function DashboardPage() {
                       Purchase Credits
                     </Link>
                     {plan === "enterprise" && credits === 0 && (
-                      <a
-                        href="mailto:support@velodoc.app?subject=Bulk%20credit%20top-up%20(Enterprise)"
-                        className="inline-flex items-center justify-center rounded-xl border border-white/20 hover:bg-white/10 text-slate-200 font-medium px-4 py-2.5 text-sm transition-colors"
-                        title="Sharon Ferguson — support@velodoc.app"
-                      >
-                        Contact Support
-                      </a>
+                        <a
+                          href="mailto:support@velodoc.app?subject=Bulk%20credit%20top-up%20(Enterprise)"
+                          className="inline-flex items-center justify-center rounded-xl border border-white/20 hover:bg-white/10 text-slate-200 font-medium px-4 py-2.5 text-sm transition-colors"
+                          title="Support Team — support@velodoc.app"
+                        >
+                          Contact Support
+                        </a>
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {plan === "free" && (
+              <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/95" role="status">
+                Notice: Trial extractions are cleared every 24 hours. Upgrade to Starter for permanent storage.
               </div>
             )}
 
@@ -1054,6 +1103,7 @@ export default function DashboardPage() {
                   }}
                   onSyncStart={() => setSyncError(null)}
                   selectedFolder={selectedFolder}
+                  plan={plan}
                 />
               </div>
             </section>

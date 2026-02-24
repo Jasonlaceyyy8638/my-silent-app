@@ -15,6 +15,34 @@ import { identifyDocumentType } from "@/lib/identify-document-type";
 import type { ExtractedRow, LineItem } from "@/types";
 
 const EXTRACT_ENDPOINT = "/api/extract";
+const FREE_MONTHLY_EXTRACT_LIMIT = 5;
+
+function startOfCurrentMonthISO(): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+async function countFreeExtractionsThisMonth(
+  supabase: ReturnType<typeof getSupabase>,
+  userId: string
+): Promise<number> {
+  if (!supabase) return 0;
+  try {
+    const { count, error } = await supabase
+      .from("api_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("endpoint", EXTRACT_ENDPOINT)
+      .eq("status_code", 200)
+      .gte("created_at", startOfCurrentMonthISO());
+    if (error) return 0;
+    return typeof count === "number" ? count : 0;
+  } catch {
+    return 0;
+  }
+}
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -64,6 +92,40 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
   await ensureWelcomeCredits(userId, orgId);
+
+  let planType: string | null = null;
+  if (supabase) {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan_type")
+        .eq("user_id", userId)
+        .maybeSingle();
+      planType = (profile as { plan_type?: string } | null)?.plan_type ?? null;
+    } catch {
+      // ignore
+    }
+  }
+
+  if (planType === "free") {
+    const count = await countFreeExtractionsThisMonth(supabase, userId);
+    if (count >= FREE_MONTHLY_EXTRACT_LIMIT) {
+      await insertApiLog(supabase, {
+        user_id: userId,
+        org_id: orgId ?? null,
+        endpoint: EXTRACT_ENDPOINT,
+        status_code: 402,
+        credits_consumed: 0,
+      });
+      return NextResponse.json(
+        {
+          error: "Monthly limit reached. Upgrade to Starter for 20 extractions and professional exports.",
+          code: "FREE_MONTHLY_LIMIT",
+        },
+        { status: 402 }
+      );
+    }
+  }
 
   const openai = getOpenAI();
   if (!openai) {
@@ -122,21 +184,7 @@ export async function POST(request: NextRequest) {
 
     const balance = await getCreditsForAuth(userId, orgId);
     if (balance < creditsNeeded) {
-      // Notify Alissa if a paid-plan user attempts to process with $0 credit balance.
       const paidPlans = ["starter", "pro", "enterprise"];
-      let planType: string | null = null;
-      if (supabase) {
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("plan_type")
-            .eq("user_id", userId)
-            .maybeSingle();
-          planType = (profile as { plan_type?: string } | null)?.plan_type ?? null;
-        } catch {
-          // ignore
-        }
-      }
       if (planType && paidPlans.includes(planType)) {
         const resendKey = process.env.RESEND_API_KEY;
         const billingNotify = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
@@ -421,11 +469,15 @@ export async function POST(request: NextRequest) {
           status_code: 200,
           credits_consumed: creditsNeeded,
         });
+        const freeLimitReachedSaveFail =
+          planType === "free" &&
+          (await countFreeExtractionsThisMonth(supabase, userId)) >= FREE_MONTHLY_EXTRACT_LIMIT;
         return NextResponse.json({
           extracted: row,
           remaining: result.remaining,
           creditsUsed: creditsNeeded,
           saveFailed: true,
+          ...(freeLimitReachedSaveFail ? { monthlyLimitReached: true } : {}),
           saveError: isTableMissing
             ? "Cloud save is optional. The 'documents' table was not found in Supabase."
             : "Failed to save to database.",
@@ -441,10 +493,14 @@ export async function POST(request: NextRequest) {
         status_code: 200,
         credits_consumed: creditsNeeded,
       });
+      const freeLimitReached =
+        planType === "free" &&
+        (await countFreeExtractionsThisMonth(supabase, userId)) >= FREE_MONTHLY_EXTRACT_LIMIT;
       return NextResponse.json({
         extracted,
         remaining: result.remaining,
         creditsUsed: creditsNeeded,
+        ...(freeLimitReached ? { monthlyLimitReached: true } : {}),
       });
     }
 
@@ -456,10 +512,14 @@ export async function POST(request: NextRequest) {
       status_code: 200,
       credits_consumed: creditsNeeded,
     });
+    const freeLimitReached =
+      planType === "free" &&
+      (await countFreeExtractionsThisMonth(supabase, userId)) >= FREE_MONTHLY_EXTRACT_LIMIT;
     return NextResponse.json({
       extracted: row,
       remaining: result.remaining,
       creditsUsed: creditsNeeded,
+      ...(freeLimitReached ? { monthlyLimitReached: true } : {}),
     });
   } catch (err) {
     console.error("Extract error:", err);

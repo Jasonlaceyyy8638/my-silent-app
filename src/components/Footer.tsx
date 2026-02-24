@@ -142,7 +142,7 @@ export function Footer() {
               href="mailto:support@velodoc.app"
               className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
               style={{ WebkitTapHighlightColor: "transparent" }}
-              title="Sharon Ferguson — support@velodoc.app"
+              title="Support — support@velodoc.app"
             >
               Need technical help? Reach out to support@velodoc.app
             </a>
@@ -150,7 +150,7 @@ export function Footer() {
               href="mailto:billing@velodoc.app"
               className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
               style={{ WebkitTapHighlightColor: "transparent" }}
-              title="Alissa Wilson — billing@velodoc.app"
+              title="Billing — billing@velodoc.app"
             >
               Billing inquiry? Contact billing@velodoc.app
             </a>
@@ -163,9 +163,9 @@ export function Footer() {
           <a
             href="mailto:support@velodoc.app?subject=Credits%20or%20support"
             className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
-            title="Sharon Ferguson — Credits &amp; support"
+            title="VeloDoc Support — support@velodoc.app"
           >
-            Credits &amp; support: Sharon Ferguson — support@velodoc.app
+            Credits &amp; support: VeloDoc Support — support@velodoc.app
           </a>
         </p>
       </div>

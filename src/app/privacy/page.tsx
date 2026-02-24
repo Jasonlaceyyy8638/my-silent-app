@@ -114,7 +114,7 @@ export default function PrivacyPolicyPage() {
                       We do not sell, rent, or disclose your data to third parties for their marketing or analytics. Our processing of Intuit-related data is consistent with our Data Processing Agreement and applicable data protection requirements.
                     </p>
                     <p className="text-slate-300 text-sm leading-relaxed mt-2 print:text-slate-700">
-                      For QuickBooks or Intuit app support inquiries, contact Sharon Ferguson at support@velodoc.app.
+                      For QuickBooks or Intuit app support inquiries, contact VeloDoc Support at support@velodoc.app.
                     </p>
                   </div>
                 </section>
@@ -160,7 +160,7 @@ export default function PrivacyPolicyPage() {
                     7. Contact
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed print:text-slate-700">
-                    For privacy questions or requests (access, correction, deletion), contact Sharon Ferguson at support@velodoc.app. We will respond in accordance with applicable law.
+                    For privacy questions or requests (access, correction, deletion), contact VeloDoc Support at support@velodoc.app. We will respond in accordance with applicable law.
                   </p>
                 </section>
               </div>

@@ -36,7 +36,7 @@ const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit:
     name: "Starter",
     price: "$29",
     automationLimit: "0 automations/month",
-    description: "Manual PDF processing only.",
+    description: "Manual PDF processing. Includes 20 extractions/mo and full data exports.",
     cta: "checkout",
   },
   {
@@ -295,7 +295,7 @@ export default function Home() {
                     className="mt-6 w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-3.5 text-sm font-medium transition-colors touch-manipulation"
                     style={{ WebkitTapHighlightColor: "transparent" }}
                   >
-                    Contact Jason Lacey — Sales
+                    Contact Sales
                   </a>
                 )}
               </div>
@@ -316,34 +316,58 @@ export default function Home() {
                 <thead>
                   <tr className="border-b border-white/20 bg-white/5">
                     <th className="px-4 py-3 text-slate-400 font-semibold uppercase tracking-wider">Feature</th>
+                    <th className="px-4 py-3 text-slate-400 font-medium">Free</th>
                     <th className="px-4 py-3 text-white font-medium">Starter</th>
-                    <th className="px-4 py-3 text-white font-medium">Professional</th>
+                    <th className="px-4 pt-6 pb-3 text-white font-medium border-l border-r border-[#22d3ee]/30 bg-[#22d3ee]/5 relative shadow-[inset_0_0_24px_rgba(34,211,238,0.06)]">
+                      <span className="absolute top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2 py-0.5 text-[9px] font-medium text-[#22d3ee] uppercase tracking-wider whitespace-nowrap">
+                        Popular
+                      </span>
+                      Professional
+                    </th>
                     <th className="px-4 py-3 text-white font-medium">Enterprise</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">QuickBooks Sync</td>
+                    <td className="px-4 py-3 font-medium">Extractions</td>
+                    <td className="px-4 py-3">5</td>
+                    <td className="px-4 py-3">20</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">50</td>
+                    <td className="px-4 py-3 text-teal-accent">Unlimited</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="px-4 py-3 font-medium">Data Retention</td>
+                    <td className="px-4 py-3">24-hr</td>
+                    <td className="px-4 py-3">Permanent</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">Permanent</td>
+                    <td className="px-4 py-3">Permanent</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="px-4 py-3 font-medium">CSV / Excel Export</td>
                     <td className="px-4 py-3">—</td>
                     <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
                     <td className="px-4 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10">
-                    <td className="px-4 py-3 font-medium">Automations / Month</td>
-                    <td className="px-4 py-3">0</td>
-                    <td className="px-4 py-3">50</td>
-                    <td className="px-4 py-3">Unlimited</td>
+                    <td className="px-4 py-3 font-medium">QuickBooks Sync</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5 text-teal-accent">✓</td>
+                    <td className="px-4 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10">
                     <td className="px-4 py-3 font-medium">Dedicated Support</td>
                     <td className="px-4 py-3">—</td>
                     <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
                     <td className="px-4 py-3 text-teal-accent">✓</td>
                   </tr>
                   <tr className="border-b border-white/10 last:border-b-0">
                     <td className="px-4 py-3 font-medium">Institutional API Access</td>
                     <td className="px-4 py-3">—</td>
                     <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 border-l border-r border-[#22d3ee]/20 bg-[#22d3ee]/5">—</td>
                     <td className="px-4 py-3 text-teal-accent">✓</td>
                   </tr>
                 </tbody>

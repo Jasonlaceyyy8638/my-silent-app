@@ -115,7 +115,7 @@ export default function DPAPage() {
                   </p>
                   <ul className="space-y-2 text-sm text-slate-300 list-disc pl-6 print:text-slate-700">
                     <li><strong className="text-white/90 print:text-slate-900">Access & export:</strong> Users can access and export their extracted data from the VeloDoc dashboard and via downloadable exports (e.g. CSV, Excel).</li>
-                    <li><strong className="text-white/90 print:text-slate-900">Deletion:</strong> You may request deletion of your data held in our Supabase storage and related systems by contacting Sharon Ferguson at support@velodoc.app. We will process such requests in accordance with our data retention and deletion procedures.</li>
+                    <li><strong className="text-white/90 print:text-slate-900">Deletion:</strong> You may request deletion of your data held in our Supabase storage and related systems by contacting the Operations Team at support@velodoc.app. We will process such requests in accordance with our data retention and deletion procedures.</li>
                   </ul>
                 </section>
 

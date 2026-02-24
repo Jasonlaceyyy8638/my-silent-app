@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Download, FileSpreadsheet, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Lock, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
-import type { MeRole } from "@/app/api/me/route";
+import type { MeRole, MePlan } from "@/app/api/me/route";
 import { SyncDestinationModal } from "@/components/SyncDestinationModal";
 import type { FolderId } from "@/components/DashboardCategorySidebar";
 
@@ -20,6 +20,8 @@ type ResultsTableProps = {
   onSyncStart?: () => void;
   /** When set, table shows folder-specific columns (e.g. Intuit TID for Financial, Reference Number for Logistics). */
   selectedFolder?: FolderId;
+  /** When 'free', CSV/Excel export is disabled with upgrade tooltip. */
+  plan?: MePlan;
 };
 
 function escapeCsvCell(value: string): string {
@@ -147,11 +149,35 @@ function downloadExcel(rows: ExtractedRow[], filename?: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit, onSyncSuccess, onSyncError, onSyncStart, selectedFolder }: ResultsTableProps) {
+export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit, onSyncSuccess, onSyncError, onSyncStart, selectedFolder = "all", plan }: ResultsTableProps) {
   const [editDoc, setEditDoc] = useState<DocumentWithRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showExportPaywall, setShowExportPaywall] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const canExport = plan !== "free";
   const [syncModalDocId, setSyncModalDocId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleExportClick = (doExport: () => void) => {
+    if (canExport) doExport();
+    else setShowExportPaywall(true);
+  };
+
+  const handleUpgradeToStarter = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "starter" }),
+      });
+      const data = await res.json();
+      if (data?.url) window.location.href = data.url;
+      else setCheckoutLoading(false);
+    } catch {
+      setCheckoutLoading(false);
+    }
+  };
 
   const isViewer = userRole === "viewer";
   const showIntuitTid = selectedFolder === "Financial";
@@ -221,17 +247,29 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => downloadExcel(rows)}
-            className="inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
+            onClick={() => handleExportClick(() => downloadExcel(rows))}
+            title={!canExport ? "Upgrade to Starter to unlock exports." : undefined}
+            className={
+              canExport
+                ? "inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2 text-sm font-medium transition-colors"
+                : "inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 text-slate-400 px-4 py-2 text-sm font-medium transition-colors cursor-pointer hover:bg-white/10 hover:text-slate-300"
+            }
           >
+            {!canExport && <Lock className="h-4 w-4 shrink-0" />}
             <FileSpreadsheet className="h-4 w-4" />
             Export to Excel
           </button>
           <button
             type="button"
-            onClick={() => downloadCsv(rows)}
-            className="inline-flex items-center gap-2 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-4 py-2 text-sm font-medium transition-colors"
+            onClick={() => handleExportClick(() => downloadCsv(rows))}
+            title={!canExport ? "Upgrade to Starter to unlock exports." : undefined}
+            className={
+              canExport
+                ? "inline-flex items-center gap-2 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-4 py-2 text-sm font-medium transition-colors"
+                : "inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 text-slate-400 px-4 py-2 text-sm font-medium transition-colors cursor-pointer hover:bg-white/10 hover:text-slate-300"
+            }
           >
+            {!canExport && <Lock className="h-4 w-4 shrink-0" />}
             <Download className="h-4 w-4" />
             {documents.length > 1 ? "Download all as CSV" : "Download as CSV"}
           </button>
@@ -275,9 +313,15 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => downloadCsv([row], oneFilename)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-3 py-1.5 text-xs font-medium transition-colors"
+                    onClick={() => (canExport ? downloadCsv([row], oneFilename) : setShowExportPaywall(true))}
+                    title={!canExport ? "Upgrade to Starter to unlock exports." : undefined}
+                    className={
+                      canExport
+                        ? "inline-flex items-center gap-1.5 rounded-lg border border-teal-accent/50 bg-teal-accent/10 hover:bg-teal-accent/20 text-teal-accent px-3 py-1.5 text-xs font-medium transition-colors"
+                        : "inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 text-slate-400 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer hover:bg-white/10 hover:text-slate-300"
+                    }
                   >
+                    {!canExport && <Lock className="h-3.5 w-3.5 shrink-0" />}
                     <Download className="h-3.5 w-3.5" />
                     Download CSV
                   </button>
@@ -423,6 +467,50 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
                 {isSubmitting ? "Removing…" : "Remove"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export paywall modal (Free tier) */}
+      {showExportPaywall && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="export-paywall-title"
+        >
+          <div className="rounded-2xl border border-[#22d3ee]/40 bg-slate-900/98 backdrop-blur-xl w-full max-w-md p-6 shadow-[0_0_32px_rgba(34,211,238,0.15)] border-t-[#22d3ee]/50">
+            <h2 id="export-paywall-title" className="text-lg font-semibold text-white uppercase tracking-wider text-[#22d3ee]">
+              Unlock Professional Data Exports
+            </h2>
+            <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+              Exporting your extracted data to CSV and Excel is a Starter feature. Upgrade now to preserve your records and streamline your workflow.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleUpgradeToStarter}
+                disabled={checkoutLoading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#22d3ee] hover:bg-[#22d3ee]/90 text-[#0b172a] font-semibold px-4 py-3 text-sm transition-colors disabled:opacity-70 disabled:pointer-events-none shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+              >
+                {checkoutLoading ? "Redirecting…" : "Upgrade to Starter — $29/mo"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowExportPaywall(false)}
+                className="w-full inline-flex items-center justify-center rounded-xl border border-white/20 hover:bg-white/10 text-slate-300 px-4 py-2.5 text-sm font-medium transition-colors"
+              >
+                Maybe later
+              </button>
+            </div>
+            <p className="mt-4 text-center">
+              <a
+                href="mailto:support@velodoc.app?subject=Export%20%26%20Starter%20plan"
+                className="text-xs text-[#22d3ee]/90 hover:text-[#22d3ee] transition-colors"
+              >
+                Questions? Contact support@velodoc.app
+              </a>
+            </p>
           </div>
         </div>
       )}

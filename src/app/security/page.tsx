@@ -3,7 +3,7 @@
 import { Mail } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@velodoc.app";
-const SUPPORT_CONTACT = "Sharon Ferguson";
+const SUPPORT_CONTACT = "VeloDoc Support";
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
