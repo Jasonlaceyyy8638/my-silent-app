@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       plan === "starter" ? priceIdStarter : plan === "pro" ? priceIdPro : priceIdEnterprise;
 
     const config = PLANS[plan];
+    // Subscription mode: use recurring Price IDs or price_data with recurring. All three tiers use the same subscription mode.
     const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
       priceId
         ? { price: priceId, quantity: config.quantity }
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
                 description: config.description,
               },
               unit_amount: config.unit_amount,
+              recurring: { interval: "month" as const },
             },
             quantity: config.quantity,
           },
@@ -97,25 +99,23 @@ export async function POST(request: NextRequest) {
     };
     if (orgId && orgId.trim()) metadata.organizationId = orgId;
 
-    const sessionParams = {
-      mode: "payment" as const,
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
       client_reference_id: userId,
       metadata,
       line_items: lineItems,
       success_url: successUrl,
       cancel_url: baseUrlClean,
-      payment_intent_data: {
-        statement_descriptor: "VELODOC",
+      subscription_data: {
+        metadata: orgId && orgId.trim() ? { plan, userId, organizationId: orgId } : { plan, userId },
       },
       branding_settings: {
         display_name: "VeloDoc",
-        logo: { type: "url" as const, url: logoUrl },
+        logo: { type: "url", url: logoUrl },
       },
     };
 
-    const session = await stripe.checkout.sessions.create(
-      sessionParams as Parameters<typeof stripe.checkout.sessions.create>[0]
-    );
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (!session.url) {
       return NextResponse.json(
