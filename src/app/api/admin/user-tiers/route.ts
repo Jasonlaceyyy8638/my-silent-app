@@ -6,6 +6,7 @@ export type UserTierEntry = {
   user_id: string;
   email: string | null;
   plan_type: string;
+  auth_provider: string | null;
 };
 
 /**
@@ -32,7 +33,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, email, plan_type")
+      .select("user_id, email, plan_type, auth_provider")
       .order("user_id");
 
     if (error) {
@@ -43,10 +44,11 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to load user tiers", tiers: [] }, { status: 500 });
     }
 
-    const tiers: UserTierEntry[] = (data ?? []).map((row: { user_id?: string; email?: string | null; plan_type?: string }) => ({
+    const tiers: UserTierEntry[] = (data ?? []).map((row: { user_id?: string; email?: string | null; plan_type?: string; auth_provider?: string | null }) => ({
       user_id: row.user_id ?? "",
       email: row.email ?? null,
       plan_type: row.plan_type ?? "starter",
+      auth_provider: row.auth_provider ?? null,
     }));
 
     return NextResponse.json({ tiers });

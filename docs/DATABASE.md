@@ -165,6 +165,14 @@ To enforce that `plan_type` only accepts `'starter'`, `'pro'`, or `'enterprise'`
 - Adds `plan_type` if missing and adds `CHECK (plan_type IN ('starter', 'pro', 'enterprise'))`.
 - Creates `plan_change_log` (user_id, customer_email, from_plan, to_plan, stripe_session_id, created_at) so the Stripe webhook can log Pro/Enterprise upgrades for the admin view.
 
+### 7d. plan_type 'free' and auth_provider (Google vs Email)
+
+To support new Google/Email users with `plan_type = 'free'` and show **Provider** (Google or Email) in Phillip's admin view, run the migration in **Supabase SQL Editor**: `supabase/migrations/20250222000000_add_free_plan_and_auth_provider.sql`.
+
+- Adds `auth_provider` column (text, nullable).
+- Extends `plan_type` CHECK to include `'free'`.
+- The Clerk webhook (`user.created`) upserts into `profiles` with `plan_type: 'free'` and `auth_provider: 'Google'` or `'Email'` based on `external_accounts`.
+
 ### 8. stripe_payments — for Phillip’s Monday morning CSV / weekly report
 
 The Stripe webhook logs each successful payment here so the weekly report (to Phillip at admin@velodoc.app) can include “Payments this week.” Run in SQL Editor:

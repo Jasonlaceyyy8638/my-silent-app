@@ -3,6 +3,7 @@ import { Webhook } from "svix";
 import { Resend } from "resend";
 import { ensureWelcomeCredits } from "@/lib/credits";
 import { getEmailSignature } from "@/lib/email-signature";
+import { getSupabase } from "@/lib/supabase";
 
 const FROM_EMAIL = process.env.FROM_EMAIL ?? process.env.WEEKLY_REPORT_FROM_EMAIL ?? "noreply@velodoc.app";
 const REPLY_TO_EMAIL = process.env.REPLY_TO ?? "billing@velodoc.app";
@@ -129,12 +130,14 @@ function getWelcomeHtml(firstName: string): string {
 </html>`;
 }
 
+type ClerkExternalAccount = { provider?: string };
 type ClerkUserCreatedData = {
   id?: string;
   first_name?: string | null;
   last_name?: string | null;
   email_addresses?: Array<{ email_address: string; id: string }>;
   primary_email_address_id?: string | null;
+  external_accounts?: ClerkExternalAccount[];
 };
 
 export async function POST(request: Request) {
@@ -223,6 +226,29 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error("Clerk webhook: user_credits upsert failed or timed out:", err);
       // Still return 200 so Clerk doesn't retry; ensureWelcomeCredits runs again on first /api/credits or /api/extract.
+    }
+  }
+
+  // Table sync: add new users (Google or Email) to Supabase profiles with plan_type 'free' for admin visibility.
+  const externalAccounts = data.external_accounts ?? [];
+  const hasGoogle = externalAccounts.some(
+    (e) => (e.provider ?? "").toLowerCase().includes("google") || e.provider === "oauth_google"
+  );
+  const authProvider = hasGoogle ? "Google" : "Email";
+  const supabase = getSupabase();
+  if (supabase && userId && toEmail) {
+    try {
+      await supabase.from("profiles").upsert(
+        {
+          user_id: userId,
+          email: toEmail,
+          plan_type: "free",
+          auth_provider: authProvider,
+        },
+        { onConflict: "user_id" }
+      );
+    } catch (err) {
+      console.error("Clerk webhook: profiles upsert failed (table may not have auth_provider/plan_type free yet)", err);
     }
   }
 

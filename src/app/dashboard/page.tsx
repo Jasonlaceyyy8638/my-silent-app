@@ -245,7 +245,7 @@ export default function DashboardPage() {
       if (res.ok) {
         if (typeof data.userId === "string") setCurrentUserId(data.userId);
         if (data.role !== undefined) setUserRole(data.role as MeRole);
-        if (data.plan === "starter" || data.plan === "pro" || data.plan === "enterprise") setPlan(data.plan);
+        if (data.plan === "starter" || data.plan === "pro" || data.plan === "enterprise" || data.plan === "free") setPlan(data.plan);
       }
     } catch {
       // keep defaults
@@ -566,6 +566,7 @@ export default function DashboardPage() {
                         <tr className="border-b border-white/10">
                           <th className="px-4 py-3 text-slate-400 font-medium">Email / User</th>
                           <th className="px-4 py-3 text-slate-400 font-medium">Tier</th>
+                          <th className="px-4 py-3 text-slate-400 font-medium">Provider</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -578,6 +579,9 @@ export default function DashboardPage() {
                               <span className="inline-flex rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent">
                                 {planDisplayName(entry.plan_type)}
                               </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-300">
+                              {entry.auth_provider ?? "—"}
                             </td>
                           </tr>
                         ))}

@@ -25,11 +25,20 @@ If users see a **disallowed_useragent** error on mobile, it usually means sign-i
 - **Stripe Dashboard** → **Settings** → **Checkout** (or **Customer portal**): ensure **Success URL** and **Cancel URL** match what the app sends (from `NEXT_PUBLIC_APP_URL`), e.g. `https://velodoc.app/success` and `https://velodoc.app`.
 - If the error appears only in an **in-app browser**, ask users to **open the link in Safari/Chrome** (e.g. “Open in browser”) so Stripe runs in an allowed user agent.
 
-## 4. Supabase (if you add Supabase Auth later)
+## 4. Supabase Auth OAuth (Google) — production redirectTo
+
+When using **Supabase Auth** `signInWithOAuth` (e.g. for Google), set **redirectTo** to the production dashboard URL so mobile users are sent back after signing in:
+
+- In code: use **`getOAuthRedirectTo()`** from `@/lib/supabase-auth-oauth`. It returns `NEXT_PUBLIC_APP_URL/dashboard` (or `/dashboard` when unset).
+- Example: `await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: getOAuthRedirectTo() } })`.
+
+This ensures external and mobile browser redirects land on your app.
+
+## 5. Supabase (if you add Supabase Auth later)
 
 - For Supabase Auth redirects (e.g. magic link, OAuth), set **Site URL** and **Redirect URLs** in **Supabase Dashboard** → **Authentication** → **URL configuration** to the same production URL (e.g. `https://velodoc.app` and `https://velodoc.app/**`).
 - Use **NEXT_PUBLIC_APP_URL** when building redirect URIs in code so mobile and desktop use the same base URL.
 
-## 5. QuickBooks OAuth
+## 6. QuickBooks OAuth
 
 - **QUICKBOOKS_REDIRECT_URI** in Netlify should match Intuit Portal (e.g. `https://velodoc.app/api/auth/callback/quickbooks`). The callback route uses **NEXT_PUBLIC_APP_URL** when building redirects so mobile redirects are consistent.

@@ -77,7 +77,7 @@ export default function SyncHistoryPage() {
       }
       if (meRes.ok) {
         if (meData.role !== undefined) setUserRole(meData.role as MeRole);
-        if (meData.plan === "starter" || meData.plan === "pro" || meData.plan === "enterprise") setPlan(meData.plan);
+        if (meData.plan === "starter" || meData.plan === "pro" || meData.plan === "enterprise" || meData.plan === "free") setPlan(meData.plan);
       }
     } catch {
       setSyncedDocuments([]);
