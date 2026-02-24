@@ -18,7 +18,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@clerk/nextjs";
 import { UploadZone } from "@/components/UploadZone";
 import { ResultsTable } from "@/components/ResultsTable";
 import { DashboardCategorySidebar, type FolderId } from "@/components/DashboardCategorySidebar";
@@ -55,6 +55,9 @@ function saveCustomCategories(orgId: string | null, list: string[]) {
 }
 
 type DashboardTab = "architect" | "integrations" | "team";
+
+const TEAM_ADMIN_EMAIL = "admin@velodoc.app";
+const TEAM_BILLING_EMAIL = "billing@velodoc.app";
 
 const INTEGRATION_CARDS = [
   { id: "quickbooks", name: "QuickBooks", Icon: QuickBooksIcon, description: "Sync extracted data to your books.", bento: "large" as const },
@@ -111,7 +114,9 @@ function getDocumentCategory(doc: DocumentWithRow): string {
 
 export default function DashboardPage() {
   const { organization } = useOrganization();
+  const { user } = useUser();
   const orgId = organization?.id ?? null;
+  const userEmail = (user?.primaryEmailAddress?.emailAddress ?? "").trim().toLowerCase();
 
   const [tab, setTab] = useState<DashboardTab>("architect");
   const [waitlistJoined, setWaitlistJoined] = useState<Set<string>>(new Set());
@@ -131,6 +136,9 @@ export default function DashboardPage() {
   const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
   const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories(orgId));
   const searchParams = useSearchParams();
+
+  const isPhillipMcKenzie = userRole === "admin" && userEmail === TEAM_ADMIN_EMAIL;
+  const isAlissaWilson = userRole === "admin" && userEmail === TEAM_BILLING_EMAIL;
 
   useEffect(() => {
     setCustomCategories(loadCustomCategories(orgId));
@@ -490,6 +498,39 @@ export default function DashboardPage() {
 
         {tab === "team" && (
           <>
+            {isPhillipMcKenzie && (
+              <section className="mb-8 rounded-2xl border border-[#22d3ee]/30 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/40">
+                <h2 className="text-lg font-semibold text-white mb-2">Weekly Sync Report</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  The weekly architectural sync report runs every Monday at 8:00 AM and is sent to admin@velodoc.app. The CSV includes all documents synced to QuickBooks in the last 7 days.
+                </p>
+                <Link
+                  href="/dashboard/sync-history"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#22d3ee]/20 hover:bg-[#22d3ee]/30 text-[#22d3ee] border border-[#22d3ee]/40 px-4 py-2.5 text-sm font-medium transition-colors"
+                >
+                  <History className="h-4 w-4" aria-hidden />
+                  View Sync History
+                </Link>
+              </section>
+            )}
+            {isAlissaWilson && (
+              <section className="mb-8 rounded-2xl border border-[#22d3ee]/30 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/40">
+                <h2 className="text-lg font-semibold text-white mb-2">Subscription Revenue</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  Revenue from Starter and Pro subscriptions. Data is synced from Stripe.
+                </p>
+                <div className="rounded-xl border border-white/20 bg-white/5 p-6 flex flex-col items-center justify-center min-h-[200px]">
+                  <p className="text-slate-400 text-sm text-center">Revenue charts will appear here once connected to your Stripe dashboard.</p>
+                  <a
+                    href="mailto:billing@velodoc.app?subject=Stripe%20revenue%20data"
+                    className="mt-4 text-[#22d3ee] text-sm font-medium hover:underline"
+                    title="Alissa Wilson — billing@velodoc.app"
+                  >
+                    Contact Billing
+                  </a>
+                </div>
+              </section>
+            )}
             <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 border-t-teal-accent/30">
               <div className="text-center mb-8">
                 <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
@@ -600,12 +641,21 @@ export default function DashboardPage() {
                     <p className="text-amber-200 text-sm font-medium">
                       Insufficient credits. Add credits to extract documents.
                     </p>
-                    <Link
-                      href="/pricing"
-                      className="inline-flex items-center justify-center rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
-                    >
-                      Top Up Credits
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Link
+                        href="/pricing"
+                        className="inline-flex items-center justify-center rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-semibold transition-colors"
+                      >
+                        Top Up Credits
+                      </Link>
+                      <a
+                        href="mailto:billing@velodoc.app?subject=Billing%20inquiry"
+                        className="inline-flex items-center justify-center rounded-lg border border-white/20 hover:bg-white/10 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+                        title="Alissa Wilson — billing@velodoc.app"
+                      >
+                        Contact Billing
+                      </a>
+                    </div>
                   </div>
                 )}
                 <UploadZone
