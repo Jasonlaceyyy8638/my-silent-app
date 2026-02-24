@@ -11,8 +11,9 @@ function getStripe(): Stripe | null {
 const MIN_BULK_CREDITS = 20;
 const MAX_BULK_CREDITS = 10000;
 
-/** Cents per credit: 20–99 $1.00; 100–499 $0.90; 500–999 $0.85; 1,000–10,000 $0.80 */
+/** Cents per credit: 20–99 $1.00; 100–499 $0.90; 500–999 $0.85; 1,000–4,999 $0.80; 5,000–10,000 $0.65 */
 function getCentsPerCredit(credits: number): number {
+  if (credits >= 5000) return 65;
   if (credits >= 1000) return 80;
   if (credits >= 500) return 85;
   if (credits >= 100) return 90;

@@ -31,7 +31,7 @@ import { AboutSection } from "@/components/AboutSection";
 const MIN_BULK_CREDITS = 20;
 const MAX_BULK_CREDITS = 10000;
 
-/** Tiers: 20–99 $1.00; 100–499 10% off; 500–999 15% off; 1,000–10,000 flat 20% off ($0.80). */
+/** Tiers: 20–99 $1.00; 100–499 10%; 500–999 15%; 1,000–4,999 20%; 5,000–10,000 35% ($0.65). */
 function getBulkPrice(credits: number): {
   total: number;
   perCredit: number;
@@ -40,7 +40,10 @@ function getBulkPrice(credits: number): {
   const c = Math.max(MIN_BULK_CREDITS, Math.min(MAX_BULK_CREDITS, Math.round(credits)));
   let perCredit: number;
   let savingsPercentage: number;
-  if (c >= 1000) {
+  if (c >= 5000) {
+    perCredit = 0.65;
+    savingsPercentage = 35;
+  } else if (c >= 1000) {
     perCredit = 0.8;
     savingsPercentage = 20;
   } else if (c >= 500) {
@@ -262,7 +265,7 @@ export default function Home() {
                 Bulk discount
               </span>
               <h3 className="text-lg font-semibold text-white">VeloPack</h3>
-              <p className="text-slate-400 text-sm mt-1">Choose 20–10,000 credits. Save up to 20% at volume.</p>
+              <p className="text-slate-400 text-sm mt-1">Choose 20–10,000 credits. Save up to 35% at volume.</p>
               <div className="mt-6 space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2 gap-4">
@@ -335,7 +338,7 @@ min={MIN_BULK_CREDITS}
               <p className="mt-6 pt-6 border-t border-white/10 text-slate-500 text-xs text-center">
                 Need more than 10,000 credits?{" "}
                 <a
-                  href="mailto:sales@velodoc.app?subject=Enterprise%20credits%20inquiry"
+                  href="mailto:sales@velodoc.app?subject=VeloPack%20credits%20inquiry"
                   className="text-teal-accent hover:underline font-medium"
                 >
                   Contact Sales
