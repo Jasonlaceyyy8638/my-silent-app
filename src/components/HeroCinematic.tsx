@@ -31,25 +31,25 @@ export function HeroCinematic() {
       <div className="absolute inset-0 hero-particles" aria-hidden />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.12),transparent)]" aria-hidden />
 
-      <div className="relative z-10 text-center max-w-5xl mx-auto">
+      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-center w-full">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-3"
+          className="flex flex-col items-center justify-center"
         >
           <Image
             src="/logo-png.png"
             alt="VeloDoc"
-            width={480}
-            height={192}
-            className="w-[340px] sm:w-[400px] lg:w-[460px] h-auto drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] mx-auto"
+            width={672}
+            height={269}
+            className="w-[476px] sm:w-[560px] lg:w-[644px] h-auto object-contain drop-shadow-[0_0_25px_rgba(34,211,238,0.3)]"
           />
         </motion.div>
 
         <motion.div
           ref={downloadRef}
-          className="hidden md:flex justify-center mb-4"
+          className="hidden md:flex flex-col items-center justify-center mt-6 mb-4"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
