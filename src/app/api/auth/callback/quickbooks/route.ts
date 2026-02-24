@@ -8,7 +8,8 @@ const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bea
 /**
  * GET: QuickBooks OAuth callback at /api/auth/callback/quickbooks.
  * Set QUICKBOOKS_REDIRECT_URI to https://velodoc.app/api/auth/callback/quickbooks in Netlify.
- * Exchange code for access_token and refresh_token, then save to profiles.
+ * Receives realmId and code from Intuit; exchanges code for production tokens;
+ * stores realmId, access_token, and refresh_token in the user's Supabase profile.
  */
 export async function GET(request: NextRequest) {
   const { userId } = await auth();
@@ -23,6 +24,20 @@ export async function GET(request: NextRequest) {
 
   if (!code || !code.trim()) {
     return NextResponse.redirect(`${base}/dashboard?qb=error&reason=no_code`);
+  }
+
+  // Block starter plans from connecting QuickBooks; show upgrade modal on dashboard
+  const supabaseForPlan = getSupabase();
+  if (supabaseForPlan) {
+    const { data: profile } = await supabaseForPlan
+      .from("profiles")
+      .select("plan_type")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const planType = (profile as { plan_type?: string } | null)?.plan_type ?? "starter";
+    if (planType === "starter") {
+      return NextResponse.redirect(`${base}/dashboard?qb=upgrade`);
+    }
   }
 
   const clientId = process.env.QUICKBOOKS_CLIENT_ID;
@@ -80,8 +95,8 @@ export async function GET(request: NextRequest) {
         user_id: userId,
         qb_access_token: accessToken,
         qb_refresh_token: refreshToken,
+        qb_realm_id: realmId ?? null,
       };
-      if (realmId) row.qb_realm_id = realmId;
       const { error } = await supabase.from("profiles").upsert(row, { onConflict: "user_id" });
       if (error) {
         console.error("[quickbooks/callback] profiles upsert error:", error);
@@ -91,5 +106,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${base}/dashboard?qb=connected`);
+  return NextResponse.redirect(`${base}/dashboard?sync=success`);
 }

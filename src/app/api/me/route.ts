@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { ensureWelcomeCredits } from "@/lib/credits-auth";
 import { prisma } from "@/lib/prisma";
+import { getSupabase } from "@/lib/supabase";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
 export type MeRole = "admin" | "editor" | "viewer" | null;
+
+export type MePlan = "starter" | "pro" | "enterprise";
 
 export async function GET(request: Request) {
   const { userId, orgId, orgRole } = await auth();
@@ -26,11 +29,26 @@ export async function GET(request: Request) {
             : "viewer"
         : null;
 
+    let plan: MePlan = "starter";
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan_type")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const planType = (profile as { plan_type?: string } | null)?.plan_type;
+      if (planType === "pro" || planType === "enterprise") {
+        plan = planType;
+      }
+    }
+
     const debug = new URL(request.url).searchParams.get("debug") === "1";
     let payload: Record<string, unknown> = {
       userId,
       orgId: orgId ?? undefined,
       role,
+      plan,
       credits,
       dbHint: projectRef
         ? `App DB project ref: ${projectRef}`

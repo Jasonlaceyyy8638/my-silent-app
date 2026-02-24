@@ -8,25 +8,18 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
-const MIN_BULK_CREDITS = 20;
-const MAX_BULK_CREDITS = 10000;
-
-/** Cents per credit: 20–99 $1.00; 100–499 $0.90; 500–999 $0.85; 1,000–4,999 $0.80; 5,000–10,000 $0.65 */
-function getCentsPerCredit(credits: number): number {
-  if (credits >= 5000) return 65;
-  if (credits >= 1000) return 80;
-  if (credits >= 500) return 85;
-  if (credits >= 100) return 90;
-  return 100;
-}
-
 const PLANS = {
   starter: {
-    name: "Starter — 1 Credit",
-    description: "For quick one-off tasks.",
-    unit_amount: 100, // $1.00
+    name: "Starter — Monthly",
+    description: "Manual PDF processing only.",
+    unit_amount: 900, // $9.00
     quantity: 1,
-    credits: 1,
+  },
+  pro: {
+    name: "Pro — Monthly",
+    description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
+    unit_amount: 4900, // $49.00
+    quantity: 1,
   },
 } as const;
 
@@ -55,64 +48,33 @@ export async function POST(request: NextRequest) {
       "http://localhost:3000";
     const baseUrlClean = baseUrl.replace(/\/$/, "");
 
-    let plan: "starter" | "velopack" = "starter";
-    let credits = 20;
+    let plan: "starter" | "pro" = "starter";
     try {
       const body = await request.json();
-      if (body?.plan === "velopack") {
-        plan = "velopack";
-        const requested = typeof body?.credits === "number" ? body.credits : 20;
-        credits = Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, Math.round(requested)));
-      }
+      if (body?.plan === "pro") plan = "pro";
     } catch {
       // default to starter
     }
 
     const logoUrl = `${baseUrlClean}/logo-png.png`;
 
-    let lineItems: Stripe.Checkout.SessionCreateParams["line_items"];
-    let successUrl: string;
+    const config = PLANS[plan];
+    const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
+      {
+        price_data: {
+          currency: "usd" as const,
+          product_data: {
+            name: config.name,
+            description: config.description,
+          },
+          unit_amount: config.unit_amount,
+        },
+        quantity: config.quantity,
+      },
+    ];
+    const successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`;
     const metadata: Record<string, string> = { plan, userId };
     if (orgId && orgId.trim()) metadata.organizationId = orgId;
-
-    if (plan === "starter") {
-      const config = PLANS.starter;
-      lineItems = [
-        {
-          price_data: {
-            currency: "usd" as const,
-            product_data: {
-              name: config.name,
-              description: config.description,
-            },
-            unit_amount: config.unit_amount,
-          },
-          quantity: config.quantity,
-        },
-      ];
-      successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=starter`;
-    } else {
-      const centsPerCredit = getCentsPerCredit(credits);
-      const description =
-        credits >= 100
-          ? "Volume discount applied. Best value for teams."
-          : "Pay-as-you-go credits.";
-      metadata.credits = String(credits);
-      lineItems = [
-        {
-          price_data: {
-            currency: "usd" as const,
-            product_data: {
-              name: `VeloPack — ${credits} Credits`,
-              description,
-            },
-            unit_amount: centsPerCredit,
-          },
-          quantity: credits,
-        },
-      ];
-      successUrl = `${baseUrlClean}/success?session_id={CHECKOUT_SESSION_ID}&plan=velopack&credits=${credits}`;
-    }
 
     const sessionParams = {
       mode: "payment" as const,

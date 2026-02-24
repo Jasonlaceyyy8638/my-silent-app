@@ -101,5 +101,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${base}/dashboard?qb=connected`);
+  return NextResponse.redirect(`${base}/dashboard?sync=success`);
 }

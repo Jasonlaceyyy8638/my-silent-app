@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import Link from "next/link";
 import { Plug, Zap, FolderSync, FileSpreadsheet, Link2 } from "lucide-react";
 import { MotionScrollSection } from "@/components/MotionScrollSection";
+import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
 
 const INTEGRATIONS = [
   {
@@ -13,24 +13,28 @@ const INTEGRATIONS = [
       "Absolute Precision: sync any architectural asset—invoices, BOLs, contracts—directly to your books.",
     status: "active" as const,
     connectHref: "/api/quickbooks/auth",
+    proOnly: true,
   },
   {
     name: "Zapier",
     icon: Zap,
     description: "Connect to 5,000+ apps automatically.",
     status: "coming_soon" as const,
+    proOnly: false,
   },
   {
     name: "Google Drive",
     icon: FolderSync,
     description: "Import and export from Drive.",
     status: "coming_soon" as const,
+    proOnly: false,
   },
   {
     name: "Excel Online",
     icon: FileSpreadsheet,
     description: "Open and edit spreadsheets in the cloud.",
     status: "coming_soon" as const,
+    proOnly: false,
   },
 ];
 
@@ -38,6 +42,7 @@ export function IntegrationsSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
   const [videoInView, setVideoInView] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
 
   useEffect(() => {
     const el = videoWrapRef.current;
@@ -72,7 +77,7 @@ export function IntegrationsSection() {
           VeloDoc fits into your ecosystem. QuickBooks is live; more integrations are on the way.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          {INTEGRATIONS.map(({ name, icon: Icon, description, status, connectHref }) => (
+          {INTEGRATIONS.map(({ name, icon: Icon, description, status, connectHref, proOnly }) => (
             <div
               key={name}
               className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 flex flex-col items-center text-center shadow-[0_8px_32px_rgba(15,23,42,0.4)] border-t-teal-accent/30"
@@ -80,20 +85,28 @@ export function IntegrationsSection() {
               <div className="w-12 h-12 rounded-xl bg-teal-accent/20 flex items-center justify-center mb-4">
                 <Icon className="h-6 w-6 text-teal-accent" />
               </div>
-              <h3 className="font-semibold text-white">{name}</h3>
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <h3 className="font-semibold text-white">{name}</h3>
+                {proOnly && (
+                  <span className="rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2.5 py-0.5 text-[10px] font-medium text-[#22d3ee] uppercase tracking-wider">
+                    Pro Feature
+                  </span>
+                )}
+              </div>
               <p className="text-slate-400 text-sm mt-1">{description}</p>
               {status === "active" && connectHref ? (
                 <>
                   <span className="mt-4 inline-block rounded-full bg-lime-500/20 border border-lime-400/40 px-3 py-1 text-xs font-medium text-lime-300">
                     Active
                   </span>
-                  <Link
-                    href={connectHref}
+                  <button
+                    type="button"
+                    onClick={() => setUpsellOpen(true)}
                     className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-accent hover:bg-teal-accent/90 text-petroleum px-4 py-2.5 text-sm font-semibold transition-colors"
                   >
                     <Link2 className="h-4 w-4" />
                     Connect
-                  </Link>
+                  </button>
                 </>
               ) : (
                 <span className="mt-4 inline-block rounded-full bg-petroleum/80 border border-teal-accent/30 px-3 py-1 text-xs font-medium text-teal-accent">
@@ -103,6 +116,9 @@ export function IntegrationsSection() {
             </div>
           ))}
         </div>
+        {upsellOpen && (
+          <QuickBooksUpsellModal onClose={() => setUpsellOpen(false)} />
+        )}
 
         <div
           ref={videoWrapRef}

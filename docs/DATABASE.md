@@ -104,6 +104,19 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
 
 Then set `email` on the profile that should receive the report. Otherwise set `WEEKLY_REPORT_EMAIL` in your environment.
 
+### 7b. Subscription tiers: profiles.plan_type and profiles.automation_count
+
+For the 3-tier monthly subscription model (starter, pro, enterprise):
+
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_type text DEFAULT 'starter';
+-- Allowed values: 'starter', 'pro', 'enterprise'
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS automation_count integer DEFAULT 0;
+```
+
+- `plan_type`: 'starter' = manual PDF only; 'pro' and 'enterprise' = QuickBooks bridge + weekly CSV report. Set to 'pro' or 'enterprise' for accounts that may connect QuickBooks and receive the weekly report.
+- `automation_count`: Tracks monthly automation usage (e.g. weekly report sends, syncs). Reset each billing period in your own job or via Stripe webhook.
+
 ### 8. Optional: api_logs columns for QuickBooks sync troubleshooting
 
 To store failed sync details and show them on the Sync History page (Admin Eye icon), add optional columns to `api_logs`:

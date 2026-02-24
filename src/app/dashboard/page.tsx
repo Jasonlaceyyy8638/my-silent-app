@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   FileUp,
   Sparkles,
@@ -26,7 +27,8 @@ import { QuickBooksIcon, ExcelIcon, ZapierIcon, GoogleDriveIcon } from "@/compon
 import { identifyDocumentType } from "@/lib/identify-document-type";
 import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
-import type { MeRole } from "@/app/api/me/route";
+import type { MeRole, MePlan } from "@/app/api/me/route";
+import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
 
 const CUSTOM_CATEGORIES_KEY = "velodoc_custom_categories";
 function getCustomCategoriesStorageKey(orgId: string | null): string {
@@ -121,9 +123,13 @@ export default function DashboardPage() {
   const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<MeRole>(null);
+  const [plan, setPlan] = useState<MePlan>("starter");
+  const [qbUpsellOpen, setQbUpsellOpen] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSuccessToast, setSyncSuccessToast] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<FolderId>("all");
   const [customCategories, setCustomCategories] = useState<string[]>(() => loadCustomCategories(orgId));
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setCustomCategories(loadCustomCategories(orgId));
@@ -203,6 +209,7 @@ export default function DashboardPage() {
       if (res.ok) {
         if (typeof data.userId === "string") setCurrentUserId(data.userId);
         if (data.role !== undefined) setUserRole(data.role as MeRole);
+        if (data.plan === "starter" || data.plan === "pro" || data.plan === "enterprise") setPlan(data.plan);
       }
     } catch {
       // keep defaults
@@ -218,6 +225,26 @@ export default function DashboardPage() {
   useEffect(() => {
     if (userRole === "admin") fetchApiLogs();
   }, [userRole, fetchApiLogs]);
+
+  useEffect(() => {
+    if (searchParams.get("sync") === "success") {
+      setSyncSuccessToast(true);
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/dashboard");
+      }
+      const t = setTimeout(() => setSyncSuccessToast(false), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("qb") === "upgrade") {
+      setQbUpsellOpen(true);
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/dashboard");
+      }
+    }
+  }, [searchParams]);
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -375,6 +402,7 @@ export default function DashboardPage() {
                   const joined = waitlistJoined.has(id);
                   const isLarge = bento === "large";
                   const isSmall = bento === "small";
+                  const isQuickBooks = id === "quickbooks";
                   return (
                     <div
                       key={id}
@@ -385,23 +413,68 @@ export default function DashboardPage() {
                       <div className="w-12 h-12 rounded-xl bg-teal-accent/10 flex items-center justify-center mb-4 shrink-0 text-teal-accent">
                         <Icon className="w-6 h-6" />
                       </div>
-                      <h3 className="font-semibold text-white text-sm">{name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-white text-sm">{name}</h3>
+                        {isQuickBooks && (
+                          <span className="rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[#22d3ee]">
+                            Pro Feature
+                          </span>
+                        )}
+                      </div>
                       <p className="text-slate-400 text-xs mt-1 flex-1 leading-relaxed">{description}</p>
-                      <span className="mt-3 inline-block rounded-full bg-petroleum border border-teal-accent/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-teal-accent w-fit">
-                        Join Beta
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleJoinWaitlist(id)}
-                        disabled={joined}
-                        className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-70 disabled:pointer-events-none"
-                      >
-                        {joined ? "You're in" : "Join Beta"}
-                      </button>
+                      {isQuickBooks ? (
+                        <>
+                          <span className="mt-3 inline-block rounded-full bg-lime-500/20 border border-lime-400/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-lime-300 w-fit">
+                            Active
+                          </span>
+                          {(plan === "pro" || plan === "enterprise") ? (
+                            <Link
+                              href="/api/quickbooks/auth"
+                              className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-center transition-colors"
+                            >
+                              Connect
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setQbUpsellOpen(true)}
+                              className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors"
+                            >
+                              Connect
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="mt-3 inline-block rounded-full bg-petroleum border border-teal-accent/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-teal-accent w-fit">
+                            Join Beta
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleJoinWaitlist(id)}
+                            disabled={joined}
+                            className="mt-4 w-full rounded-lg bg-teal-accent/20 hover:bg-teal-accent/30 text-teal-accent border border-teal-accent/40 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-70 disabled:pointer-events-none"
+                          >
+                            {joined ? "You're in" : "Join Beta"}
+                          </button>
+                        </>
+                      )}
                     </div>
                   );
                 })}
               </div>
+              <div className="mt-6 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-md p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t-[#22d3ee]/30">
+                <div>
+                  <h3 className="font-semibold text-white text-sm">Weekly Report</h3>
+                  <p className="text-slate-400 text-xs mt-1">Every Monday at 8:00 AM — CSV architectural log of your nationwide sync history to your inbox.</p>
+                </div>
+                <span className="shrink-0 inline-flex rounded-full bg-lime-500/20 border border-lime-400/40 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-lime-300">
+                  Active
+                </span>
+              </div>
+              {qbUpsellOpen && (
+                <QuickBooksUpsellModal onClose={() => setQbUpsellOpen(false)} />
+              )}
             </div>
           </section>
         )}
@@ -635,6 +708,16 @@ export default function DashboardPage() {
                 >
                   Dismiss
                 </button>
+              </div>
+            )}
+
+            {syncSuccessToast && (
+              <div
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md rounded-xl border-2 border-[#22d3ee]/60 bg-[#0f172a]/95 backdrop-blur-xl px-4 py-3 shadow-[0_0_24px_rgba(34,211,238,0.4)] text-[#22d3ee] text-sm font-medium"
+                role="status"
+                aria-live="polite"
+              >
+                VeloDoc is now architecting your QuickBooks data
               </div>
             )}
 

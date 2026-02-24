@@ -26,56 +26,47 @@ import { SignupSection } from "@/components/SignupSection";
 import { AboutSection } from "@/components/AboutSection";
 import { IntegrationsSection } from "@/components/IntegrationsSection";
 
-const MIN_BULK_CREDITS = 20;
-const MAX_BULK_CREDITS = 10000;
+type Plan = "starter" | "pro" | "enterprise";
 
-/** Tiers: 20–99 $1.00; 100–499 10%; 500–999 15%; 1,000–4,999 20%; 5,000–10,000 35% ($0.65). */
-function getBulkPrice(credits: number): {
-  total: number;
-  perCredit: number;
-  savingsPercentage: number;
-} {
-  const c = Math.max(MIN_BULK_CREDITS, Math.min(MAX_BULK_CREDITS, Math.round(credits)));
-  let perCredit: number;
-  let savingsPercentage: number;
-  if (c >= 5000) {
-    perCredit = 0.65;
-    savingsPercentage = 35;
-  } else if (c >= 1000) {
-    perCredit = 0.8;
-    savingsPercentage = 20;
-  } else if (c >= 500) {
-    perCredit = 0.85;
-    savingsPercentage = 15;
-  } else if (c >= 100) {
-    perCredit = 0.9;
-    savingsPercentage = 10;
-  } else {
-    perCredit = 1.0;
-    savingsPercentage = 0;
-  }
-  const total = Math.round(perCredit * c * 100) / 100;
-  return { total, perCredit, savingsPercentage };
-}
-
-type Plan = "starter" | "velopack";
+const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit: string; description: string; cta: "checkout" | "contact" }[] = [
+  {
+    plan: "starter",
+    name: "Starter",
+    price: "$9",
+    automationLimit: "0 automations/month",
+    description: "Manual PDF processing only. Perfect for trying VeloDoc.",
+    cta: "checkout",
+  },
+  {
+    plan: "pro",
+    name: "Pro",
+    price: "$49",
+    automationLimit: "50 automations/month",
+    description: "QuickBooks bridge + automated weekly CSV report. For growing teams.",
+    cta: "checkout",
+  },
+  {
+    plan: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    automationLimit: "Unlimited automations",
+    description: "Full access, dedicated support, and custom limits.",
+    cta: "contact",
+  },
+];
 
 export default function Home() {
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null);
-  const [bulkCredits, setBulkCredits] = useState(100);
   const [error, setError] = useState<string | null>(null);
-  const bulkPrice = getBulkPrice(bulkCredits);
 
-  const handleCheckout = useCallback(async (plan: Plan, credits?: number) => {
+  const handleCheckout = useCallback(async (plan: Plan) => {
     setError(null);
     setCheckoutPlan(plan);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          plan === "velopack" ? { plan, credits: credits ?? bulkCredits } : { plan }
-        ),
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Checkout failed.");
@@ -85,7 +76,7 @@ export default function Home() {
       setError(e instanceof Error ? e.message : "Checkout failed.");
       setCheckoutPlan(null);
     }
-  }, [bulkCredits]);
+  }, []);
 
   const audiences = [
     {
@@ -237,109 +228,57 @@ export default function Home() {
 
         <MotionScrollSection id="pricing" className="mb-14 scroll-mt-24">
           <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Simple pricing
+            Monthly subscription
           </h2>
+          <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
+            Three tiers with automation limits. Upgrade anytime.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 flex flex-col border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)]">
-              <h3 className="text-lg font-semibold text-white">Starter</h3>
-              <p className="mt-1 text-3xl font-bold text-white">$1.00</p>
-              <p className="text-slate-300 text-sm mt-1">1 Credit</p>
-              <p className="text-slate-400 text-sm mt-2">For quick one-off tasks.</p>
-              <button
-                type="button"
-                onClick={() => handleCheckout("starter")}
-                disabled={checkoutPlan !== null}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors"
+            {PRICING_TIERS.map(({ plan, name, price, automationLimit, description, cta }) => (
+              <div
+                key={plan}
+                className={`rounded-2xl border backdrop-blur-xl p-6 flex flex-col shadow-[0_8px_32px_rgba(15,23,42,0.4)] ${
+                  plan === "pro"
+                    ? "border-[#22d3ee]/40 bg-[#22d3ee]/5 border-t-[#22d3ee]/50 relative"
+                    : "border-white/20 bg-white/[0.07] border-t-teal-accent/30"
+                }`}
               >
-                <ShoppingCart className="h-4 w-4" />
-                {checkoutPlan === "starter" ? "Redirecting…" : "Get Starter"}
-              </button>
-            </div>
-            <div className="md:col-span-2 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-6 sm:p-8 flex flex-col border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] relative">
-              <span className="absolute -top-2.5 right-6 rounded-full bg-lime-accent px-2.5 py-0.5 text-xs font-medium text-petroleum">
-                Bulk discount
-              </span>
-              <h3 className="text-lg font-semibold text-white">VeloPack</h3>
-              <p className="text-slate-400 text-sm mt-1">Choose 20–10,000 credits. Save up to 35% at volume.</p>
-              <div className="mt-6 space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-2 gap-4">
-                    <label htmlFor="bulk-credits" className="text-slate-300 font-medium">
-                      Credits
-                    </label>
-                    <input
-                      type="number"
-min={MIN_BULK_CREDITS}
-                    max={MAX_BULK_CREDITS}
-                    value={Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits))}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      if (!Number.isNaN(v)) setBulkCredits(Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, v)));
-                    }}
-                      className="w-20 rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-right font-mono text-sm font-semibold text-teal-accent tabular-nums focus:border-teal-accent focus:outline-none focus:ring-1 focus:ring-teal-accent"
-                    />
-                  </div>
-                  <input
-                    id="bulk-credits"
-                    type="range"
-                    min={MIN_BULK_CREDITS}
-                    max={MAX_BULK_CREDITS}
-                    step={1}
-                    value={Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits))}
-                    onChange={(e) =>
-                      setBulkCredits(Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, Number(e.target.value))))
-                    }
-                    className="w-full h-2 rounded-full appearance-none bg-slate-700 accent-teal-accent cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
-                    <span>{MIN_BULK_CREDITS}</span>
-                    <span>{MAX_BULK_CREDITS.toLocaleString()}</span>
-                  </div>
-                </div>
-                {bulkPrice.savingsPercentage > 0 && (
-                  <p className="text-teal-accent text-sm font-medium">
-                    You are saving {bulkPrice.savingsPercentage}% on{" "}
-                    {Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)).toLocaleString()} credits.
-                  </p>
-                )}
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-bold text-white tabular-nums">
-                    ${bulkPrice.total.toFixed(2)}
+                {plan === "pro" && (
+                  <span className="absolute -top-2.5 right-6 rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2.5 py-0.5 text-[10px] font-medium text-[#22d3ee] uppercase tracking-wider">
+                    Popular
                   </span>
-                  {bulkPrice.savingsPercentage > 0 && (
-                    <span className="rounded bg-teal-accent/20 text-teal-accent text-xs font-medium px-2 py-0.5">
-                      {bulkPrice.savingsPercentage}% off
-                    </span>
-                  )}
-                </div>
-                <p className="text-slate-500 text-xs">
-                  ${bulkPrice.perCredit.toFixed(2)}/credit
-                  {bulkPrice.savingsPercentage > 0 && " (volume rate)"}
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleCheckout("velopack", Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)))
-                  }
-                  disabled={checkoutPlan !== null}
-                  className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-teal-accent hover:bg-lime-accent text-petroleum px-4 py-3 text-sm font-semibold disabled:opacity-70 disabled:pointer-events-none transition-colors"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {checkoutPlan === "velopack"
-                    ? "Redirecting…"
-                    : `Get ${Math.min(MAX_BULK_CREDITS, Math.max(MIN_BULK_CREDITS, bulkCredits)).toLocaleString()} Credits`}
-                </button>
+                )}
+                <span className={`text-[10px] font-mono uppercase tracking-wider ${plan === "pro" ? "text-[#22d3ee]" : "text-slate-500"}`}>
+                  {plan}
+                </span>
+                <h3 className="text-lg font-semibold text-white mt-0.5">{name}</h3>
+                <p className="mt-1 text-3xl font-bold text-white">{price}</p>
+                <p className="text-slate-300 text-sm mt-1 font-medium">{automationLimit}</p>
+                <p className="text-slate-400 text-sm mt-2 flex-1">{description}</p>
+                {cta === "checkout" ? (
+                  <button
+                    type="button"
+                    onClick={() => handleCheckout(plan)}
+                    disabled={checkoutPlan !== null}
+                    className={`mt-6 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:pointer-events-none transition-colors ${
+                      plan === "pro"
+                        ? "bg-[#22d3ee] hover:bg-[#22d3ee]/90 text-petroleum"
+                        : "bg-teal-accent hover:bg-lime-accent text-petroleum"
+                    }`}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : "Get Pro"}
+                  </button>
+                ) : (
+                  <a
+                    href="mailto:sales@velodoc.app?subject=Enterprise%20plan%20inquiry"
+                    className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+                  >
+                    Contact Sales
+                  </a>
+                )}
               </div>
-              <p className="mt-6 pt-6 border-t border-white/10 text-slate-500 text-xs text-center">
-                Need more than 10,000 credits?{" "}
-                <a
-                  href="mailto:sales@velodoc.app?subject=VeloPack%20credits%20inquiry"
-                  className="text-teal-accent hover:underline font-medium"
-                >
-                  Contact Sales
-                </a>
-              </p>
-            </div>
+            ))}
           </div>
           {error && (
             <p className="mt-3 text-sm text-red-300 text-center" role="alert">
