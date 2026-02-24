@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  OrganizationList,
   OrganizationProfile,
   OrganizationSwitcher,
-  CreateOrganization,
   useOrganization,
 } from "@clerk/nextjs";
 import { clerkTeamAppearance } from "@/lib/clerk-appearance";
@@ -103,19 +103,12 @@ export default function TeamSettingsPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] flex flex-col items-center gap-8">
-            <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-              <OrganizationSwitcher
-                hidePersonal
-                afterCreateOrganizationUrl="/settings/team"
-                afterSelectOrganizationUrl="/settings/team"
-                appearance={clerkTeamAppearance}
-              />
-              <CreateOrganization
-                afterCreateOrganizationUrl="/settings/team"
-                appearance={clerkTeamAppearance}
-              />
-            </div>
+          <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] flex flex-col items-center gap-8 [&_.cl-rootBox]:!rounded-2xl [&_.cl-card]:!rounded-2xl [&_.cl-card]:!border [&_.cl-card]:!border-white/20 [&_.cl-card]:!bg-white/[0.07] [&_.cl-card]:!backdrop-blur-xl [&_.cl-card]:!border-t-teal-accent/30">
+            <OrganizationList
+              hidePersonal
+              afterCreateOrganizationUrl="/settings/team"
+              appearance={clerkTeamAppearance}
+            />
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
