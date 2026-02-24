@@ -13,7 +13,10 @@ function getStripe(): Stripe | null {
 
 /**
  * POST: Create a Stripe Customer Portal (billing portal) session.
- * Authenticates via Clerk, loads stripe_customer_id from Supabase profiles, returns portal URL for redirect.
+ * - Authenticates the user (Clerk); uses Supabase server client (getSupabase()) to fetch stripe_customer_id from profiles by user_id.
+ * - Creates portal session via stripe.billingPortal.sessions.create({ customer, return_url }).
+ * - Returns { url } for frontend redirect.
+ * Brand & support: Portal branding is managed by Alissa Wilson in Stripe Dashboard. Set support contact (Sharon Ferguson — support@velodoc.app) in Stripe Dashboard → Billing → Customer portal.
  */
 export async function POST() {
   const { userId } = await auth();

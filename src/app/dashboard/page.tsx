@@ -698,7 +698,7 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4" aria-hidden />
-                        Manage Billing
+                        Manage Billing & Subscription
                       </>
                     )}
                   </button>
