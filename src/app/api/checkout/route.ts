@@ -8,28 +8,25 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
-// Pricing cards map to Stripe Price IDs via env: STRIPE_PRICE_ID_STARTER, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_ENTERPRISE.
+// Pricing cards map to Stripe Price IDs from Netlify env: STRIPE_PRICE_ID_STARTER, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_ENTERPRISE.
 const PLANS = {
   starter: {
     name: "Starter — Monthly",
     description: "Manual PDF processing only.",
     unit_amount: 2900, // $29
     quantity: 1,
-    priceId: process.env.STRIPE_PRICE_ID_STARTER as string | undefined,
   },
   pro: {
     name: "Professional — Monthly",
     description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
     unit_amount: 7900, // $79
     quantity: 1,
-    priceId: process.env.STRIPE_PRICE_ID_PRO as string | undefined,
   },
   enterprise: {
     name: "Enterprise — Monthly",
     description: "Full access, dedicated support, unlimited automations.",
     unit_amount: 24900, // $249
     quantity: 1,
-    priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE as string | undefined,
   },
 } as const;
 
@@ -68,10 +65,17 @@ export async function POST(request: NextRequest) {
 
     const logoUrl = `${baseUrlClean}/logo-png.png`;
 
+    // Use Netlify env Price IDs when set (firewalled tiers from VeloDoc Stripe account).
+    const priceIdStarter = process.env.STRIPE_PRICE_ID_STARTER?.trim();
+    const priceIdPro = process.env.STRIPE_PRICE_ID_PRO?.trim();
+    const priceIdEnterprise = process.env.STRIPE_PRICE_ID_ENTERPRISE?.trim();
+    const priceId =
+      plan === "starter" ? priceIdStarter : plan === "pro" ? priceIdPro : priceIdEnterprise;
+
     const config = PLANS[plan];
     const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
-      config.priceId
-        ? { price: config.priceId, quantity: config.quantity }
+      priceId
+        ? { price: priceId, quantity: config.quantity }
         : {
             price_data: {
               currency: "usd" as const,

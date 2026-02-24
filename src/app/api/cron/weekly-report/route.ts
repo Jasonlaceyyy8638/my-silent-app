@@ -147,7 +147,7 @@ async function buildAndSendReport(
   const count = body.length;
   const filename = `velodoc-weekly-sync-report-${new Date().toISOString().slice(0, 10)}.csv`;
 
-  // Weekly CSV Report is sent exclusively to Phillip McKenzie at admin@velodoc.app
+  // Weekly report notifies Phillip McKenzie (admin@velodoc.app) — sync summary + payments this week
   const adminEmail = (process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app").trim();
   const recipients: string[] = [adminEmail];
   const supabaseClient = getSupabase();

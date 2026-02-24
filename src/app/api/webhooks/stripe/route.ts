@@ -22,7 +22,7 @@ const CREDITS_BY_PLAN: Record<string, number> = {
 };
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
-// Subscription/billing receipts: signed by Alissa Wilson at billing@velodoc.app
+// All automated receipts from Starter/Pro/Enterprise: addressed from Alissa Wilson billing@velodoc.app
 const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
 const BILLING_REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 const ADMIN_EMAIL = process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
