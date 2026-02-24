@@ -126,6 +126,36 @@ export function Footer() {
             </div>
           ))}
         </div>
+        <div className="border-t border-white/10 pt-8 mt-8">
+          <p className="text-center text-slate-400 text-xs font-medium mb-4 uppercase tracking-wider">
+            Contact
+          </p>
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-8">
+            <a
+              href="mailto:sales@velodoc.app"
+              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Interested in bulk credits? Contact sales@velodoc.app
+            </a>
+            <a
+              href="mailto:support@velodoc.app"
+              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              title="Sharon Ferguson — support@velodoc.app"
+            >
+              Need technical help? Reach out to support@velodoc.app
+            </a>
+            <a
+              href="mailto:billing@velodoc.app"
+              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              title="Alissa Wilson — billing@velodoc.app"
+            >
+              Billing inquiry? Contact billing@velodoc.app
+            </a>
+          </div>
+        </div>
         <p className="mt-6 text-center text-slate-500 text-[10px] font-mono">
           © {new Date().getFullYear()} VeloDoc. All rights reserved.
         </p>

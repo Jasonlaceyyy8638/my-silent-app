@@ -306,6 +306,50 @@ export default function Home() {
               {error}
             </p>
           )}
+
+          <section className="mt-12 max-w-4xl mx-auto px-1 sm:px-0" aria-labelledby="compare-tiers-heading">
+            <h2 id="compare-tiers-heading" className="text-xl font-bold text-white text-center mb-6">
+              Compare Tiers
+            </h2>
+            <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl overflow-hidden border-t-teal-accent/30">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/20 bg-white/5">
+                    <th className="px-4 py-3 text-slate-400 font-semibold uppercase tracking-wider">Feature</th>
+                    <th className="px-4 py-3 text-white font-medium">Starter</th>
+                    <th className="px-4 py-3 text-white font-medium">Professional</th>
+                    <th className="px-4 py-3 text-white font-medium">Enterprise</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  <tr className="border-b border-white/10">
+                    <td className="px-4 py-3 font-medium">QuickBooks Sync</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="px-4 py-3 font-medium">Automations / Month</td>
+                    <td className="px-4 py-3">0</td>
+                    <td className="px-4 py-3">50</td>
+                    <td className="px-4 py-3">Unlimited</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="px-4 py-3 font-medium">Dedicated Support</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                  </tr>
+                  <tr className="border-b border-white/10 last:border-b-0">
+                    <td className="px-4 py-3 font-medium">Institutional API Access</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3">—</td>
+                    <td className="px-4 py-3 text-teal-accent">✓</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </MotionScrollSection>
 
         <IntegrationsSection />
