@@ -108,13 +108,19 @@ export function IntegrationsSection() {
           ref={videoWrapRef}
           className="mt-12 max-w-2xl mx-auto rounded-2xl border border-white/20 bg-white/[0.07] overflow-hidden border-t-teal-accent/30 shadow-[0_0_24px_rgba(34,211,238,0.15)]"
         >
-          <p className="text-center text-slate-400 text-xs font-medium uppercase tracking-wider py-3 border-b border-white/10">
-            Live sync in action
-          </p>
+          <div className="py-5 px-4 sm:px-6 border-b border-white/10 text-center">
+            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#22d3ee] shadow-[0_0_20px_rgba(34,211,238,0.4)]">
+              PRECISION REPORTING. DELIVERED WEEKLY.
+            </h3>
+            <p className="mt-2 text-slate-400 text-sm max-w-xl mx-auto leading-relaxed">
+              Every Monday at 8:00 AM, VeloDoc delivers a comprehensive CSV architectural log of your nationwide sync history directly to your inbox.
+            </p>
+          </div>
           <div className="relative aspect-video bg-slate-900/80">
             <video
               ref={videoRef}
               src="/demo.mp4"
+              poster="/weekly-report-poster.png"
               loop
               muted
               playsInline
