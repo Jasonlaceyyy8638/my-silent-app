@@ -131,11 +131,11 @@ export function Footer() {
         </p>
         <p className="mt-3 text-center">
           <a
-            href="mailto:support@velodoc.app"
+            href="mailto:support@velodoc.app?subject=Credits%20or%20support"
             className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
-            title="Sharon Ferguson — Support"
+            title="Sharon Ferguson — Credits &amp; support"
           >
-            Sharon Ferguson — support@velodoc.app
+            Credits &amp; support: Sharon Ferguson — support@velodoc.app
           </a>
         </p>
       </div>

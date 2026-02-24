@@ -10,6 +10,7 @@ import {
   Home as HomeIcon,
   GraduationCap,
   Truck,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
@@ -229,9 +230,12 @@ export default function Home() {
         </MotionScrollSection>
 
         <MotionScrollSection id="pricing" className="mb-14 scroll-mt-24">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Monthly subscription
+          <h2 className="text-2xl font-bold text-white text-center mb-2">
+            Monthly Subscription
           </h2>
+          <p className="text-amber-200/90 text-center text-sm max-w-xl mx-auto mb-2 px-2" role="status">
+            Plans provide platform access and integrations. Document processing requires a separate credit balance.
+          </p>
           <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
             Three tiers with automation limits. Upgrade anytime.
           </p>
@@ -257,6 +261,12 @@ export default function Home() {
                 <p className="mt-1 text-3xl font-bold text-white">{price}</p>
                 <p className="text-slate-300 text-sm mt-1 font-medium">{automationLimit}</p>
                 <p className="text-slate-400 text-sm mt-2 flex-1">{description}</p>
+                {(plan === "pro" || plan === "enterprise") && (
+                  <p className="text-slate-500 text-xs mt-2 flex items-start gap-1.5" title="Credits are consumed per extraction.">
+                    <Info className="h-3.5 w-3.5 text-teal-accent/70 flex-shrink-0 mt-0.5" aria-hidden />
+                    <span>QuickBooks bridge unlocked; credits still consumed per extraction.</span>
+                  </p>
+                )}
                 {cta === "checkout" ? (
                   <button
                     type="button"

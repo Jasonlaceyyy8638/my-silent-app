@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
+import { Resend } from "resend";
 import { getSupabase } from "@/lib/supabase";
 import {
   getCreditsForAuth,
@@ -121,6 +122,40 @@ export async function POST(request: NextRequest) {
 
     const balance = await getCreditsForAuth(userId, orgId);
     if (balance < creditsNeeded) {
+      // Notify Alissa if a paid-plan user attempts to process with $0 credit balance.
+      const paidPlans = ["starter", "pro", "enterprise"];
+      let planType: string | null = null;
+      if (supabase) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("plan_type")
+            .eq("user_id", userId)
+            .maybeSingle();
+          planType = (profile as { plan_type?: string } | null)?.plan_type ?? null;
+        } catch {
+          // ignore
+        }
+      }
+      if (planType && paidPlans.includes(planType)) {
+        const resendKey = process.env.RESEND_API_KEY;
+        const billingNotify = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
+        const billingFrom = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
+        if (resendKey) {
+          try {
+            const resend = new Resend(resendKey);
+            await resend.emails.send({
+              from: billingFrom,
+              to: billingNotify,
+              subject: "VeloDoc — Paid plan user attempted extraction with $0 credit balance",
+              text: `User ${userId} (plan: ${planType}) attempted to process a file with insufficient credit balance. They may need to buy credits.`,
+              html: `<p>User <strong>${userId}</strong> (plan: <strong>${planType}</strong>) attempted to process a file with insufficient credit balance.</p><p>They may need to buy credits.</p>`,
+            });
+          } catch (err) {
+            console.error("[extract] Alissa notification (0 credits) failed:", err);
+          }
+        }
+      }
       await insertApiLog(supabase, {
         user_id: userId,
         org_id: orgId ?? null,

@@ -9,22 +9,23 @@ function getStripe(): Stripe | null {
 }
 
 // Pricing cards map to Stripe Price IDs from Netlify env: STRIPE_PRICE_ID_STARTER, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_ENTERPRISE.
+// Description shown in Stripe Checkout when using price_data (no Price ID). When using Price IDs, set product description in Stripe Dashboard to match.
 const PLANS = {
   starter: {
     name: "Starter — Monthly",
-    description: "Manual PDF processing only.",
+    description: "Subscription for VeloDoc Starter access. Credits sold separately.",
     unit_amount: 2900, // $29
     quantity: 1,
   },
   pro: {
     name: "Professional — Monthly",
-    description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
+    description: "Subscription for VeloDoc Professional access. Credits sold separately.",
     unit_amount: 7900, // $79
     quantity: 1,
   },
   enterprise: {
     name: "Enterprise — Monthly",
-    description: "Full access, dedicated support, unlimited automations.",
+    description: "Subscription for VeloDoc Enterprise access. Credits sold separately.",
     unit_amount: 24900, // $249
     quantity: 1,
   },
