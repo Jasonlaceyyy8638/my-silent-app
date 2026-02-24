@@ -21,6 +21,8 @@ import { UsageHistory, type UsageEntry } from "@/components/UsageHistory";
 import { SecurityLog, type SecurityLogEntry } from "@/components/SecurityLog";
 import { QuickBooksIcon, ExcelIcon, ZapierIcon, GoogleDriveIcon } from "@/components/integration-icons";
 import type { ExtractedRow } from "@/types";
+import type { DocumentWithRow } from "@/app/api/documents/route";
+import type { MeRole } from "@/app/api/me/route";
 
 type DashboardTab = "architect" | "integrations" | "team";
 
@@ -74,13 +76,16 @@ const GETTING_STARTED_STEPS = [
 export default function DashboardPage() {
   const [tab, setTab] = useState<DashboardTab>("architect");
   const [waitlistJoined, setWaitlistJoined] = useState<Set<string>>(new Set());
-  const [rows, setRows] = useState<ExtractedRow[]>([]);
+  const [documents, setDocuments] = useState<DocumentWithRow[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [usage, setUsage] = useState<UsageEntry[]>([]);
   const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<MeRole>(null);
+  const rows = useMemo(() => documents.map((d) => d.extracted_data), [documents]);
   const stats = useUsageStats(rows, credits);
 
   const handleJoinWaitlist = useCallback((id: string) => {
@@ -111,11 +116,11 @@ export default function DashboardPage() {
       const res = await fetch("/api/documents");
       const data = await res.json();
       if (res.ok) {
-        if (Array.isArray(data.rows)) setRows(data.rows);
+        if (Array.isArray(data.documents)) setDocuments(data.documents);
         if (Array.isArray(data.usage)) setUsage(data.usage);
       }
     } catch {
-      // keep existing rows
+      // keep existing
     }
   }, []);
 
@@ -129,11 +134,25 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchMe = useCallback(async () => {
+    try {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (res.ok) {
+        if (typeof data.userId === "string") setCurrentUserId(data.userId);
+        if (data.role !== undefined) setUserRole(data.role as MeRole);
+      }
+    } catch {
+      // keep defaults
+    }
+  }, []);
+
   useEffect(() => {
     fetchCredits();
     fetchSavedDocuments();
     fetchApiLogs();
-  }, [fetchCredits, fetchSavedDocuments, fetchApiLogs]);
+    fetchMe();
+  }, [fetchCredits, fetchSavedDocuments, fetchApiLogs, fetchMe]);
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -316,19 +335,35 @@ export default function DashboardPage() {
         )}
 
         {tab === "team" && (
-          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center border-t-teal-accent/30">
-            <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">Team Management</h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
-              Invite team members, assign roles, and manage access across your organization. Built for enterprises that need audit trails and SSO.
-            </p>
-            <Link
-              href="/settings/team"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
-            >
-              Open Team Settings
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+          <section className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 border-t-teal-accent/30">
+            <div className="text-center mb-8">
+              <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-white mb-2">Project Team</h2>
+              <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
+                Invite team members, assign roles, and manage access. Built for enterprises that need audit trails and SSO.
+              </p>
+              <Link
+                href="/settings/team"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
+              >
+                Open Team Settings
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                <span className="text-sm font-semibold text-teal-accent">Admin</span>
+                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Full access to credits, team management, and all uploads.</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                <span className="text-sm font-semibold text-cyan-400">Editor</span>
+                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Can upload, edit, and delete their own files.</p>
+              </div>
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-md p-5 text-left">
+                <span className="text-sm font-semibold text-slate-400">Viewer</span>
+                <p className="text-slate-400 text-xs mt-2 leading-relaxed">Read-only access to processed data.</p>
+              </div>
+            </div>
           </section>
         )}
 
@@ -445,7 +480,19 @@ export default function DashboardPage() {
             </section>
 
             <section className="rounded-2xl">
-              <ResultsTable rows={rows} />
+              <ResultsTable
+                documents={documents}
+                currentUserId={currentUserId}
+                userRole={userRole}
+                onDelete={async (id) => {
+                  const res = await fetch("/api/documents", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+                  if (res.ok) fetchSavedDocuments();
+                }}
+                onEdit={async (id, updates) => {
+                  const res = await fetch("/api/documents", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) });
+                  if (res.ok) fetchSavedDocuments();
+                }}
+              />
             </section>
           </>
         )}

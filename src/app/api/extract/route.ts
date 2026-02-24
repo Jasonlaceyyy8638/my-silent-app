@@ -306,13 +306,14 @@ export async function POST(request: NextRequest) {
     };
 
     if (supabase) {
-      const payload = {
+      const payload: Record<string, unknown> = {
         user_id: userId,
         file_name: file.name,
         extracted_data: row as unknown as Record<string, unknown>,
         page_count: numPages,
         credit_cost: creditsNeeded,
       };
+      if (orgId != null && String(orgId).trim()) payload.org_id = orgId;
       const { data: saved, error: insertError } = await supabase
         .from("documents")
         .insert(payload)

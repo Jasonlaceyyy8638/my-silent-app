@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
+export type MeRole = "admin" | "editor" | "viewer" | null;
+
 export async function GET(request: Request) {
-  const { userId, orgId } = await auth();
+  const { userId, orgId, orgRole } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
@@ -15,9 +17,20 @@ export async function GET(request: Request) {
     const url = process.env.DATABASE_URL ?? "";
     const projectRef = url.match(/prisma\.([a-zA-Z0-9]+)/)?.[1] ?? null;
 
+    const role: MeRole =
+      orgId && orgRole
+        ? orgRole === "org:admin" || orgRole === "admin"
+          ? "admin"
+          : orgRole === "org:member" || orgRole === "member"
+            ? "editor"
+            : "viewer"
+        : null;
+
     const debug = new URL(request.url).searchParams.get("debug") === "1";
     let payload: Record<string, unknown> = {
       userId,
+      orgId: orgId ?? undefined,
+      role,
       credits,
       dbHint: projectRef
         ? `App DB project ref: ${projectRef}`

@@ -68,6 +68,7 @@ If you want extracted PDFs to be saved in Supabase (so they appear in the Table 
 CREATE TABLE IF NOT EXISTS public.documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
+  org_id text,
   file_name text,
   extracted_data jsonb,
   created_at timestamptz DEFAULT NOW()
@@ -79,7 +80,9 @@ ALTER TABLE public.documents DISABLE ROW LEVEL SECURITY;
 -- GRANT ALL ON public.documents TO prisma;
 ```
 
-The app inserts into this table when Supabase is configured. If the table doesn't exist, extraction still works and data is returned to the browser; you'll see a note that cloud save was skipped.
+If you already have a `documents` table without `org_id`, add it: `ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS org_id text;`
+
+The app inserts into this table when Supabase is configured. When the user is in an organization, `org_id` is set so documents can be listed and managed org-wide (Admin/Editor roles). If the table doesn't exist, extraction still works and data is returned to the browser; you'll see a note that cloud save was skipped.
 
 ### Session pooler format (reference)
 

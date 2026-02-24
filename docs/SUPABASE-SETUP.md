@@ -76,6 +76,7 @@ If you want extracted PDFs stored in Supabase (dashboard “Total Documents Arch
 CREATE TABLE IF NOT EXISTS public.documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
+  org_id text,
   file_name text,
   extracted_data jsonb,
   created_at timestamptz DEFAULT NOW()
@@ -83,6 +84,8 @@ CREATE TABLE IF NOT EXISTS public.documents (
 
 ALTER TABLE public.documents DISABLE ROW LEVEL SECURITY;
 ```
+
+To add org-wide document listing to an existing table: `ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS org_id text;`
 
 2. **Project Settings** → **API**: copy **Project URL** and **service_role** key.
 3. In **Netlify** (and local `.env`) set:
