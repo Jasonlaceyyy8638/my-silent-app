@@ -29,6 +29,7 @@ import { identifyDocumentType } from "@/lib/identify-document-type";
 import type { ExtractedRow } from "@/types";
 import type { DocumentWithRow } from "@/app/api/documents/route";
 import type { MeRole, MePlan } from "@/app/api/me/route";
+import type { UserTierEntry } from "@/app/api/admin/user-tiers/route";
 import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
 
 const CUSTOM_CATEGORIES_KEY = "velodoc_custom_categories";
@@ -127,6 +128,7 @@ export default function DashboardPage() {
   const [credits, setCredits] = useState<number | null>(null);
   const [usage, setUsage] = useState<UsageEntry[]>([]);
   const [securityLogs, setSecurityLogs] = useState<SecurityLogEntry[]>([]);
+  const [userTiers, setUserTiers] = useState<UserTierEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<MeRole>(null);
   const [plan, setPlan] = useState<MePlan>("starter");
@@ -211,6 +213,17 @@ export default function DashboardPage() {
     }
   }, [userRole]);
 
+  const fetchUserTiers = useCallback(async () => {
+    if (userRole !== "admin") return;
+    try {
+      const res = await fetch("/api/admin/user-tiers");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.tiers)) setUserTiers(data.tiers);
+    } catch {
+      setUserTiers([]);
+    }
+  }, [userRole]);
+
   const fetchMe = useCallback(async () => {
     try {
       const res = await fetch("/api/me");
@@ -232,8 +245,11 @@ export default function DashboardPage() {
   }, [fetchCredits, fetchSavedDocuments, fetchMe]);
 
   useEffect(() => {
-    if (userRole === "admin") fetchApiLogs();
-  }, [userRole, fetchApiLogs]);
+    if (userRole === "admin") {
+      fetchApiLogs();
+      fetchUserTiers();
+    }
+  }, [userRole, fetchApiLogs, fetchUserTiers]);
 
   useEffect(() => {
     if (searchParams.get("sync") === "success") {
@@ -444,6 +460,7 @@ export default function DashboardPage() {
                           <span className="mt-3 inline-block rounded-full bg-lime-500/20 border border-lime-400/40 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-lime-300 w-fit">
                             Active
                           </span>
+                          {/* Professional and Enterprise tiers unlock QuickBooks sync */}
                           {(plan === "pro" || plan === "enterprise") ? (
                             <Link
                               href="/api/quickbooks/auth"
@@ -511,6 +528,42 @@ export default function DashboardPage() {
                   <History className="h-4 w-4" aria-hidden />
                   View Sync History
                 </Link>
+              </section>
+            )}
+            {userRole === "admin" && (
+              <section className="mb-8 rounded-2xl border border-[#22d3ee]/20 bg-[#22d3ee]/5 backdrop-blur-xl p-6 sm:p-8 border-t-[#22d3ee]/30">
+                <h2 className="text-lg font-semibold text-white mb-2">User Tiers (Master Admin View)</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  Which tier each user is on. Phillip McKenzie can use this to see Starter, Professional, and Enterprise assignments.
+                </p>
+                {userTiers.length === 0 ? (
+                  <p className="text-slate-500 text-sm">No profile data yet, or table not loaded.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-petroleum/40">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="px-4 py-3 text-slate-400 font-medium">Email / User</th>
+                          <th className="px-4 py-3 text-slate-400 font-medium">Tier</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userTiers.map((entry) => (
+                          <tr key={entry.user_id} className="border-b border-white/5 last:border-0">
+                            <td className="px-4 py-2.5 text-white font-mono truncate max-w-[240px]" title={entry.user_id}>
+                              {entry.email ?? `${entry.user_id.slice(0, 12)}…`}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className="inline-flex rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent capitalize">
+                                {entry.plan_type}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             )}
             {isAlissaWilson && (

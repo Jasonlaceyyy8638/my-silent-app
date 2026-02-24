@@ -28,13 +28,14 @@ import { IntegrationsSection } from "@/components/IntegrationsSection";
 
 type Plan = "starter" | "pro" | "enterprise";
 
+// Descriptions must match Stripe product descriptions exactly (see /api/checkout PLANS).
 const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit: string; description: string; cta: "checkout" | "contact" }[] = [
   {
     plan: "starter",
     name: "Starter",
     price: "$29",
     automationLimit: "0 automations/month",
-    description: "Manual PDF processing only. Perfect for trying VeloDoc.",
+    description: "Manual PDF processing only.",
     cta: "checkout",
   },
   {
@@ -42,7 +43,7 @@ const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit:
     name: "Professional",
     price: "$79",
     automationLimit: "50 automations/month",
-    description: "QuickBooks bridge + automated weekly CSV report. For growing teams.",
+    description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
     cta: "checkout",
   },
   {
@@ -50,7 +51,7 @@ const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit:
     name: "Enterprise",
     price: "$249",
     automationLimit: "Unlimited automations",
-    description: "Full access, dedicated support, and custom limits.",
+    description: "Full access, dedicated support, unlimited automations.",
     cta: "checkout",
   },
 ];
