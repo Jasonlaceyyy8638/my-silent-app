@@ -120,29 +120,10 @@ async function buildAndSendReport(rows: DocRow[], _request: Request): Promise<Ne
   const count = body.length;
   const filename = `velodoc-weekly-sync-report-${new Date().toISOString().slice(0, 10)}.csv`;
 
-  // Only send to profiles with plan_type 'pro' or 'enterprise' (starter has no automated report)
-  const supabaseClient = getSupabase();
-  const recipients: string[] = [];
-  if (supabaseClient) {
-    const { data: profileRows } = await supabaseClient
-      .from("profiles")
-      .select("email, plan_type")
-      .in("plan_type", ["pro", "enterprise"])
-      .not("email", "is", null);
-    const profiles = (profileRows ?? []) as { email?: string; plan_type?: string }[];
-    for (const p of profiles) {
-      const email = p.email?.trim();
-      if (email) recipients.push(email);
-    }
-  }
-  // Env override or default admin: always send CSV to admin@velodoc.app when no pro/enterprise recipients
+  // Weekly CSV Report is sent exclusively to Phillip McKenzie at admin@velodoc.app
   const adminEmail = (process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app").trim();
-  if (recipients.length === 0) {
-    recipients.push(adminEmail);
-  } else {
-    const envEmail = process.env.WEEKLY_REPORT_EMAIL?.trim();
-    if (envEmail && !recipients.includes(envEmail)) recipients.push(envEmail);
-  }
+  const recipients: string[] = [adminEmail];
+  const supabaseClient = getSupabase();
 
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {

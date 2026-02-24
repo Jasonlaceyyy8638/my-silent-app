@@ -19,8 +19,14 @@ const CREDITS_BY_PLAN: Record<string, number> = {
 };
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
+// Subscription/billing receipts: signed by Alissa Wilson at billing@velodoc.app
 const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
+const BILLING_REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 
+/**
+ * Stripe webhook: signature-verified, ready for team-managed Stripe roles.
+ * Handles checkout.session.completed (credits + billing receipt). Other event types acknowledged with 200.
+ */
 export async function POST(request: NextRequest) {
   if (!webhookSecret) {
     return NextResponse.json(
@@ -137,7 +143,7 @@ export async function POST(request: NextRequest) {
       await resend.emails.send({
         from: BILLING_FROM,
         to: customerEmail,
-        reply_to: process.env.REPLY_TO ?? "billing@velodoc.app",
+        reply_to: BILLING_REPLY_TO,
         subject: "VeloDoc — Payment received",
         text: `Payment received. Plan: ${planLabel}. Amount: $${amountPaid}. Credits added: ${amount}. Thank you.`,
         html,
