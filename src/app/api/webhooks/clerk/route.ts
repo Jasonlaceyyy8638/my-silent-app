@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import sgMail from "@sendgrid/mail";
+import { ensureWelcomeCredits } from "@/lib/credits";
 
 const FROM_EMAIL = "jason@velodoc.app";
 const WELCOME_SUBJECT = "Welcome to VeloDoc";
@@ -190,6 +191,7 @@ export async function POST(request: Request) {
   }
 
   const data = payload.data as ClerkUserCreatedData;
+  const userId = data.id;
   const emailAddresses = data.email_addresses ?? [];
   const primaryId = data.primary_email_address_id;
   const primary = primaryId
@@ -202,10 +204,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
+  // Production audit: ensure production uses Production instance keys (pk_live_ / sk_live_), not Development (pk_test_ / sk_test_).
+  const pubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+  if (process.env.NODE_ENV === "production" && pubKey.startsWith("pk_test_")) {
+    console.warn(
+      "[Clerk] Production build is using Development keys (pk_test_). Use Production instance keys (pk_live_ / sk_live_) in production."
+    );
+  }
+
+  // After-signup hook: push 5 free credits into user_credits (Prisma → Supabase Postgres) immediately so the user sees them on first dashboard load.
+  const CREDITS_TIMEOUT_MS = 8_000;
+  if (userId) {
+    try {
+      await Promise.race([
+        ensureWelcomeCredits(userId),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("user_credits upsert timeout")), CREDITS_TIMEOUT_MS)
+        ),
+      ]);
+    } catch (err) {
+      console.error("Clerk webhook: user_credits upsert failed or timed out:", err);
+      // Still return 200 so Clerk doesn't retry; ensureWelcomeCredits runs again on first /api/credits or /api/extract.
+    }
+  }
+
   const firstName = data.first_name?.trim() || "";
 
   sgMail.setApiKey(apiKey);
-
   const textBody = getWelcomeBody(firstName);
   const htmlBody = getWelcomeHtml(firstName);
 

@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { OrganizationProfile, useOrganization } from "@clerk/nextjs";
-import { clerkAppearance } from "@/lib/clerk-appearance";
-import { Users, Zap, ChevronRight } from "lucide-react";
+import {
+  OrganizationProfile,
+  OrganizationSwitcher,
+  CreateOrganization,
+  useOrganization,
+} from "@clerk/nextjs";
+import { clerkTeamAppearance } from "@/lib/clerk-appearance";
+import { Zap, ChevronRight } from "lucide-react";
 
 type TeamUsageEntry = { user_id: string; credits_used: number };
 
@@ -98,12 +103,19 @@ export default function TeamSettingsPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-petroleum via-slate-900 to-petroleum">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center border-t-teal-accent/30">
-            <Users className="h-14 w-14 text-teal-accent/60 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-white mb-2">Team Management</h1>
-            <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
-              Create or select an organization to invite members and view team credit usage.
-            </p>
+          <div className="rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl p-8 sm:p-12 text-center border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] flex flex-col items-center gap-8">
+            <div className="flex flex-col items-center gap-4 w-full max-w-sm">
+              <OrganizationSwitcher
+                hidePersonal
+                afterCreateOrganizationUrl="/settings/team"
+                afterSelectOrganizationUrl="/settings/team"
+                appearance={clerkTeamAppearance}
+              />
+              <CreateOrganization
+                afterCreateOrganizationUrl="/settings/team"
+                appearance={clerkTeamAppearance}
+              />
+            </div>
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
@@ -125,24 +137,42 @@ export default function TeamSettingsPage() {
             <h1 className="text-xl font-bold text-white">Team Settings</h1>
             <p className="text-slate-400 text-sm mt-0.5">Invite members and view team credit usage</p>
           </div>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium text-teal-accent hover:text-lime-accent transition-colors"
-          >
-            ← Back to Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <OrganizationSwitcher
+              hidePersonal
+              afterCreateOrganizationUrl="/settings/team"
+              afterSelectOrganizationUrl="/settings/team"
+              appearance={clerkTeamAppearance}
+            />
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-teal-accent hover:text-lime-accent transition-colors"
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl overflow-hidden border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] [&_.cl-rootBox]:!rounded-2xl [&_.cl-card]:!rounded-2xl [&_.cl-card]:!border [&_.cl-card]:!border-white/20 [&_.cl-card]:!bg-white/[0.07] [&_.cl-card]:!backdrop-blur-xl [&_.cl-card]:!border-t-teal-accent/30">
+          <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-white/[0.07] backdrop-blur-xl overflow-hidden border-t-teal-accent/30 shadow-[0_8px_32px_rgba(15,23,42,0.4)] [&_.cl-rootBox]:!rounded-2xl [&_.cl-card]:!rounded-2xl [&_.cl-card]:!border [&_.cl-card]:!border-white/20 [&_.cl-card]:!bg-white/[0.07] [&_.cl-card]:!backdrop-blur-xl [&_.cl-card]:!border-t-teal-accent/30 flex justify-center">
             <OrganizationProfile
-              appearance={clerkAppearance}
+              appearance={clerkTeamAppearance}
               routing="hash"
             />
           </div>
           <div>
             <TeamCreditUsageBento />
           </div>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-accent hover:bg-teal-accent/90 text-petroleum font-semibold px-5 py-2.5 transition-colors"
+          >
+            Go to Dashboard
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </main>

@@ -17,6 +17,8 @@ export type InviteEmailOptions = {
   baseUrl?: string;
 };
 
+const PETROLEUM_BLUE = "#0b172a";
+const TEAL_ACCENT = "#22d3ee";
 const DEFAULT_HERO =
   "https://hupsfpzhdrkmvlskqxbg.supabase.co/storage/v1/object/public/Assets/email-hero.png";
 
@@ -57,10 +59,19 @@ export function getInviteEmailHtml(options: InviteEmailOptions): string {
               <img src="${logoUrl}" alt="VeloDoc" width="140" height="56" style="display:block;max-width:140px;height:auto;" />
             </td>
           </tr>
-          <!-- Hero image (600px, 12px radius — Bento style) -->
+          <!-- Table-based Hero Section (cross-client compatible) -->
           <tr>
             <td style="padding-bottom:32px;">
-              <img src="${heroUrl}" alt="VeloDoc Enterprise Workspace Architecture" width="600" style="display:block;width:600px;max-width:100%;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,0.12);" />
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background-color:${PETROLEUM_BLUE};border-radius:12px;border:1px solid rgba(255,255,255,0.12);">
+                <tr>
+                  <td align="center" style="background-color:${PETROLEUM_BLUE};padding:32px 24px 24px;">
+                    <img src="${heroUrl}" alt="VeloDoc Enterprise Workspace Architecture" width="600" height="240" style="display:block;width:600px;max-width:100%;height:240px;object-fit:cover;border:0;border-radius:8px;" />
+                    <p style="margin:24px 0 0;font-size:22px;font-weight:700;line-height:1.3;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;text-shadow:0 0 20px ${TEAL_ACCENT}40;border-bottom:2px solid ${TEAL_ACCENT};display:inline-block;padding-bottom:4px;">
+                      The Architecture of Your Data Starts Now.
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <!-- Headline -->
