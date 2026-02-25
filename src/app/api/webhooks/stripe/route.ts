@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { Resend } from "resend";
 import { addCredits } from "@/lib/credits";
+import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
-import { getTransactionalWrapper, getWelcomeTierBody, SUPPORT_FROM } from "@/lib/email-transactional";
+import { getTransactionalWrapper, getWelcomeTierBody } from "@/lib/email-transactional";
 import { planDisplayName } from "@/lib/plan-display";
 import { getSupabase } from "@/lib/supabase";
 
@@ -128,21 +128,17 @@ export async function POST(request: NextRequest) {
             }
           }
           if (planType === "enterprise" && previousPlan !== "enterprise") {
-            const resendKey = process.env.RESEND_API_KEY;
-            if (resendKey) {
-              try {
-                const resend = new Resend(resendKey);
-                await resend.emails.send({
-                  from: BILLING_FROM,
-                  to: BILLING_NOTIFY_EMAIL,
-                  replyTo: BILLING_REPLY_TO,
-                  subject: "VeloDoc — User upgraded to Enterprise (high-touch support)",
-                  text: `A user has upgraded to Enterprise via the Customer Portal.\nSubscription: ${subscription.id}\nUser ID: ${userId}\nPrevious plan: ${previousPlan ?? "—"}\nPlease provide the high-touch support promised for Enterprise.`,
-                  html: `<p>A user has upgraded to <strong>Enterprise</strong> via the Customer Portal.</p><p><strong>Subscription:</strong> ${subscription.id}<br/><strong>User ID:</strong> ${userId}<br/><strong>Previous plan:</strong> ${previousPlan ?? "—"}</p><p>Please provide the high-touch support promised for Enterprise.</p>`,
-                });
-              } catch (err) {
-                console.error("[Stripe webhook] Absolute Precision audit: Enterprise upgrade notification failed", { error: err });
-              }
+            try {
+              await sendWithSendGrid({
+                from: SENDGRID_FROM_SUPPORT,
+                to: BILLING_NOTIFY_EMAIL,
+                replyTo: BILLING_REPLY_TO,
+                subject: "VeloDoc — User upgraded to Enterprise (high-touch support)",
+                text: `A user has upgraded to Enterprise via the Customer Portal.\nSubscription: ${subscription.id}\nUser ID: ${userId}\nPrevious plan: ${previousPlan ?? "—"}\nPlease provide the high-touch support promised for Enterprise.`,
+                html: `<p>A user has upgraded to <strong>Enterprise</strong> via the Customer Portal.</p><p><strong>Subscription:</strong> ${subscription.id}<br/><strong>User ID:</strong> ${userId}<br/><strong>Previous plan:</strong> ${previousPlan ?? "—"}</p><p>Please provide the high-touch support promised for Enterprise.</p>`,
+              });
+            } catch (err) {
+              console.error("[Stripe webhook] Absolute Precision audit: Enterprise upgrade notification failed", { error: err });
             }
           }
         } catch (err) {
@@ -337,12 +333,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Billing receipt: automated notification from Alissa Wilson at billing@velodoc.app
+  // Billing receipt and tier welcome: SendGrid, from Jason Lacey <support@velodoc.app>
   const customerEmail =
     (session.customer_details?.email as string | undefined)?.trim() ??
     (session.customer_email as string | undefined)?.trim();
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey && customerEmail) {
+  if (customerEmail) {
     const planLabel = planDisplayName(planForTier);
     const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
     const billingSignature = getEmailSignature("billing");
@@ -354,10 +349,10 @@ export async function POST(request: NextRequest) {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f7;">
     <tr>
       <td align="center" style="padding:32px 24px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06); border-top:4px solid #22d3ee;">
           <tr>
             <td style="padding:32px 40px; text-align:center;">
-              <img src="${LOGO_URL}" alt="VeloDoc" width="150" style="display:block; margin:0 auto 20px; height:auto;" />
+              <img src="${LOGO_URL}" alt="VeloDoc" width="150" style="display:block; margin:0 auto 20px; height:auto; max-width:100%;" />
               <h1 style="margin:0 0 8px; font-size:20px; font-weight:700; color:#0f172a;">Payment received</h1>
               <p style="margin:0; font-size:15px; color:#374151;">Thank you for your purchase.</p>
             </td>
@@ -379,9 +374,8 @@ export async function POST(request: NextRequest) {
 </body>
 </html>`;
     try {
-      const resend = new Resend(resendKey);
-      await resend.emails.send({
-        from: BILLING_FROM,
+      await sendWithSendGrid({
+        from: SENDGRID_FROM_SUPPORT,
         to: customerEmail,
         replyTo: BILLING_REPLY_TO,
         subject: "VeloDoc — Payment received",
@@ -392,7 +386,7 @@ export async function POST(request: NextRequest) {
       console.error("[Stripe webhook] Absolute Precision audit: billing receipt email failed", { error: err });
     }
 
-    // Institutional welcome email (tier-based): from support@velodoc.app, Go to Dashboard CTA
+    // Tier welcome (Starter 25, Professional 150, Enterprise 500) — Go to Dashboard CTA
     if (planForTier === "starter" || planForTier === "pro" || planForTier === "enterprise") {
       const firstName = (session.customer_details?.name ?? session.customer_details?.email ?? "")
         .toString()
@@ -405,9 +399,7 @@ export async function POST(request: NextRequest) {
         ctaLabel: "Go to Dashboard",
       });
       try {
-        const resend = new Resend(resendKey);
-        await resend.emails.send({
-          from: SUPPORT_FROM,
+        await sendWithSendGrid({
           to: customerEmail,
           replyTo: BILLING_REPLY_TO,
           subject: `Welcome to VeloDoc ${planDisplayName(planForTier)}`,
@@ -420,28 +412,26 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify admin and Alissa when an Enterprise subscription is initiated (checkout or high-touch).
-  if (planForTier === "enterprise" && resendKey) {
-    const customerEmail =
+  if (planForTier === "enterprise") {
+    const customerEmailForAdmin =
       (session.customer_details?.email as string | undefined)?.trim() ??
       (session.customer_email as string | undefined)?.trim() ??
       "—";
     const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
     const payload = {
-      from: BILLING_FROM as string,
+      from: SENDGRID_FROM_SUPPORT,
       replyTo: BILLING_REPLY_TO,
       subject: "VeloDoc — Enterprise subscription initiated",
-      text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmail}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
-      html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmail}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
+      text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmailForAdmin}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
+      html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmailForAdmin}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
     };
     try {
-      const resend = new Resend(resendKey);
-      await resend.emails.send({ ...payload, to: ADMIN_EMAIL });
+      await sendWithSendGrid({ ...payload, to: ADMIN_EMAIL });
     } catch (err) {
       console.error("[Stripe webhook] Absolute Precision audit: Enterprise notification to admin failed", { error: err });
     }
     try {
-      const resend = new Resend(resendKey);
-      await resend.emails.send({
+      await sendWithSendGrid({
         ...payload,
         to: BILLING_NOTIFY_EMAIL,
         subject: "VeloDoc — Enterprise subscription initiated (high-touch support)",

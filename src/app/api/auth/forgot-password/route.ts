@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
-import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
-import { getTransactionalWrapper, SUPPORT_FROM } from "@/lib/email-transactional";
+import { getTransactionalWrapper } from "@/lib/email-transactional";
+import { sendWithSendGrid } from "@/lib/sendgrid";
 
 const RESET_EXPIRY_HOURS = 1;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://velodoc.app";
 
 export async function POST(request: Request) {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
+  if (!process.env.SENDGRID_API_KEY?.trim()) {
     return NextResponse.json({ error: "Email not configured" }, { status: 500 });
   }
 
@@ -50,16 +49,14 @@ export async function POST(request: Request) {
     ctaUrl: resetUrl,
   });
 
-  const resend = new Resend(resendKey);
   try {
-    await resend.emails.send({
-      from: SUPPORT_FROM,
+    await sendWithSendGrid({
       to: email,
       subject: "VeloDoc — Reset your password",
       html,
     });
   } catch (err) {
-    console.error("[auth] forgot-password: Resend failed", err);
+    console.error("[auth] forgot-password: SendGrid failed", err);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 

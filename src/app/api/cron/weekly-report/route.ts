@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { getSupabase } from "@/lib/supabase";
+import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
 import { getEmailSignature } from "@/lib/email-signature";
 import type { ExtractedRow } from "@/types";
 
-const FROM_EMAIL = process.env.WEEKLY_REPORT_FROM_EMAIL ?? process.env.FROM_EMAIL ?? "Phillip McKenzie <admin@velodoc.app>";
+// Precision Reporting: from Jason Lacey <support@velodoc.app>
 const ARCHITECTURAL_LOGS_URL = "https://velodoc.app/dashboard/sync-history";
 
 type DocRow = {
@@ -152,31 +152,29 @@ async function buildAndSendReport(
   const recipients: string[] = [adminEmail];
   const supabaseClient = getSupabase();
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
-  }
-
   const replyTo = process.env.REPLY_TO ?? "billing@velodoc.app";
   const adminSignature = getEmailSignature("admin");
   const htmlBody = `
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>img { max-width: 100%; height: auto; }</style>
+</head>
 <body style="margin:0; padding:0; background-color:#f5f5f7; font-family: Inter, Helvetica, sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f5f5f7;">
     <tr>
-      <td align="center" style="padding:32px 24px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+      <td align="center" style="padding:24px 16px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06); border-top:4px solid #22d3ee;">
           <tr>
-            <td style="background:#22d3ee; padding:32px 40px; text-align:center;">
-              <h1 style="margin:0; font-size:22px; font-weight:700; color:#0f172a; letter-spacing:-0.02em;">Weekly Architectural Sync Report</h1>
+            <td style="background:#22d3ee; padding:28px 24px; text-align:center;">
+              <h1 style="margin:0; font-size:22px; font-weight:700; color:#0f172a; letter-spacing:-0.02em;">Precision Reporting — Weekly Sync</h1>
               <p style="margin:8px 0 0; font-size:15px; color:rgba(15,23,42,0.9);">${count} document(s) synced in the last 7 days. CSV attached.</p>
-              <p style="margin:12px 0 0; font-size:13px; color:rgba(15,23,42,0.8);">Addressed to Phillip McKenzie, Admin.</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 40px;">
+            <td style="padding:28px 24px;">
               <p style="margin:0 0 24px; font-size:16px; color:#374151; line-height:1.6;">Your weekly QuickBooks sync summary is ready. Open the attachment for the full architectural log.</p>
               <a href="${ARCHITECTURAL_LOGS_URL}" style="display:inline-block; padding:14px 28px; background:#22d3ee; color:#0f172a; font-size:15px; font-weight:600; text-decoration:none; border-radius:10px;">View Architectural Logs</a>
               ${paymentRows.length > 0 ? `
@@ -202,27 +200,25 @@ async function buildAndSendReport(
 </body>
 </html>`;
 
-  const resend = new Resend(resendApiKey);
   const sent: string[] = [];
   try {
     for (const toEmail of recipients) {
-      await resend.emails.send({
-        from: FROM_EMAIL,
+      await sendWithSendGrid({
+        from: SENDGRID_FROM_SUPPORT,
         to: toEmail,
         replyTo,
-        subject: `VeloDoc Weekly Sync Report – ${count} document(s)`,
+        subject: `VeloDoc Precision Reporting – ${count} document(s)`,
         text: `Weekly QuickBooks sync report: ${count} document(s) with qb_sync_status = synced in the last 7 days. CSV attached.\n\nView Architectural Logs: ${ARCHITECTURAL_LOGS_URL}`,
         html: htmlBody,
         attachments: [
           {
-            filename,
             content: Buffer.from(csv, "utf-8").toString("base64"),
+            filename,
+            type: "text/csv",
           },
         ],
       });
       sent.push(toEmail);
-      // Track monthly automation usage (reset automation_count in your billing cron)
-      // Connection audit: filter by email (recipient); cron uses getSupabase() service role for RLS.
       if (supabaseClient) {
         const { data: prof } = await supabaseClient.from("profiles").select("automation_count").eq("email", toEmail).maybeSingle();
         const current = (prof as { automation_count?: number } | null)?.automation_count ?? 0;
@@ -230,7 +226,7 @@ async function buildAndSendReport(
       }
     }
   } catch (err) {
-    console.error("[weekly-report] Resend error:", err);
+    console.error("[weekly-report] SendGrid error:", err);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 

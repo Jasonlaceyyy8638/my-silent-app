@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
-import { Resend } from "resend";
 import { ensureWelcomeCredits } from "@/lib/credits";
 import { getEmailSignature } from "@/lib/email-signature";
+import { sendWithSendGrid } from "@/lib/sendgrid";
 import { getSupabase } from "@/lib/supabase";
 
-const FROM_EMAIL = process.env.FROM_EMAIL ?? process.env.WEEKLY_REPORT_FROM_EMAIL ?? "noreply@velodoc.app";
 const REPLY_TO_EMAIL = process.env.REPLY_TO ?? "billing@velodoc.app";
 const WELCOME_SUBJECT = "Welcome to VeloDoc";
 const DASHBOARD_URL = "https://velodoc.app/dashboard";
@@ -149,10 +148,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
+  if (!process.env.SENDGRID_API_KEY?.trim()) {
     return NextResponse.json(
-      { error: "RESEND_API_KEY not set" },
+      { error: "SENDGRID_API_KEY not set" },
       { status: 500 }
     );
   }
@@ -256,10 +254,8 @@ export async function POST(request: Request) {
   const textBody = getWelcomeBody(firstName);
   const htmlBody = getWelcomeHtml(firstName);
 
-  const resend = new Resend(resendApiKey);
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendWithSendGrid({
       to: toEmail,
       replyTo: REPLY_TO_EMAIL,
       subject: WELCOME_SUBJECT,
@@ -267,7 +263,7 @@ export async function POST(request: Request) {
       html: htmlBody,
     });
   } catch (err) {
-    console.error("Resend welcome email failed:", err);
+    console.error("SendGrid welcome email failed:", err);
     return NextResponse.json(
       { error: "Failed to send welcome email" },
       { status: 500 }

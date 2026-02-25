@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { Resend } from "resend";
 import { getSupabase } from "@/lib/supabase";
+import { sendWithSendGrid } from "@/lib/sendgrid";
 
 /** Production token endpoint (aligns with https://developer.intuit.com/.well-known/openid_configuration) */
 const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
@@ -9,17 +9,14 @@ const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bea
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
 
 async function sendErrorLogToAdmin(reason: string, detail: string, userId?: string): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return;
+  if (!process.env.SENDGRID_API_KEY?.trim()) return;
   try {
-    const resend = new Resend(key);
-    const from = process.env.WEEKLY_REPORT_FROM_EMAIL ?? process.env.FROM_EMAIL ?? "Phillip McKenzie <admin@velodoc.app>";
-    await resend.emails.send({
-      from,
+    await sendWithSendGrid({
       to: ADMIN_EMAIL,
       replyTo: process.env.REPLY_TO ?? "billing@velodoc.app",
       subject: `[VeloDoc] QuickBooks callback error: ${reason}`,
       text: `QuickBooks OAuth callback failed.\nReason: ${reason}\nDetail: ${detail}\nUser ID: ${userId ?? "unknown"}\n`,
+      html: `<p>QuickBooks OAuth callback failed.</p><p><strong>Reason:</strong> ${reason}<br/><strong>Detail:</strong> ${detail}<br/><strong>User ID:</strong> ${userId ?? "unknown"}</p>`,
     });
   } catch {
     // ignore send failure

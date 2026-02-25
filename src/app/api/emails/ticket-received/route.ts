@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { getEmailSignature } from "@/lib/email-signature";
+import { sendWithSendGrid } from "@/lib/sendgrid";
 
-const FROM_EMAIL = process.env.SUPPORT_FROM_EMAIL ?? "support@velodoc.app";
 const REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 
 /**
  * POST /api/emails/ticket-received
- * Sends a "Ticket Received" confirmation to the customer from support@velodoc.app with Support signature.
+ * Sends a "Ticket Received" confirmation from Jason Lacey <support@velodoc.app>.
  * Body: { to: string, ticketId?: string, subject?: string }
  */
 export async function POST(request: NextRequest) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
+  if (!process.env.SENDGRID_API_KEY?.trim()) {
+    return NextResponse.json({ error: "SENDGRID_API_KEY not set" }, { status: 500 });
   }
 
   let body: { to?: string; ticketId?: string; subject?: string };
@@ -55,10 +53,8 @@ export async function POST(request: NextRequest) {
 </body>
 </html>`;
 
-  const resend = new Resend(key);
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await sendWithSendGrid({
       to,
       replyTo: REPLY_TO,
       subject: body.subject ?? `Ticket Received – ${ticketId}`,
@@ -67,7 +63,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ ok: true, ticketId });
   } catch (err) {
-    console.error("[ticket-received] Resend error:", err);
+    console.error("[ticket-received] SendGrid error:", err);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

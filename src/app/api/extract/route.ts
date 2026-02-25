@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
-import { Resend } from "resend";
+import { sendWithSendGrid } from "@/lib/sendgrid";
 import { getSupabase } from "@/lib/supabase";
 import {
   getCreditsForAuth,
@@ -186,22 +186,15 @@ export async function POST(request: NextRequest) {
     if (balance < creditsNeeded) {
       const paidPlans = ["starter", "pro", "enterprise"];
       if (planType && paidPlans.includes(planType)) {
-        const resendKey = process.env.RESEND_API_KEY;
-        const billingNotify = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
-        const billingFrom = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
-        if (resendKey) {
-          try {
-            const resend = new Resend(resendKey);
-            await resend.emails.send({
-              from: billingFrom,
-              to: billingNotify,
-              subject: "VeloDoc — Paid plan user attempted extraction with $0 credit balance",
-              text: `User ${userId} (plan: ${planType}) attempted to process a file with insufficient credit balance. They may need to buy credits.`,
-              html: `<p>User <strong>${userId}</strong> (plan: <strong>${planType}</strong>) attempted to process a file with insufficient credit balance.</p><p>They may need to buy credits.</p>`,
-            });
-          } catch (err) {
-            console.error("[extract] Alissa notification (0 credits) failed:", err);
-          }
+        try {
+          await sendWithSendGrid({
+            to: process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app",
+            subject: "VeloDoc — Paid plan user attempted extraction with $0 credit balance",
+            text: `User ${userId} (plan: ${planType}) attempted to process a file with insufficient credit balance. They may need to buy credits.`,
+            html: `<p>User <strong>${userId}</strong> (plan: <strong>${planType}</strong>) attempted to process a file with insufficient credit balance.</p><p>They may need to buy credits.</p>`,
+          });
+        } catch (err) {
+          console.error("[extract] Alissa notification (0 credits) failed:", err);
         }
       }
       await insertApiLog(supabase, {
@@ -258,18 +251,15 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
         const planType = (profile as { plan_type?: string } | null)?.plan_type ?? null;
         if (planType === "enterprise") {
-          const resendKey = process.env.RESEND_API_KEY;
-          const billingNotify = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
-          const billingFrom = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
-          if (resendKey) {
-            const resend = new Resend(resendKey);
-            await resend.emails.send({
-              from: billingFrom,
-              to: billingNotify,
+          try {
+            await sendWithSendGrid({
+              to: process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app",
               subject: "VeloDoc — Low Credit alert (Enterprise user)",
               text: `Enterprise user ${userId} has ${result.remaining} credits remaining. Consider reaching out to offer bulk credit packages.`,
               html: `<p>Enterprise user <strong>${userId}</strong> has <strong>${result.remaining}</strong> credits remaining.</p><p>Consider reaching out to offer bulk credit packages.</p>`,
             });
+          } catch (err) {
+            console.error("[extract] Low Credit (Enterprise) notification failed:", err);
           }
         }
       } catch (err) {

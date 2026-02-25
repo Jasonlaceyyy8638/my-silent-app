@@ -1,43 +1,68 @@
-import { Handler } from '@netlify/functions';
-import { Resend } from 'resend';
+import { Handler } from "@netlify/functions";
 
-// Your Resend API Key from your Netlify Env Variables
-const resend = new Resend(process.env.RESEND_API_KEY);
+/**
+ * test-email-function: Sends the Precision Reporting Monday CSV using SendGrid.
+ * Triggers the same weekly-report flow as the cron (fetches synced docs, builds CSV, sends via SendGrid).
+ *
+ * Invoke: Netlify dashboard → Functions → test-email-function → Run
+ * Or: npx netlify functions:invoke test-email-function
+ *
+ * Requires in Netlify env:
+ * - SENDGRID_API_KEY (used by the app when weekly-report runs)
+ * - CRON_SECRET
+ * - NEXT_PUBLIC_APP_URL or APP_URL (e.g. https://your-site.netlify.app)
+ */
+export const handler: Handler = async () => {
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "").replace(/\/$/, "");
+  const cronSecret = process.env.CRON_SECRET?.trim();
 
-export const handler: Handler = async (event, context) => {
+  if (!appUrl || !cronSecret) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        ok: false,
+        error: "NEXT_PUBLIC_APP_URL (or APP_URL) and CRON_SECRET must be set in Netlify env",
+      }),
+    };
+  }
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'VeloDoc <reports@velodoc.app>', // Ensure domain is verified in Resend
-      to: ['jasonlaceyy0638@gmail.com'], // Sending to your admin email
-      subject: 'VeloDoc Weekly Sync History (Test)',
-      html: `
-        <h1>Absolute Precision Reporting</h1>
-        <p>This is a test of your automated Monday morning report architecture.</p>
-        <p>Attached is the CSV breakdown of last week's QuickBooks syncs.</p>
-      `,
-      attachments: [
-        {
-          filename: 'Weekly_Sync_History.csv',
-          content: 'Date,Document,Vendor,Amount,Status\n2026-02-23,Invoice_101,OfficeDepot,$150.00,Synced',
-        },
-      ],
+    const res = await fetch(`${appUrl}/api/cron/weekly-report`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cronSecret}`,
+        "Content-Type": "application/json",
+      },
     });
+    const data = await res.json().catch(() => ({}));
 
-    if (error) {
+    if (!res.ok) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message ?? 'Failed to send email' }),
+        statusCode: res.status,
+        body: JSON.stringify({
+          ok: false,
+          error: (data as { error?: string }).error ?? "Weekly report request failed",
+          status: res.status,
+        }),
       };
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Email sent successfully', id: data?.id }),
+      body: JSON.stringify({
+        ok: true,
+        message: "Precision Reporting Monday CSV sent via SendGrid",
+        ...data,
+      }),
     };
-  } catch (error) {
+  } catch (err) {
+    console.error("test-email-function error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to send email' }),
+      body: JSON.stringify({
+        ok: false,
+        error: err instanceof Error ? err.message : "Failed to trigger weekly report",
+      }),
     };
   }
 };

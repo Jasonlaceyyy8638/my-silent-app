@@ -1,45 +1,41 @@
-const { Resend } = require("resend");
-
 /**
- * Netlify serverless function: test-email-function
- * Invoke via: npx netlify functions:invoke test-email-function
- * Or from Netlify dashboard: Functions → test-email-function → Run
+ * test-email-function: Sends the Precision Reporting Monday CSV using SendGrid.
+ * Triggers the app's weekly-report API (same flow as cron).
  *
- * Requires RESEND_API_KEY in Netlify env. Optional: TEST_EMAIL_TO (defaults to admin).
+ * Requires: NEXT_PUBLIC_APP_URL (or APP_URL), CRON_SECRET, SENDGRID_API_KEY in Netlify env.
  */
 exports.handler = async () => {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "").replace(/\/$/, "");
+  const cronSecret = (process.env.CRON_SECRET || "").trim();
+
+  if (!appUrl || !cronSecret) {
     return {
       statusCode: 500,
       body: JSON.stringify({
         ok: false,
-        error: "RESEND_API_KEY is not set in environment",
+        error: "NEXT_PUBLIC_APP_URL (or APP_URL) and CRON_SECRET must be set in Netlify env",
       }),
     };
   }
 
-  const to = process.env.TEST_EMAIL_TO?.trim() || "admin@velodoc.app";
-  const from = process.env.SUPPORT_FROM_EMAIL || "support@velodoc.app";
-
   try {
-    const resend = new Resend(resendKey);
-    const { data, error } = await resend.emails.send({
-      from,
-      to,
-      subject: "VeloDoc test email (Netlify function)",
-      text: "This is a test email from the test-email-function on Netlify. If you received this, the function and Resend are working.",
-      html: `
-        <p>This is a test email from the <strong>test-email-function</strong> on Netlify.</p>
-        <p>If you received this, the function and Resend are working.</p>
-        <p><em>Sent at ${new Date().toISOString()}</em></p>
-      `,
+    const res = await fetch(`${appUrl}/api/cron/weekly-report`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cronSecret}`,
+        "Content-Type": "application/json",
+      },
     });
+    const data = await res.json().catch(() => ({}));
 
-    if (error) {
+    if (!res.ok) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ ok: false, error: error.message }),
+        statusCode: res.status,
+        body: JSON.stringify({
+          ok: false,
+          error: data.error || "Weekly report request failed",
+          status: res.status,
+        }),
       };
     }
 
@@ -47,9 +43,8 @@ exports.handler = async () => {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        message: "Test email sent",
-        id: data?.id,
-        to,
+        message: "Precision Reporting Monday CSV sent via SendGrid",
+        ...data,
       }),
     };
   } catch (err) {
@@ -58,7 +53,7 @@ exports.handler = async () => {
       statusCode: 500,
       body: JSON.stringify({
         ok: false,
-        error: err.message || "Failed to send test email",
+        error: err && err.message ? err.message : "Failed to trigger weekly report",
       }),
     };
   }
