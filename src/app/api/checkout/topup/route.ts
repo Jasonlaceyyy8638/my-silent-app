@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     "http://localhost:3000";
   const baseUrlClean = baseUrl.replace(/\/$/, "");
 
-  const unitAmount = CENTS_PER_CREDITS;
+  const unitAmount = CENTS_PER_CREDIT;
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: "payment",
     client_reference_id: userId,
