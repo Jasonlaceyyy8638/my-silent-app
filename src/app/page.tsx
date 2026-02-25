@@ -19,6 +19,7 @@ import { CaseStudies } from "@/components/CaseStudies";
 import { MotionScrollSection } from "@/components/MotionScrollSection";
 import { HeroCinematic } from "@/components/HeroCinematic";
 import { ComparisonSection } from "@/components/ComparisonSection";
+import { WhyVelodocCompetitors } from "@/components/WhyVelodocCompetitors";
 import { FeaturesBento } from "@/components/FeaturesBento";
 import { IndustrySwitcher } from "@/components/IndustrySwitcher";
 import { TemplatesGallery } from "@/components/TemplatesGallery";
@@ -120,6 +121,10 @@ export default function Home() {
 
         <MotionScrollSection className="mb-14">
           <ComparisonSection />
+        </MotionScrollSection>
+
+        <MotionScrollSection className="mb-14">
+          <WhyVelodocCompetitors />
         </MotionScrollSection>
 
         <SignupSection />

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 
 const TRUST_SIGNALS = [
   { label: "Enterprise-Grade Security" },
@@ -78,109 +78,76 @@ const TRUST_LEGAL_LINKS = [
   { href: "/terms", label: "Terms of Service" },
 ] as const;
 
+const CONTACT_LINKS = [
+  { href: "mailto:sales@velodoc.app", label: "Sales", title: "sales@velodoc.app" },
+  { href: "mailto:support@velodoc.app", label: "Support", title: "support@velodoc.app" },
+  { href: "mailto:billing@velodoc.app", label: "Billing", title: "billing@velodoc.app" },
+] as const;
+
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-petroleum/90 backdrop-blur-md">
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 sm:gap-6 flex-wrap">
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {SECURITY_BADGES.map(({ Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-3 border-t-teal-accent/20"
-              >
-                <Icon className="h-5 w-5 text-teal-accent/90 shrink-0" />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-          <nav
-            className="flex flex-wrap items-center gap-4 sm:gap-6 border-t border-white/10 pt-6 sm:pt-0 sm:border-t-0"
-            aria-label="Trust and legal"
-          >
-            <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-widest text-slate-500 mr-1">
-              Trust &amp; legal
-            </span>
-            {TRUST_LEGAL_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 border-t border-white/10 pt-8 mt-8">
-          {TRUST_SIGNALS.map(({ label }) => (
+      <div className="mx-auto max-w-5xl px-6 py-12 flex flex-col items-center text-center space-y-10">
+        {/* Security badges */}
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+          {SECURITY_BADGES.map(({ Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 text-slate-400 text-[10px] font-mono uppercase tracking-wider"
+              className="flex items-center gap-2.5 text-slate-400"
             >
-              <Globe className="h-4 w-4 text-teal-accent/70 flex-shrink-0" aria-hidden />
-              <span>{label}</span>
+              <Icon className="h-4 w-4 text-teal-accent/80 shrink-0" aria-hidden />
+              <span className="text-[10px] font-mono uppercase tracking-wider">
+                {label}
+              </span>
             </div>
           ))}
         </div>
-        <div className="border-t border-white/10 pt-8 mt-8">
-          <p className="text-center text-slate-400 text-xs font-medium mb-4 uppercase tracking-wider">
-            Contact
-          </p>
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 sm:gap-8">
+
+        {/* Legal links */}
+        <nav
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1"
+          aria-label="Trust and legal"
+        >
+          {TRUST_LEGAL_LINKS.map(({ href, label }) => (
             <Link
-              href="/download"
-              className="hidden md:inline-flex items-center gap-2 text-[#22d3ee] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] border border-[#22d3ee]/50 hover:bg-[#22d3ee]/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-colors"
-              title="Download Desktop App"
+              key={href}
+              href={href}
+              className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
             >
-              <Download className="w-4 h-4 shrink-0" aria-hidden />
-              Download Desktop App
+              {label}
             </Link>
+          ))}
+        </nav>
+
+        {/* Nationwide branding */}
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+          {TRUST_SIGNALS.map(({ label }) => (
             <span
-              className="md:hidden inline-flex items-center gap-2 text-slate-500 text-sm py-3 px-4 rounded-xl border border-white/15"
-              title="Coming soon"
+              key={label}
+              className="inline-flex items-center gap-2 text-slate-500 text-[10px] font-mono uppercase tracking-wider"
             >
-              Get Mobile App <span className="text-[10px]">(Coming Soon)</span>
+              <Globe className="h-3.5 w-3.5 text-teal-accent/60 shrink-0" aria-hidden />
+              {label}
             </span>
-            <a
-              href="mailto:sales@velodoc.app"
-              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              Interested in bulk credits? Contact sales@velodoc.app
-            </a>
-            <a
-              href="mailto:support@velodoc.app"
-              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              title="Support — support@velodoc.app"
-            >
-              Need technical help? Reach out to support@velodoc.app
-            </a>
-            <a
-              href="mailto:billing@velodoc.app"
-              className="text-teal-accent hover:text-[#7dd3fc] font-medium text-sm py-3 px-4 rounded-xl min-h-[44px] min-w-[44px] inline-flex items-center justify-center touch-manipulation transition-colors border border-teal-accent/30 hover:border-teal-accent/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-              title="Billing — billing@velodoc.app"
-            >
-              Billing inquiry? Contact billing@velodoc.app
-            </a>
-          </div>
+          ))}
         </div>
-        <p className="mt-6 text-center text-slate-500 text-[10px] font-mono">
+
+        {/* Contact: simple text links in a row */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+          {CONTACT_LINKS.map(({ href, label, title }) => (
+            <a
+              key={href}
+              href={href}
+              title={title}
+              className="text-sm text-slate-300 hover:text-teal-accent transition-colors"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
+        <p className="text-slate-500 text-[10px] font-mono">
           © {new Date().getFullYear()} VeloDoc. All rights reserved.
-        </p>
-        <p className="mt-3 text-center">
-          <a
-            href="mailto:support@velodoc.app?subject=Credits%20or%20support"
-            className="text-[10px] font-mono uppercase tracking-wider text-slate-400 hover:text-teal-accent transition-colors"
-            title="VeloDoc Support — support@velodoc.app"
-          >
-            Credits &amp; support: VeloDoc Support — support@velodoc.app
-          </a>
         </p>
       </div>
     </footer>
