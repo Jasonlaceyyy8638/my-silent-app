@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { Plug, Zap, FolderSync, FileSpreadsheet, Link2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import { Plug, Zap, FolderSync, FileSpreadsheet, Link2, Mail } from "lucide-react";
 import { MotionScrollSection } from "@/components/MotionScrollSection";
 import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
 
@@ -38,34 +39,100 @@ const INTEGRATIONS = [
   },
 ];
 
-export function IntegrationsSection() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const videoWrapRef = useRef<HTMLDivElement>(null);
-  const [videoInView, setVideoInView] = useState(false);
-  const [upsellOpen, setUpsellOpen] = useState(false);
+function ReportingAnimation() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const [clockVisible, setClockVisible] = useState(false);
 
   useEffect(() => {
-    const el = videoWrapRef.current;
-    const video = videoRef.current;
-    if (!el || !video) return;
+    if (!isInView) return;
+    const t = setTimeout(() => setClockVisible(true), 600);
+    return () => clearTimeout(t);
+  }, [isInView]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        const visible = entry.isIntersecting;
-        setVideoInView(visible);
-        if (visible) {
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
-      },
-      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
-    );
+  return (
+    <div
+      ref={ref}
+      className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/[0.07] border-t-teal-accent/30 shadow-[0_0_24px_rgba(34,211,238,0.15)]"
+    >
+      <div className="py-8 px-4 sm:py-14 sm:px-10 text-center max-w-full box-border">
+        <motion.p
+          className="text-lg sm:text-2xl md:text-3xl font-extrabold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white break-words"
+          initial={{ opacity: 0, y: 12 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <span className="text-[#22d3ee] drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+            PRECISION REPORTING.
+          </span>{" "}
+          <span className="text-white">DELIVERED WEEKLY.</span>
+        </motion.p>
 
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+        <motion.div
+          className="mt-8 flex justify-center items-center gap-3"
+          initial={{ opacity: 0, rotateX: -20 }}
+          animate={isInView && clockVisible ? { opacity: 1, rotateX: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          style={{ transformPerspective: 400 }}
+        >
+          <motion.span
+            className="font-mono text-3xl sm:text-4xl font-bold tabular-nums text-[#22d3ee] bg-slate-900/60 border border-[#22d3ee]/30 rounded-lg px-4 py-2 shadow-[0_0_16px_rgba(34,211,238,0.2)]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={isInView && clockVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.4, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            8:00 AM
+          </motion.span>
+          <span className="text-slate-400 text-sm font-medium uppercase tracking-wider">Monday</span>
+        </motion.div>
+
+        <motion.div
+          className="mt-10 flex justify-center items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.4, delay: 1.1 }}
+        >
+          <motion.div
+            className="flex items-center justify-center w-14 h-14 rounded-xl bg-[#22d3ee]/20 border border-[#22d3ee]/40 text-[#22d3ee]"
+            initial={{ x: -80, opacity: 0 }}
+            animate={isInView ? { x: 0, opacity: 1 } : {}}
+            transition={{ duration: 0.5, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <FileSpreadsheet className="w-7 h-7" aria-hidden />
+          </motion.div>
+          <motion.span
+            className="text-slate-500 font-mono text-sm"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ delay: 1.5 }}
+          >
+            →
+          </motion.span>
+          <motion.div
+            className="flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 border border-white/20 text-teal-accent"
+            initial={{ x: 40, opacity: 0 }}
+            animate={isInView ? { x: 0, opacity: 1 } : {}}
+            transition={{ duration: 0.5, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Mail className="w-7 h-7" aria-hidden />
+          </motion.div>
+        </motion.div>
+
+        <motion.p
+          className="mt-8 text-slate-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-medium break-words"
+          initial={{ opacity: 0, y: 8 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          Every Monday at 8:00 AM, VeloDoc delivers a comprehensive CSV architectural log of your nationwide sync history directly to your inbox.
+        </motion.p>
+      </div>
+    </div>
+  );
+}
+
+export function IntegrationsSection() {
+  const [upsellOpen, setUpsellOpen] = useState(false);
 
   return (
     <>
@@ -120,37 +187,8 @@ export function IntegrationsSection() {
           <QuickBooksUpsellModal onClose={() => setUpsellOpen(false)} />
         )}
 
-        <div
-          ref={videoWrapRef}
-          className="mt-12 max-w-2xl mx-auto rounded-2xl border border-white/20 bg-white/[0.07] overflow-hidden border-t-teal-accent/30 shadow-[0_0_24px_rgba(34,211,238,0.15)]"
-        >
-          <div className="py-5 px-4 sm:px-6 border-b border-white/10 text-center">
-            <h3 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#22d3ee] shadow-[0_0_20px_rgba(34,211,238,0.4)]">
-              PRECISION REPORTING. DELIVERED WEEKLY.
-            </h3>
-            <p className="mt-2 text-slate-400 text-sm max-w-xl mx-auto leading-relaxed">
-              Every Monday at 8:00 AM, VeloDoc delivers a comprehensive CSV architectural log of your nationwide sync history directly to your inbox.
-            </p>
-          </div>
-          <div className="relative aspect-video bg-slate-900/80">
-            <video
-              ref={videoRef}
-              src="/demo.mp4"
-              poster="/weekly-report-poster.png"
-              loop
-              muted
-              playsInline
-              preload="auto"
-              controls
-              className="w-full h-full object-cover"
-              aria-label="VeloDoc demo: paper-to-digital workflow and sync"
-            />
-            {videoInView && (
-              <p className="absolute bottom-0 left-0 right-0 py-2 px-3 text-center text-xs font-medium text-white/90 bg-gradient-to-t from-black/70 to-transparent">
-                Any Paper-to-Digital Workflow → Your books
-              </p>
-            )}
-          </div>
+        <div className="mt-12 max-w-2xl mx-auto w-full px-2 sm:px-0 overflow-hidden">
+          <ReportingAnimation />
         </div>
       </MotionScrollSection>
     </>

@@ -31,30 +31,39 @@ import { planDisplayName } from "@/lib/plan-display";
 type Plan = "starter" | "pro" | "enterprise";
 
 // Descriptions must match Stripe product descriptions exactly (see /api/checkout PLANS).
-const PRICING_TIERS: { plan: Plan; name: string; price: string; automationLimit: string; description: string; cta: "checkout" | "contact" }[] = [
+const PRICING_TIERS: {
+  plan: Plan;
+  name: string;
+  price: string;
+  credits: string;
+  description: string;
+  highlights?: string[];
+  cta: "checkout" | "contact";
+}[] = [
   {
     plan: "starter",
     name: "Starter",
     price: "$29",
-    automationLimit: "0 automations/month",
-    description: "Manual PDF processing. Includes 20 extractions/mo and full data exports.",
+    credits: "25 Architectural Credits",
+    description: "Perfect for solo entrepreneurs.",
     cta: "checkout",
   },
   {
     plan: "pro",
     name: "Professional",
     price: "$79",
-    automationLimit: "50 automations/month",
-    description: "QuickBooks bridge + weekly CSV report. 50 automations/month.",
+    credits: "150 Architectural Credits",
+    description: "Automated Monday 8 AM Reports + QuickBooks Live Sync.",
+    highlights: ["MOST POPULAR"],
     cta: "checkout",
   },
   {
     plan: "enterprise",
     name: "Enterprise",
     price: "$249",
-    automationLimit: "Unlimited automations",
-    description: "Full access, dedicated support, unlimited automations.",
-    cta: "checkout",
+    credits: "500 Architectural Credits",
+    description: "Priority Support + Nationwide Compliance.",
+    cta: "contact",
   },
 ];
 
@@ -243,8 +252,8 @@ export default function Home() {
           <p className="text-slate-400 text-center text-sm max-w-xl mx-auto mb-8">
             Three tiers with automation limits. Upgrade anytime.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-1 sm:px-0 mb-12 md:mb-10">
-            {PRICING_TIERS.map(({ plan, name, price, automationLimit, description, cta }) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto px-2 sm:px-0 mb-12 md:mb-10">
+            {PRICING_TIERS.map(({ plan, name, price, credits, description, highlights, cta }) => (
               <div
                 key={plan}
                 className={`rounded-2xl border backdrop-blur-xl p-5 sm:p-6 flex flex-col shadow-[0_8px_32px_rgba(15,23,42,0.4)] min-w-0 ${
@@ -253,32 +262,18 @@ export default function Home() {
                     : "border-white/20 bg-white/[0.07] border-t-teal-accent/30"
                 }`}
               >
-                {plan === "pro" && (
-                  <span className="absolute -top-2.5 right-6 rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-2.5 py-0.5 text-[10px] font-medium text-[#22d3ee] uppercase tracking-wider">
-                    Popular
+                {highlights?.includes("MOST POPULAR") && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[#22d3ee]/20 border border-[#22d3ee]/40 px-3 py-0.5 text-[10px] font-medium text-[#22d3ee] uppercase tracking-wider whitespace-nowrap">
+                    Most Popular
                   </span>
                 )}
                 <span className={`text-[10px] font-mono uppercase tracking-wider ${plan === "pro" ? "text-[#22d3ee]" : "text-slate-500"}`}>
                   {planDisplayName(plan)}
                 </span>
                 <h3 className="text-lg font-semibold text-white mt-0.5">{name}</h3>
-                <p className="mt-1 text-3xl font-bold text-white">{price}</p>
-                <p className="text-slate-300 text-sm mt-1 font-medium">{automationLimit}</p>
-                <p className="text-slate-400 text-sm mt-2 flex-1">
-                  {plan === "pro" && (
-                    <>
-                      <span title="Integration unlocked; extraction still consumes credits." className="border-b border-dotted border-slate-500 cursor-help">QuickBooks Bridge</span>
-                      {" "}+ weekly CSV report. 50 automations/month.
-                    </>
-                  )}
-                  {plan === "enterprise" && (
-                    <>
-                      Full access, dedicated support, unlimited automations.{" "}
-                      <span title="Integration unlocked; extraction still consumes credits." className="border-b border-dotted border-slate-500 cursor-help">QuickBooks Bridge</span> included.
-                    </>
-                  )}
-                  {plan === "starter" && description}
-                </p>
+                <p className="mt-1 text-3xl font-bold text-white">{price}<span className="text-base font-normal text-slate-400">/mo</span></p>
+                <p className="text-teal-accent/90 text-sm mt-1 font-medium">{credits}</p>
+                <p className="text-slate-400 text-sm mt-2 flex-1">{description}</p>
                 {cta === "checkout" ? (
                   <button
                     type="button"
@@ -292,7 +287,7 @@ export default function Home() {
                     style={{ WebkitTapHighlightColor: "transparent" }}
                   >
                     <ShoppingCart className="h-4 w-4 flex-shrink-0" aria-hidden />
-                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : plan === "pro" ? "Get Professional" : "Get Enterprise"}
+                    {checkoutPlan === plan ? "Redirecting…" : plan === "starter" ? "Get Starter" : "Get Professional"}
                   </button>
                 ) : (
                   <a

@@ -6,30 +6,17 @@ const ROWS = [
   {
     feature: "Monday AM Reports",
     velodoc: "Fully Automated",
-    dext: "Manual Export",
-    autoEntry: "Manual Export",
-    nanonets: "Custom",
+    others: "Manual Export Only",
   },
   {
-    feature: "Industry Background",
-    velodoc: "Built by 1UpLogistics — industry voice",
-    dext: "Generic software",
-    autoEntry: "Generic software",
-    nanonets: "Generic software",
+    feature: "Monthly Allowance",
+    velodoc: "25–500 Included",
+    others: "Strict Pay-Per-Credit (e.g. AutoEntry)",
   },
   {
-    feature: "QuickBooks Sync",
-    velodoc: "1-Click Architectural Bridge",
-    dext: "Standard scanning",
-    autoEntry: "Standard scanning",
-    nanonets: "Standard scanning",
-  },
-  {
-    feature: "Pricing",
-    velodoc: "$29 / $79 / $249 — clear tiers",
-    dext: "Hidden fees",
-    autoEntry: "Hidden fees",
-    nanonets: "Custom enterprise quotes",
+    feature: "Industry Voice",
+    velodoc: "Built by 1UpLogistics",
+    others: "Generic Software",
   },
 ] as const;
 
@@ -46,25 +33,20 @@ export function WhyVelodocCompetitors() {
         See how we compare to Dext, AutoEntry, and Nanonets.
       </p>
 
-      <div className={`${CARD_CLASS} overflow-hidden`}>
+      {/* Desktop: table */}
+      <div className={`${CARD_CLASS} overflow-hidden hidden md:block`}>
         <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-          <table className="w-full text-left text-sm min-w-[640px]">
+          <table className="w-full text-left text-sm min-w-[520px]">
             <thead>
               <tr className="border-b border-white/20 bg-white/5">
-                <th className="py-4 px-4 text-slate-400 font-semibold uppercase tracking-wider w-[22%]">
+                <th className="py-4 px-4 text-slate-400 font-semibold uppercase tracking-wider w-[28%]">
                   Feature
                 </th>
-                <th className="py-4 px-4 text-teal-accent font-semibold text-center w-[26%] bg-teal-accent/5 border-l border-[#22d3ee]/20">
+                <th className="py-4 px-4 text-teal-accent font-semibold text-center w-[36%] bg-teal-accent/5 border-l border-[#22d3ee]/20">
                   VeloDoc
                 </th>
-                <th className="py-4 px-4 text-slate-400 font-semibold text-center w-[17%]">
-                  Dext
-                </th>
-                <th className="py-4 px-4 text-slate-400 font-semibold text-center w-[17%] border-l border-white/10">
-                  AutoEntry
-                </th>
-                <th className="py-4 px-4 text-slate-400 font-semibold text-center w-[18%] border-l border-white/10">
-                  Nanonets
+                <th className="py-4 px-4 text-slate-400 font-semibold text-center w-[36%] border-l border-white/10">
+                  Others
                 </th>
               </tr>
             </thead>
@@ -76,31 +58,45 @@ export function WhyVelodocCompetitors() {
                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0 mx-auto mb-1.5" aria-hidden>
                       <Check className="w-4 h-4" strokeWidth={2.5} />
                     </span>
-                    <span className="block text-teal-accent font-medium text-xs sm:text-sm">{row.velodoc}</span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-slate-500 shrink-0 mx-auto mb-1.5" aria-hidden>
-                      <Minus className="w-4 h-4" />
-                    </span>
-                    <span className="block text-slate-400 text-xs sm:text-sm">{row.dext}</span>
+                    <span className="block text-teal-accent font-medium text-sm">{row.velodoc}</span>
                   </td>
                   <td className="py-4 px-4 text-center border-l border-white/10">
                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-slate-500 shrink-0 mx-auto mb-1.5" aria-hidden>
                       <Minus className="w-4 h-4" />
                     </span>
-                    <span className="block text-slate-400 text-xs sm:text-sm">{row.autoEntry}</span>
-                  </td>
-                  <td className="py-4 px-4 text-center border-l border-white/10">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-slate-500 shrink-0 mx-auto mb-1.5" aria-hidden>
-                      <Minus className="w-4 h-4" />
-                    </span>
-                    <span className="block text-slate-400 text-xs sm:text-sm">{row.nanonets}</span>
+                    <span className="block text-slate-400 text-sm">{row.others}</span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile: feature cards (no cut-off) */}
+      <div className="md:hidden space-y-4">
+        {ROWS.map((row) => (
+          <div
+            key={row.feature}
+            className={`${CARD_CLASS} p-4 overflow-hidden`}
+          >
+            <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-3">
+              {row.feature}
+            </p>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0" aria-hidden>
+                <Check className="w-4 h-4" strokeWidth={2.5} />
+              </span>
+              <span className="text-teal-accent font-medium text-sm">{row.velodoc}</span>
+            </div>
+            <div className="flex items-center gap-3 pl-0">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-slate-500 shrink-0" aria-hidden>
+                <Minus className="w-4 h-4" />
+              </span>
+              <span className="text-slate-400 text-sm break-words">{row.others}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

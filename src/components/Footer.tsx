@@ -87,25 +87,25 @@ const CONTACT_LINKS = [
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-petroleum/90 backdrop-blur-md">
-      <div className="mx-auto max-w-5xl px-6 py-12 flex flex-col items-center text-center space-y-10">
-        {/* Security badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 sm:py-12 flex flex-col items-center text-center space-y-8 sm:space-y-10">
+        {/* Security badges — scannable on small screens */}
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-6">
           {SECURITY_BADGES.map(({ Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2.5 text-slate-400"
+              className="flex items-center gap-2 text-slate-400 min-w-0"
             >
               <Icon className="h-4 w-4 text-teal-accent/80 shrink-0" aria-hidden />
-              <span className="text-[10px] font-mono uppercase tracking-wider">
+              <span className="text-[10px] font-mono uppercase tracking-wider whitespace-nowrap">
                 {label}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Legal links */}
+        {/* Legal links — centered */}
         <nav
-          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1"
+          className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:gap-x-6"
           aria-label="Trust and legal"
         >
           {TRUST_LEGAL_LINKS.map(({ href, label }) => (
@@ -119,12 +119,12 @@ export function Footer() {
           ))}
         </nav>
 
-        {/* Nationwide branding */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+        {/* Nationwide branding — Enterprise-Grade Security, Nationwide Compliance */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 sm:gap-x-8">
           {TRUST_SIGNALS.map(({ label }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-2 text-slate-500 text-[10px] font-mono uppercase tracking-wider"
+              className="inline-flex items-center gap-2 text-slate-500 text-[10px] font-mono uppercase tracking-wider whitespace-nowrap"
             >
               <Globe className="h-3.5 w-3.5 text-teal-accent/60 shrink-0" aria-hidden />
               {label}
@@ -132,8 +132,8 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Contact: simple text links in a row */}
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+        {/* Contact — centered text links */}
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:gap-x-6">
           {CONTACT_LINKS.map(({ href, label, title }) => (
             <a
               key={href}
