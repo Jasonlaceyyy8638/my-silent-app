@@ -68,7 +68,7 @@ export async function PATCH(req: Request) {
 
   const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .select("user_id, email, credits_remaining")
+    .select("user_id, email, credits_remaining, credits_allowance_remaining, credits_topup_remaining")
     .eq("user_id", userId)
     .single();
 
@@ -81,20 +81,36 @@ export async function PATCH(req: Request) {
   }
 
   const current =
-    typeof (profile as { credits_remaining?: number }).credits_remaining ===
-    "number"
-      ? Math.max(
-          0,
-          Math.floor((profile as { credits_remaining: number }).credits_remaining)
-        )
+    typeof (profile as { credits_remaining?: number }).credits_remaining === "number"
+      ? Math.max(0, Math.floor((profile as { credits_remaining: number }).credits_remaining))
       : 0;
-  const newTotal =
-    mode === "add" ? current + value : Math.max(0, value);
+  const topup =
+    typeof (profile as { credits_topup_remaining?: number }).credits_topup_remaining === "number"
+      ? Math.max(0, Math.floor((profile as { credits_topup_remaining: number }).credits_topup_remaining))
+      : 0;
+  let newAllowance: number;
+  let newTopup: number;
+  let newTotal: number;
+  const currentAllowance = Math.max(0, Math.floor((profile as { credits_allowance_remaining?: number }).credits_allowance_remaining ?? 0));
+  if (mode === "add") {
+    newAllowance = currentAllowance;
+    newTopup = topup + value;
+    newTotal = current + value;
+  } else {
+    newAllowance = Math.max(0, value);
+    newTopup = 0;
+    newTotal = Math.max(0, value);
+  }
   const userEmail = (profile as { email?: string | null }).email?.trim();
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({ credits_remaining: newTotal })
+    .update({
+      credits_allowance_remaining: newAllowance,
+      credits_topup_remaining: newTopup,
+      credits_remaining: newTotal,
+      low_credit_alert_sent: false,
+    })
     .eq("user_id", userId)
     .select("user_id, credits_remaining")
     .single();

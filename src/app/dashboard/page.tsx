@@ -491,16 +491,24 @@ export default function DashboardPage() {
                   Plan: {planDisplayName(plan)}
                 </span>
                 {credits !== null && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-medium text-slate-300">
-                    Credit balance: <span className="font-semibold text-teal-accent tabular-nums">{credits}</span>
-                    <button
-                      type="button"
-                      onClick={() => fetchCredits()}
-                      className="text-slate-500 hover:text-teal-accent text-xs underline"
-                      aria-label="Refresh credit balance"
+                  <span className="inline-flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                      Credit balance: <span className="font-semibold text-teal-accent tabular-nums">{credits}</span>
+                      <button
+                        type="button"
+                        onClick={() => fetchCredits()}
+                        className="text-slate-500 hover:text-teal-accent text-xs underline"
+                        aria-label="Refresh credit balance"
+                      >
+                        Refresh
+                      </button>
+                    </span>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-teal-accent/20 border border-teal-accent/40 px-2.5 py-0.5 text-xs font-medium text-teal-accent hover:bg-teal-accent/30 transition-colors"
                     >
-                      Refresh
-                    </button>
+                      Buy Credits
+                    </Link>
                   </span>
                 )}
               </div>

@@ -5,9 +5,14 @@ import {
   addCredits as addUserCredits,
   deductCredits as deductUserCredits,
 } from "@/lib/credits";
+import {
+  getCreditsFromSupabase,
+  deductCreditsFromSupabase,
+  addCreditsToSupabase,
+} from "@/lib/supabase-credits";
 
 /**
- * Get credit balance: organizations.credit_balance if user is in an org, else Prisma user_credits.
+ * Get credit balance: org credit_balance if in org; else Supabase profiles.credits_remaining (hybrid billing); else Prisma.
  */
 export async function getCreditsForAuth(
   userId: string,
@@ -27,6 +32,8 @@ export async function getCreditsForAuth(
       return 0;
     }
   }
+  const fromSupabase = await getCreditsFromSupabase(userId);
+  if (fromSupabase !== null) return fromSupabase;
   return getCredits(userId);
 }
 
@@ -80,6 +87,8 @@ export async function deductCreditsForAuth(
     }
   }
 
+  const hasSupabaseProfile = (await getCreditsFromSupabase(userId)) !== null;
+  if (hasSupabaseProfile) return deductCreditsFromSupabase(userId, a);
   return deductUserCredits(userId, a);
 }
 
@@ -120,5 +129,7 @@ export async function addCreditsForAuth(
     }
   }
 
+  const fromSupabase = await addCreditsToSupabase(userId, a);
+  if (fromSupabase !== null) return fromSupabase;
   return addUserCredits(userId, a);
 }

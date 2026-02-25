@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { addCredits } from "@/lib/credits";
 import { sendWithSendGrid, SENDGRID_FROM_BILLING, SENDGRID_FROM_ADMIN } from "@/lib/sendgrid";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
@@ -187,13 +186,24 @@ export async function POST(request: NextRequest) {
       }
 
       const allowance = getAllowanceForPlan(planType);
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("credits_topup_remaining")
+        .eq("user_id", resolvedUserId)
+        .maybeSingle();
+      const topup = Math.max(0, Math.floor((existing as { credits_topup_remaining?: number } | null)?.credits_topup_remaining ?? 0));
+      const newTotal = allowance + topup;
       const { error } = await supabase
         .from("profiles")
-        .update({ credits_remaining: allowance })
+        .update({
+          credits_allowance_remaining: allowance,
+          credits_remaining: newTotal,
+          low_credit_alert_sent: false,
+        })
         .eq("user_id", resolvedUserId);
 
       if (error) {
-        console.error("[Stripe webhook] Absolute Precision audit: invoice.paid credits_remaining update failed", { error: error.message, code: error.code, userId: resolvedUserId, planType, allowance });
+        console.error("[Stripe webhook] Absolute Precision audit: invoice.paid credits update failed", { error: error.message, code: error.code, userId: resolvedUserId, planType, allowance });
         return NextResponse.json({ received: true });
       }
     } catch (err) {
@@ -213,10 +223,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing user" }, { status: 400 });
   }
 
+  const isTopUp = session.mode === "payment" && session.metadata?.topup === "true";
+  const organizationId =
+    (session.metadata?.organizationId as string) ??
+    (session.metadata?.orgId as string) ??
+    (session.metadata?.corporate === "true" && session.metadata?.organizationId
+      ? (session.metadata.organizationId as string)
+      : null);
+
+  if (isTopUp) {
+    const creditsAmount =
+      session.metadata?.credits != null && String(session.metadata.credits).trim() !== ""
+        ? Math.max(1, Math.round(Number(session.metadata.credits)))
+        : 20;
+    try {
+      if (organizationId && organizationId.trim()) {
+        await addCreditsForAuth(userId, creditsAmount, organizationId);
+      } else {
+        await addCreditsForAuth(userId, creditsAmount, null);
+      }
+    } catch (err) {
+      console.error("[Stripe webhook] Absolute Precision audit: top-up addCredits failed", { error: err, userId });
+      return NextResponse.json({ error: "Failed to add top-up credits" }, { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
+
   // Webhook mapping: Price IDs from Netlify env -> database plan_type values.
-  // STRIPE_PRICE_ID_STARTER -> 'starter'
-  // STRIPE_PRICE_ID_PRO -> 'pro'
-  // STRIPE_PRICE_ID_ENTERPRISE -> 'enterprise'
   const priceIdStarter = process.env.STRIPE_PRICE_ID_STARTER?.trim();
   const priceIdPro = process.env.STRIPE_PRICE_ID_PRO?.trim();
   const priceIdEnterprise = process.env.STRIPE_PRICE_ID_ENTERPRISE?.trim();
@@ -233,47 +266,17 @@ export async function POST(request: NextRequest) {
     console.error("[Stripe webhook] Absolute Precision audit: listLineItems failed", { error: e, sessionId: session.id });
   }
   const plan = (planFromPrice ?? (session.metadata?.plan as string) ?? "starter") as string;
-  const metadataCredits = session.metadata?.credits;
-  const fromMetadata =
-    metadataCredits != null && String(metadataCredits).trim() !== ""
-      ? Math.max(1, Math.round(Number(metadataCredits)))
-      : null;
-  const amount: number =
-    Number.isFinite(fromMetadata) && fromMetadata != null
-      ? fromMetadata
-      : CREDITS_BY_PLAN[plan] ?? 1;
-
-  const organizationId =
-    (session.metadata?.organizationId as string) ??
-    (session.metadata?.orgId as string) ??
-    (session.metadata?.corporate === "true" && session.metadata?.organizationId
-      ? (session.metadata.organizationId as string)
-      : null);
-
-  try {
-    if (organizationId && organizationId.trim()) {
-      await addCreditsForAuth(userId, amount, organizationId);
-    } else {
-      await addCredits(userId, amount);
-    }
-  } catch (err) {
-    console.error("[Stripe webhook] Absolute Precision audit: addCredits failed", { error: err, userId });
-    return NextResponse.json(
-      { error: "Failed to add credits" },
-      { status: 500 }
-    );
-  }
-
-  // First-time setup: link stripe_customer_id and stripe_subscription_id to profile, grant first month's allowance.
-  // Connection audit: profiles filtered by user_id (RLS-compatible).
-  const supabase = getSupabase();
   const planForTier = (planFromPrice ?? (session.metadata?.plan as string) ?? plan) as string;
+  const creditsAddedForEmail = getAllowanceForPlan(planForTier);
+
+  // First-time setup: link stripe_customer_id and stripe_subscription_id to profile, grant first month's allowance (Hybrid: keep existing top-up).
+  const supabase = getSupabase();
   let previousPlan: string | null = null;
   if (supabase && (planForTier === "starter" || planForTier === "pro" || planForTier === "enterprise")) {
     try {
       const { data: existing } = await supabase
         .from("profiles")
-        .select("plan_type")
+        .select("plan_type, credits_topup_remaining")
         .eq("user_id", userId)
         .maybeSingle();
       previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
@@ -282,11 +285,16 @@ export async function POST(request: NextRequest) {
       const stripeSubscriptionId =
         typeof session.subscription === "string" ? session.subscription : session.subscription ?? null;
       const firstMonthAllowance = getAllowanceForPlan(planForTier);
+      const existingTopup = Math.max(0, Math.floor((existing as { credits_topup_remaining?: number } | null)?.credits_topup_remaining ?? 0));
+      const newTotal = firstMonthAllowance + existingTopup;
       const { error: upsertError } = await supabase.from("profiles").upsert(
         {
           user_id: userId,
           plan_type: planForTier,
-          credits_remaining: firstMonthAllowance,
+          credits_allowance_remaining: firstMonthAllowance,
+          credits_topup_remaining: existingTopup,
+          credits_remaining: newTotal,
+          low_credit_alert_sent: false,
           ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
           ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
         },
@@ -361,7 +369,7 @@ export async function POST(request: NextRequest) {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
                 <tr><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;"><strong>Plan</strong></td><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;">${planLabel}</td></tr>
                 <tr><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;"><strong>Amount</strong></td><td style="padding:8px 0; border-bottom:1px solid #e5e7eb;">$${amountPaid}</td></tr>
-                <tr><td style="padding:8px 0;"><strong>Credits added</strong></td><td style="padding:8px 0;">${amount}</td></tr>
+                <tr><td style="padding:8px 0;"><strong>Credits added</strong></td><td style="padding:8px 0;">${creditsAddedForEmail}</td></tr>
               </table>
               ${billingSignature}
             </td>
@@ -378,7 +386,7 @@ export async function POST(request: NextRequest) {
         to: customerEmail,
         replyTo: BILLING_REPLY_TO,
         subject: "VeloDoc — Payment received",
-        text: `Payment received. Plan: ${planLabel}. Amount: $${amountPaid}. Credits added: ${amount}. Thank you.`,
+        text: `Payment received. Plan: ${planLabel}. Amount: $${amountPaid}. Credits added: ${creditsAddedForEmail}. Thank you.`,
         html,
       });
     } catch (err) {

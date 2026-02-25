@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
   const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .select("user_id, email, credits_remaining")
+    .select("user_id, email, credits_remaining, credits_topup_remaining")
     .eq("user_id", userId)
     .single();
 
@@ -71,21 +71,26 @@ export async function POST(req: Request) {
     );
   }
 
-  const current =
-    typeof (profile as { credits_remaining?: number }).credits_remaining ===
-    "number"
-      ? Math.max(
-          0,
-          Math.floor((profile as { credits_remaining: number }).credits_remaining)
-        )
+  const currentTotal =
+    typeof (profile as { credits_remaining?: number }).credits_remaining === "number"
+      ? Math.max(0, Math.floor((profile as { credits_remaining: number }).credits_remaining))
       : 0;
-  const newTotal = current + amount;
+  const topup =
+    typeof (profile as { credits_topup_remaining?: number }).credits_topup_remaining === "number"
+      ? Math.max(0, Math.floor((profile as { credits_topup_remaining: number }).credits_topup_remaining))
+      : 0;
+  const newTopup = topup + amount;
+  const newTotal = currentTotal + amount;
   const userEmail = (profile as { email?: string | null }).email?.trim();
   const performedBy = (await getCurrentUserEmail()) ?? "admin";
 
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({ credits_remaining: newTotal })
+    .update({
+      credits_topup_remaining: newTopup,
+      credits_remaining: newTotal,
+      low_credit_alert_sent: false,
+    })
     .eq("user_id", userId);
 
   if (updateError) {
