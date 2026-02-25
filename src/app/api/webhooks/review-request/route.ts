@@ -34,9 +34,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const record = body.record ?? body;
+  type PayloadRecord = { id?: string; user_id?: string; email?: string };
+  const record = (body.record ?? body) as PayloadRecord;
   const email = record.email?.trim();
-  const userId = (record as { user_id?: string }).user_id?.trim();
+  const userId = record.user_id?.trim();
   const queueId = record.id;
   if (!email) {
     return NextResponse.json({ error: "Missing email in payload" }, { status: 400 });
