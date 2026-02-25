@@ -4,5 +4,8 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions]
+  directory = "netlify/functions"
+
 # Netlify detects Next.js and uses the Essential Next.js plugin.
 # Set env vars in Netlify: Site → Build & deploy → Environment (e.g. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY).
