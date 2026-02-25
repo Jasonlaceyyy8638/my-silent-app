@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
       const priceId = firstItem?.price?.id;
       const planType = priceIdToPlanType(priceId);
 
-      let resolvedUserId = userId;
+      let resolvedUserId: string | null = userId ?? null;
       if (!resolvedUserId) {
         const { data: profileByCustomer } = await supabase
           .from("profiles")
