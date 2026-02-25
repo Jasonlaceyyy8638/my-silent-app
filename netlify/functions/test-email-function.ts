@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const handler: Handler = async (event, context) => {
   try {
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'VeloDoc <reports@velodoc.app>', // Ensure domain is verified in Resend
       to: ['jasonlaceyy0638@gmail.com'], // Sending to your admin email
       subject: 'VeloDoc Weekly Sync History (Test)',
@@ -23,9 +23,16 @@ export const handler: Handler = async (event, context) => {
       ],
     });
 
+    if (error) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: error.message ?? 'Failed to send email' }),
+      };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Email sent successfully', id: data.id }),
+      body: JSON.stringify({ message: 'Email sent successfully', id: data?.id }),
     };
   } catch (error) {
     return {
