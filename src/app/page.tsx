@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { Testimonials } from "@/components/Testimonials";
+import { TrustedByProfessionals } from "@/components/TrustedByProfessionals";
 import { TrustBar } from "@/components/TrustBar";
 import { CaseStudies } from "@/components/CaseStudies";
 import { MotionScrollSection } from "@/components/MotionScrollSection";
@@ -226,6 +227,10 @@ export default function Home() {
 
         <MotionScrollSection>
           <Testimonials />
+        </MotionScrollSection>
+
+        <MotionScrollSection>
+          <TrustedByProfessionals />
         </MotionScrollSection>
 
         <MotionScrollSection className="mb-14 text-center">

@@ -197,7 +197,29 @@ CREATE INDEX IF NOT EXISTS idx_stripe_payments_created_at ON public.stripe_payme
 - `amount_total_cents`: Session total in cents.
 - `customer_email`: From session for reference.
 
-### 9. Optional: api_logs columns for QuickBooks sync troubleshooting
+### 9. sync_history and review_request_queue (review-request email at 10 syncs)
+
+Run the migration in **Supabase SQL Editor**: `supabase/migrations/20250223000000_sync_history_and_review_request.sql`.
+
+- **sync_history**: One row per successful QuickBooks sync. The app inserts here from `quickbooks-sync.ts` when a document is synced. Trigger `tr_sync_history_review_request` runs after each insert.
+- **review_request_queue**: When a user reaches **exactly 10** rows in `sync_history`, the trigger inserts one row here (user_id, email from profiles). One row per user (UNIQUE on user_id).
+- **Supabase Database Webhook**: In Supabase Dashboard → **Database** → **Webhooks**, create a webhook:
+  - **Table**: `review_request_queue`
+  - **Events**: Insert
+  - **URL**: `https://your-app-url/api/webhooks/review-request` (e.g. `https://velodoc.app/api/webhooks/review-request`)
+  - **HTTP Headers** (optional): `x-review-secret: <REVIEW_WEBHOOK_SECRET>` if you set that env var.
+
+The app sends a professional “Review Request” email from **sales@velodoc.app** with a link to your feedback form. Set `FEEDBACK_FORM_URL` in env (default `https://velodoc.app/feedback`).
+
+### 10. reviews and review_request_sent (Review & Testimonial system)
+
+Run the migration in **Supabase SQL Editor**: `supabase/migrations/20250224000000_reviews_and_review_request_sent.sql`.
+
+- **reviews**: `user_id`, `rating` (1–5), `comment`, `reviewer_name` (optional), `is_published` (boolean, default false), `created_at`. Set `is_published = true` in Supabase (or via admin) to show a review on the landing page.
+- **profiles.review_request_sent**: Set to `true` when the user submits a review via `/review/[id]` so they are not emailed again. The sync_history trigger also skips queueing if this is already true.
+- **Review page**: `/review/[id]` — form with 1–5 stars, testimonial text, optional name; submits to `POST /api/reviews`. The review-request email links to `/review/{user_id}`.
+
+### 11. Optional: api_logs columns for QuickBooks sync troubleshooting
 
 To store failed sync details and show them on the Sync History page (Admin Eye icon), add optional columns to `api_logs`:
 

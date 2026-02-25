@@ -222,5 +222,10 @@ export async function syncDocumentToQuickBooks(
     return { ok: false, error: "Bill created in QuickBooks but failed to save sync status." };
   }
 
+  // Log successful sync for sync_history trigger (review-request email at 10 syncs)
+  await supabase.from("sync_history").insert({ user_id: userId, document_id: documentId }).then(({ error: syncLogErr }) => {
+    if (syncLogErr) console.error("[quickbooks-sync] sync_history insert error:", syncLogErr);
+  });
+
   return { ok: true, intuit_tid: billId };
 }
