@@ -6,9 +6,12 @@ import {
   SignedIn,
   SignedOut,
   UserButton,
+  useUser,
 } from "@clerk/nextjs";
 import { clerkAppearance } from "@/lib/clerk-appearance";
-import { Laptop } from "lucide-react";
+import { Laptop, Shield } from "lucide-react";
+
+const ADMIN_EMAIL = "jasonlaceyyy8638@gmail.com";
 
 /** Petroleum Blue #0b172a + Teal #22d3ee glassmorphism for User Action Group */
 const actionGroupAppearance = {
@@ -35,6 +38,10 @@ const actionGroupAppearance = {
  * "Download Desktop" is in the User profile dropdown with a Laptop icon.
  */
 export function UserActions() {
+  const { user } = useUser();
+  const primaryEmail = user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress;
+  const isAdmin = (primaryEmail ?? "").trim().toLowerCase() === ADMIN_EMAIL;
+
   return (
     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap justify-end">
       {/* Primary CTA — most prominent */}
@@ -62,6 +69,13 @@ export function UserActions() {
           appearance={actionGroupAppearance}
         >
           <UserButton.MenuItems>
+            {isAdmin && (
+              <UserButton.Link
+                href="/admin"
+                label="Admin"
+                labelIcon={<Shield className="w-4 h-4" />}
+              />
+            )}
             <UserButton.Link
               href="/download"
               label="Download Desktop"
