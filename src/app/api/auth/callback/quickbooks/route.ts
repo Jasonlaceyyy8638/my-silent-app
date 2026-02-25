@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabase } from "@/lib/supabase";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_ADMIN } from "@/lib/sendgrid";
 
 /** Production token endpoint (aligns with https://developer.intuit.com/.well-known/openid_configuration) */
 const INTUIT_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
@@ -12,6 +12,7 @@ async function sendErrorLogToAdmin(reason: string, detail: string, userId?: stri
   if (!process.env.SENDGRID_API_KEY?.trim()) return;
   try {
     await sendWithSendGrid({
+      from: SENDGRID_FROM_ADMIN,
       to: ADMIN_EMAIL,
       replyTo: process.env.REPLY_TO ?? "billing@velodoc.app",
       subject: `[VeloDoc] QuickBooks callback error: ${reason}`,

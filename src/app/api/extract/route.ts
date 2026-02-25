@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import pdfParse from "pdf-parse";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_ADMIN } from "@/lib/sendgrid";
 import { getSupabase } from "@/lib/supabase";
 import {
   getCreditsForAuth,
@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
       if (planType && paidPlans.includes(planType)) {
         try {
           await sendWithSendGrid({
+            from: SENDGRID_FROM_ADMIN,
             to: process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app",
             subject: "VeloDoc — Paid plan user attempted extraction with $0 credit balance",
             text: `User ${userId} (plan: ${planType}) attempted to process a file with insufficient credit balance. They may need to buy credits.`,
@@ -253,6 +254,7 @@ export async function POST(request: NextRequest) {
         if (planType === "enterprise") {
           try {
             await sendWithSendGrid({
+              from: SENDGRID_FROM_ADMIN,
               to: process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app",
               subject: "VeloDoc — Low Credit alert (Enterprise user)",
               text: `Enterprise user ${userId} has ${result.remaining} credits remaining. Consider reaching out to offer bulk credit packages.`,

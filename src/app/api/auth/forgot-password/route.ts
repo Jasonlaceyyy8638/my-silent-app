@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getTransactionalWrapper } from "@/lib/email-transactional";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
 
 const RESET_EXPIRY_HOURS = 1;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://velodoc.app";
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
 
   try {
     await sendWithSendGrid({
+      from: SENDGRID_FROM_SUPPORT,
       to: email,
       subject: "VeloDoc — Reset your password",
       html,

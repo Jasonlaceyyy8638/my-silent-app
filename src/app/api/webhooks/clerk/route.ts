@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { ensureWelcomeCredits } from "@/lib/credits";
 import { getEmailSignature } from "@/lib/email-signature";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
 import { getSupabase } from "@/lib/supabase";
 
 const REPLY_TO_EMAIL = process.env.REPLY_TO ?? "billing@velodoc.app";
@@ -256,6 +256,7 @@ export async function POST(request: Request) {
 
   try {
     await sendWithSendGrid({
+      from: SENDGRID_FROM_SUPPORT,
       to: toEmail,
       replyTo: REPLY_TO_EMAIL,
       subject: WELCOME_SUBJECT,

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEmailSignature } from "@/lib/email-signature";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
 
 const REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 
 /**
  * POST /api/emails/ticket-received
- * Sends a "Ticket Received" confirmation from Jason Lacey <support@velodoc.app>.
+ * Sends a "Ticket Received" confirmation from support@velodoc.app (verified sender).
  * Body: { to: string, ticketId?: string, subject?: string }
  */
 export async function POST(request: NextRequest) {
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await sendWithSendGrid({
+      from: SENDGRID_FROM_SUPPORT,
       to,
       replyTo: REPLY_TO,
       subject: body.subject ?? `Ticket Received – ${ticketId}`,

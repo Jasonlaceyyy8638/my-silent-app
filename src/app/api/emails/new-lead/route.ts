@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEmailSignature } from "@/lib/email-signature";
-import { sendWithSendGrid } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_SALES } from "@/lib/sendgrid";
 
 const SALES_INBOX = "sales@velodoc.app";
 const REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 
 /**
  * POST /api/emails/new-lead
- * Sends a "New Lead" notification to sales@velodoc.app from Jason Lacey <support@velodoc.app>.
+ * Sends a "New Lead" notification to sales@velodoc.app from sales@velodoc.app (verified sender).
  * Body: { email: string, name?: string, source?: string, message?: string }
  */
 export async function POST(request: NextRequest) {
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await sendWithSendGrid({
+      from: SENDGRID_FROM_SALES,
       to: SALES_INBOX,
       replyTo: leadEmail,
       subject: `New Lead: ${name !== "—" ? name : leadEmail}`,

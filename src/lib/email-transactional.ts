@@ -1,6 +1,6 @@
 /**
  * Shared VeloDoc transactional email layout: teal/white branding, mobile-responsive.
- * All emails from support use: Jason Lacey <support@velodoc.app>
+ * Support transactional wrapper. From is always support@velodoc.app (verified sender).
  */
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
@@ -8,7 +8,8 @@ const DASHBOARD_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")
   ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/dashboard`
   : "https://velodoc.app/dashboard";
 
-export const SUPPORT_FROM = "Jason Lacey <support@velodoc.app>";
+/** Must match verified sender in Supabase/SendGrid */
+export const SUPPORT_FROM = "support@velodoc.app";
 
 export function getTransactionalWrapper(options: {
   title: string;

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_SALES } from "@/lib/sendgrid";
 import { getEmailSignature } from "@/lib/email-signature";
 import type { ExtractedRow } from "@/types";
 
-// Precision Reporting: from Jason Lacey <support@velodoc.app>
+// Sales/Reports: Monday Precision Report from sales@velodoc.app
 const ARCHITECTURAL_LOGS_URL = "https://velodoc.app/dashboard/sync-history";
 
 type DocRow = {
@@ -204,7 +204,7 @@ async function buildAndSendReport(
   try {
     for (const toEmail of recipients) {
       await sendWithSendGrid({
-        from: SENDGRID_FROM_SUPPORT,
+        from: SENDGRID_FROM_SALES,
         to: toEmail,
         replyTo,
         subject: `VeloDoc Precision Reporting – ${count} document(s)`,

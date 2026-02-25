@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addCredits } from "@/lib/credits";
-import { sendWithSendGrid, SENDGRID_FROM_SUPPORT } from "@/lib/sendgrid";
+import { sendWithSendGrid, SENDGRID_FROM_BILLING, SENDGRID_FROM_ADMIN } from "@/lib/sendgrid";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
 import { getTransactionalWrapper, getWelcomeTierBody } from "@/lib/email-transactional";
@@ -36,8 +36,7 @@ function getAllowanceForPlan(plan: string): number {
 }
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
-// All automated receipts from Starter/Pro/Enterprise: addressed from Alissa Wilson billing@velodoc.app
-const BILLING_FROM = process.env.BILLING_FROM_EMAIL ?? "Alissa Wilson <billing@velodoc.app>";
+// All sends use SendGrid with verified departmental from (billing@, admin@) — no env override for from
 const BILLING_REPLY_TO = process.env.REPLY_TO ?? "billing@velodoc.app";
 const ADMIN_EMAIL = process.env.WEEKLY_REPORT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@velodoc.app";
 const BILLING_NOTIFY_EMAIL = process.env.BILLING_NOTIFY_EMAIL ?? process.env.REPLY_TO ?? "billing@velodoc.app";
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest) {
           if (planType === "enterprise" && previousPlan !== "enterprise") {
             try {
               await sendWithSendGrid({
-                from: SENDGRID_FROM_SUPPORT,
+                from: SENDGRID_FROM_BILLING,
                 to: BILLING_NOTIFY_EMAIL,
                 replyTo: BILLING_REPLY_TO,
                 subject: "VeloDoc — User upgraded to Enterprise (high-touch support)",
@@ -333,7 +332,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Billing receipt and tier welcome: SendGrid, from Jason Lacey <support@velodoc.app>
+  // Billing: receipt + tier welcome from billing@velodoc.app
   const customerEmail =
     (session.customer_details?.email as string | undefined)?.trim() ??
     (session.customer_email as string | undefined)?.trim();
@@ -375,7 +374,7 @@ export async function POST(request: NextRequest) {
 </html>`;
     try {
       await sendWithSendGrid({
-        from: SENDGRID_FROM_SUPPORT,
+        from: SENDGRID_FROM_BILLING,
         to: customerEmail,
         replyTo: BILLING_REPLY_TO,
         subject: "VeloDoc — Payment received",
@@ -400,6 +399,7 @@ export async function POST(request: NextRequest) {
       });
       try {
         await sendWithSendGrid({
+          from: SENDGRID_FROM_BILLING,
           to: customerEmail,
           replyTo: BILLING_REPLY_TO,
           subject: `Welcome to VeloDoc ${planDisplayName(planForTier)}`,
@@ -411,30 +411,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Notify admin and Alissa when an Enterprise subscription is initiated (checkout or high-touch).
+  // Admin: backend alert to admin@velodoc.app; Billing: high-touch notice to Alissa from billing@velodoc.app
   if (planForTier === "enterprise") {
     const customerEmailForAdmin =
       (session.customer_details?.email as string | undefined)?.trim() ??
       (session.customer_email as string | undefined)?.trim() ??
       "—";
     const amountPaid = session.amount_total != null ? (session.amount_total / 100).toFixed(2) : "—";
-    const payload = {
-      from: SENDGRID_FROM_SUPPORT,
-      replyTo: BILLING_REPLY_TO,
-      subject: "VeloDoc — Enterprise subscription initiated",
-      text: `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmailForAdmin}\nAmount: $${amountPaid}\nUser ID: ${userId}`,
-      html: `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmailForAdmin}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`,
-    };
+    const text = `Enterprise subscription completed.\nSession: ${session.id}\nCustomer: ${customerEmailForAdmin}\nAmount: $${amountPaid}\nUser ID: ${userId}`;
+    const html = `<p>Enterprise subscription completed.</p><p><strong>Session:</strong> ${session.id}<br/><strong>Customer:</strong> ${customerEmailForAdmin}<br/><strong>Amount:</strong> $${amountPaid}<br/><strong>User ID:</strong> ${userId}</p>`;
     try {
-      await sendWithSendGrid({ ...payload, to: ADMIN_EMAIL });
+      await sendWithSendGrid({
+        from: SENDGRID_FROM_ADMIN,
+        to: ADMIN_EMAIL,
+        replyTo: BILLING_REPLY_TO,
+        subject: "VeloDoc — Enterprise subscription initiated",
+        text,
+        html,
+      });
     } catch (err) {
       console.error("[Stripe webhook] Absolute Precision audit: Enterprise notification to admin failed", { error: err });
     }
     try {
       await sendWithSendGrid({
-        ...payload,
+        from: SENDGRID_FROM_BILLING,
         to: BILLING_NOTIFY_EMAIL,
+        replyTo: BILLING_REPLY_TO,
         subject: "VeloDoc — Enterprise subscription initiated (high-touch support)",
+        text,
+        html,
       });
     } catch (err) {
       console.error("[Stripe webhook] Absolute Precision audit: Enterprise notification to Alissa failed", { error: err });
