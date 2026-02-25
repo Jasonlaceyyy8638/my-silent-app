@@ -35,6 +35,8 @@ import type { UserTierEntry } from "@/app/api/admin/user-tiers/route";
 import type { PlanChangeEntry } from "@/app/api/admin/plan-changes/route";
 import { planDisplayName } from "@/lib/plan-display";
 import { QuickBooksUpsellModal } from "@/components/QuickBooksUpsellModal";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { CreditShield, isOutOfCredits } from "@/components/CreditShield";
 
 const CUSTOM_CATEGORIES_KEY = "velodoc_custom_categories";
 function getCustomCategoriesStorageKey(orgId: string | null): string {
@@ -138,6 +140,7 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<MeRole>(null);
   const [plan, setPlan] = useState<MePlan>("starter");
   const [qbUpsellOpen, setQbUpsellOpen] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
   const [billingPortalError, setBillingPortalError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -873,7 +876,10 @@ export default function DashboardPage() {
                   onFileSelect={handleFileSelect}
                   isUploading={isUploading}
                   disabled={credits !== null && credits < 1}
+                  disabledLabel={credits !== null && credits <= 0 ? "Out of Credits — Upgrade Now" : undefined}
+                  onDisabledClick={credits !== null && credits <= 0 ? () => setUpgradeModalOpen(true) : undefined}
                 />
+                {upgradeModalOpen && <UpgradeModal onClose={() => setUpgradeModalOpen(false)} />}
                 {error && (
                   <p className="mt-3 text-sm text-red-300 text-center" role="alert">
                     {error}
@@ -888,18 +894,7 @@ export default function DashboardPage() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md p-6 overflow-hidden">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Usage & Insights</h2>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-slate-400">Credits</span>
-                      <span className="text-white font-medium">{stats.creditsUsed}/{stats.creditsTotal}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all"
-                        style={{ width: `${Math.min(100, (stats.creditsUsed / stats.creditsTotal) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                  <CreditShield creditsRemaining={credits} plan={plan} />
                   <div className="grid grid-cols-1 gap-3 pt-2">
                     <div className="rounded-xl border border-white/10 bg-slate-800/50 p-3 flex items-center gap-3">
                       <FileText className="h-5 w-5 text-cyan-400 flex-shrink-0" />
@@ -1104,6 +1099,7 @@ export default function DashboardPage() {
                   onSyncStart={() => setSyncError(null)}
                   selectedFolder={selectedFolder}
                   plan={plan}
+                  outOfCredits={isOutOfCredits(credits)}
                 />
               </div>
             </section>

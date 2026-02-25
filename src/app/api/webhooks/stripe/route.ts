@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { addCredits } from "@/lib/credits";
 import { addCreditsForAuth } from "@/lib/credits-auth";
 import { getEmailSignature } from "@/lib/email-signature";
+import { getTransactionalWrapper, getWelcomeTierBody, SUPPORT_FROM } from "@/lib/email-transactional";
 import { planDisplayName } from "@/lib/plan-display";
 import { getSupabase } from "@/lib/supabase";
 
@@ -15,12 +16,24 @@ function getStripe(): Stripe | null {
 // Validates all incoming Stripe events; set STRIPE_WEBHOOK_SECRET in Netlify to your webhook signing secret.
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+/** One-time credit grant from checkout (legacy); first-month allowance now set via credits_remaining in profiles. */
 const CREDITS_BY_PLAN: Record<string, number> = {
   starter: 1,
   velopack: 20,
   pro: 1,
   enterprise: 100,
 };
+
+/** Monthly credit allowance by plan_tier — used for invoice.paid reset and checkout.session.completed first-month grant. */
+const CREDITS_ALLOWANCE: Record<string, number> = {
+  starter: 25,
+  pro: 150,
+  enterprise: 500,
+};
+
+function getAllowanceForPlan(plan: string): number {
+  return CREDITS_ALLOWANCE[plan] ?? 25;
+}
 
 const LOGO_URL = "https://velodoc.app/logo-png.png";
 // All automated receipts from Starter/Pro/Enterprise: addressed from Alissa Wilson billing@velodoc.app
@@ -41,9 +54,13 @@ function priceIdToPlanType(priceId: string | undefined): "starter" | "pro" | "en
 }
 
 /**
- * Stripe webhook: signature-verified, ready for team-managed Stripe roles.
- * Handles checkout.session.completed (credits + billing receipt) and customer.subscription.updated (portal plan changes).
- * Other event types acknowledged with 200.
+ * Stripe webhook: signature-verified (Stripe SDK), credit-allowance management.
+ * Requires Supabase profiles to have: credits_remaining (int), stripe_customer_id (text), stripe_subscription_id (text).
+ *
+ * - invoice.paid: Resets profiles.credits_remaining by plan_tier (Starter 25, Professional 150, Enterprise 500).
+ * - checkout.session.completed: Links stripe_customer_id + stripe_subscription_id to profile and grants first month allowance.
+ * - customer.subscription.updated: Updates plan_type and credits_remaining on plan change.
+ * All failed Supabase updates are logged with "[Stripe webhook] Absolute Precision audit" for billing audit.
  */
 export async function POST(request: NextRequest) {
   if (!webhookSecret) {
@@ -89,10 +106,14 @@ export async function POST(request: NextRequest) {
             .eq("user_id", userId)
             .maybeSingle();
           const previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
-          await supabase.from("profiles").upsert(
-            { user_id: userId, plan_type: planType },
+          const allowance = getAllowanceForPlan(planType);
+          const { error: upsertError } = await supabase.from("profiles").upsert(
+            { user_id: userId, plan_type: planType, credits_remaining: allowance },
             { onConflict: "user_id" }
           );
+          if (upsertError) {
+            console.error("[Stripe webhook] Absolute Precision audit: customer.subscription.updated profiles upsert failed", { error: upsertError.message, code: upsertError.code, userId, planType });
+          }
           if (planType === "pro" || planType === "enterprise") {
             try {
               await supabase.from("plan_change_log").insert({
@@ -102,8 +123,8 @@ export async function POST(request: NextRequest) {
                 to_plan: planType,
                 stripe_session_id: subscription.id,
               });
-            } catch {
-              // ignore
+            } catch (e) {
+              console.error("[Stripe webhook] Absolute Precision audit: plan_change_log insert failed", { error: e, userId, planType });
             }
           }
           if (planType === "enterprise" && previousPlan !== "enterprise") {
@@ -120,14 +141,68 @@ export async function POST(request: NextRequest) {
                   html: `<p>A user has upgraded to <strong>Enterprise</strong> via the Customer Portal.</p><p><strong>Subscription:</strong> ${subscription.id}<br/><strong>User ID:</strong> ${userId}<br/><strong>Previous plan:</strong> ${previousPlan ?? "—"}</p><p>Please provide the high-touch support promised for Enterprise.</p>`,
                 });
               } catch (err) {
-                console.error("Stripe webhook: Enterprise upgrade notification to Alissa failed", err);
+                console.error("[Stripe webhook] Absolute Precision audit: Enterprise upgrade notification failed", { error: err });
               }
             }
           }
         } catch (err) {
-          console.error("Stripe webhook: customer.subscription.updated profiles update failed", err);
+          console.error("[Stripe webhook] Absolute Precision audit: customer.subscription.updated profiles update failed", { error: err, userId, planType });
         }
       }
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  if (event.type === "invoice.paid") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+    const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? null;
+
+    if (!subscriptionId || !customerId) {
+      console.error("[Stripe webhook] Absolute Precision audit: invoice.paid missing subscription or customer", { invoiceId: invoice.id, subscriptionId, customerId });
+      return NextResponse.json({ received: true });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      console.error("[Stripe webhook] Absolute Precision audit: invoice.paid Supabase not configured");
+      return NextResponse.json({ received: true });
+    }
+
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const userId = (subscription.metadata?.userId as string)?.trim();
+      const firstItem = subscription.items?.data?.[0];
+      const priceId = firstItem?.price?.id;
+      const planType = priceIdToPlanType(priceId);
+
+      let resolvedUserId = userId;
+      if (!resolvedUserId) {
+        const { data: profileByCustomer } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+        resolvedUserId = (profileByCustomer as { user_id?: string } | null)?.user_id?.trim() ?? null;
+      }
+
+      if (!resolvedUserId || !planType) {
+        console.error("[Stripe webhook] Absolute Precision audit: invoice.paid could not resolve user or plan", { invoiceId: invoice.id, subscriptionId, customerId, resolvedUserId, planType });
+        return NextResponse.json({ received: true });
+      }
+
+      const allowance = getAllowanceForPlan(planType);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ credits_remaining: allowance })
+        .eq("user_id", resolvedUserId);
+
+      if (error) {
+        console.error("[Stripe webhook] Absolute Precision audit: invoice.paid credits_remaining update failed", { error: error.message, code: error.code, userId: resolvedUserId, planType, allowance });
+        return NextResponse.json({ received: true });
+      }
+    } catch (err) {
+      console.error("[Stripe webhook] Absolute Precision audit: invoice.paid handler failed", { error: err, invoiceId: invoice.id });
     }
     return NextResponse.json({ received: true });
   }
@@ -139,7 +214,7 @@ export async function POST(request: NextRequest) {
   const session = event.data.object as Stripe.Checkout.Session;
   const userId = session.client_reference_id ?? session.metadata?.userId;
   if (!userId) {
-    console.error("Stripe webhook: no userId in session", session.id);
+    console.error("[Stripe webhook] Absolute Precision audit: checkout.session.completed missing userId", { sessionId: session.id });
     return NextResponse.json({ error: "Missing user" }, { status: 400 });
   }
 
@@ -160,7 +235,7 @@ export async function POST(request: NextRequest) {
       else if (priceIdEnterprise && firstPriceId === priceIdEnterprise) planFromPrice = "enterprise";
     }
   } catch (e) {
-    console.error("Stripe webhook: listLineItems failed", e);
+    console.error("[Stripe webhook] Absolute Precision audit: listLineItems failed", { error: e, sessionId: session.id });
   }
   const plan = (planFromPrice ?? (session.metadata?.plan as string) ?? "starter") as string;
   const metadataCredits = session.metadata?.credits;
@@ -187,14 +262,14 @@ export async function POST(request: NextRequest) {
       await addCredits(userId, amount);
     }
   } catch (err) {
-    console.error("Webhook addCredits error:", err);
+    console.error("[Stripe webhook] Absolute Precision audit: addCredits failed", { error: err, userId });
     return NextResponse.json(
       { error: "Failed to add credits" },
       { status: 500 }
     );
   }
 
-  // Update profile tier so /api/me and QuickBooks access reflect the purchased plan.
+  // First-time setup: link stripe_customer_id and stripe_subscription_id to profile, grant first month's allowance.
   // Connection audit: profiles filtered by user_id (RLS-compatible).
   const supabase = getSupabase();
   const planForTier = (planFromPrice ?? (session.metadata?.plan as string) ?? plan) as string;
@@ -209,16 +284,24 @@ export async function POST(request: NextRequest) {
       previousPlan = (existing as { plan_type?: string } | null)?.plan_type ?? null;
       const stripeCustomerId =
         typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
-      await supabase.from("profiles").upsert(
+      const stripeSubscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription ?? null;
+      const firstMonthAllowance = getAllowanceForPlan(planForTier);
+      const { error: upsertError } = await supabase.from("profiles").upsert(
         {
           user_id: userId,
           plan_type: planForTier,
+          credits_remaining: firstMonthAllowance,
           ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+          ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
         },
         { onConflict: "user_id" }
       );
+      if (upsertError) {
+        console.error("[Stripe webhook] Absolute Precision audit: checkout.session.completed profiles upsert failed", { error: upsertError.message, code: upsertError.code, userId, planForTier });
+      }
     } catch (e) {
-      console.error("Stripe webhook: profiles plan_type update failed", e);
+      console.error("[Stripe webhook] Absolute Precision audit: checkout.session.completed profiles update failed", { error: e, userId, planForTier });
     }
     // Team notification: log pro/enterprise updates for Phillip McKenzie's admin view.
     if ((planForTier === "pro" || planForTier === "enterprise") && supabase) {
@@ -234,7 +317,7 @@ export async function POST(request: NextRequest) {
           stripe_session_id: session.id,
         });
       } catch (e) {
-        console.error("Stripe webhook: plan_change_log insert failed", e);
+        console.error("[Stripe webhook] Absolute Precision audit: plan_change_log insert failed", { error: e, userId, planForTier });
       }
     }
   }
@@ -250,7 +333,7 @@ export async function POST(request: NextRequest) {
         customer_email: (session.customer_details?.email ?? session.customer_email) ?? null,
       });
     } catch (e) {
-      console.error("Stripe webhook: stripe_payments insert failed (table may not exist yet)", e);
+      console.error("[Stripe webhook] Absolute Precision audit: stripe_payments insert failed", { error: e, userId, sessionId: session.id });
     }
   }
 
@@ -306,7 +389,33 @@ export async function POST(request: NextRequest) {
         html,
       });
     } catch (err) {
-      console.error("Stripe webhook: billing receipt email failed", err);
+      console.error("[Stripe webhook] Absolute Precision audit: billing receipt email failed", { error: err });
+    }
+
+    // Institutional welcome email (tier-based): from support@velodoc.app, Go to Dashboard CTA
+    if (planForTier === "starter" || planForTier === "pro" || planForTier === "enterprise") {
+      const firstName = (session.customer_details?.name ?? session.customer_details?.email ?? "")
+        .toString()
+        .trim()
+        .split(/\s+/)[0] ?? "";
+      const welcomeBody = getWelcomeTierBody(planForTier as "starter" | "pro" | "enterprise", firstName);
+      const welcomeHtml = getTransactionalWrapper({
+        title: `Welcome to VeloDoc ${planDisplayName(planForTier)}`,
+        bodyHtml: welcomeBody,
+        ctaLabel: "Go to Dashboard",
+      });
+      try {
+        const resend = new Resend(resendKey);
+        await resend.emails.send({
+          from: SUPPORT_FROM,
+          to: customerEmail,
+          replyTo: BILLING_REPLY_TO,
+          subject: `Welcome to VeloDoc ${planDisplayName(planForTier)}`,
+          html: welcomeHtml,
+        });
+      } catch (err) {
+        console.error("[Stripe webhook] Absolute Precision audit: tier welcome email failed", { error: err, planForTier });
+      }
     }
   }
 
@@ -328,7 +437,7 @@ export async function POST(request: NextRequest) {
       const resend = new Resend(resendKey);
       await resend.emails.send({ ...payload, to: ADMIN_EMAIL });
     } catch (err) {
-      console.error("Stripe webhook: Enterprise notification to admin failed", err);
+      console.error("[Stripe webhook] Absolute Precision audit: Enterprise notification to admin failed", { error: err });
     }
     try {
       const resend = new Resend(resendKey);
@@ -338,7 +447,7 @@ export async function POST(request: NextRequest) {
         subject: "VeloDoc — Enterprise subscription initiated (high-touch support)",
       });
     } catch (err) {
-      console.error("Stripe webhook: Enterprise notification to Alissa failed", err);
+      console.error("[Stripe webhook] Absolute Precision audit: Enterprise notification to Alissa failed", { error: err });
     }
   }
 

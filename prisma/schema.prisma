@@ -13,3 +13,13 @@ model UserCredits {
   credits   Int      @default(0)
   updatedAt DateTime @updatedAt
 }
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([email])
+  @@index([expiresAt])
+}

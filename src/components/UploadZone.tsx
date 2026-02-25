@@ -7,9 +7,13 @@ type UploadZoneProps = {
   onFileSelect: (file: File) => void;
   isUploading: boolean;
   disabled?: boolean;
+  /** When disabled due to credits, show this instead of the default drop message. */
+  disabledLabel?: string;
+  /** When disabled, clicking the zone calls this (e.g. open upgrade modal) instead of doing nothing. */
+  onDisabledClick?: () => void;
 };
 
-export function UploadZone({ onFileSelect, isUploading, disabled = false }: UploadZoneProps) {
+export function UploadZone({ onFileSelect, isUploading, disabled = false, disabledLabel, onDisabledClick }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDrop = useCallback(
@@ -44,19 +48,31 @@ export function UploadZone({ onFileSelect, isUploading, disabled = false }: Uplo
   );
 
   const isDisabled = isUploading || disabled;
+  const allowDisabledClick = disabled && !isUploading && onDisabledClick;
+
+  const handleLabelClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (allowDisabledClick) {
+        e.preventDefault();
+        onDisabledClick?.();
+      }
+    },
+    [allowDisabledClick, onDisabledClick]
+  );
 
   return (
     <label
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
+      onClick={handleLabelClick}
       className={`
         flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-8 py-12
         transition-colors
         ${isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
         ${isDragging && !isDisabled ? "border-teal-accent/60 bg-teal-accent/10" : "border-white/20 hover:border-teal-accent/40 bg-white/5"}
         ${isUploading ? "pointer-events-none" : ""}
-        ${disabled && !isUploading ? "pointer-events-none" : ""}
+        ${disabled && !isUploading && !onDisabledClick ? "pointer-events-none" : ""}
       `}
     >
       <input
@@ -74,7 +90,9 @@ export function UploadZone({ onFileSelect, isUploading, disabled = false }: Uplo
       <span className="text-slate-300 text-center text-sm">
         {isUploading
           ? "Extracting data…"
-          : "Drop any PDF here—Invoices, Contracts, Records, or Quotes."}
+          : disabled && disabledLabel
+            ? disabledLabel
+            : "Drop any PDF here—Invoices, Contracts, Records, or Quotes."}
       </span>
       <span className="text-slate-500 text-center text-xs max-w-sm">
         Enterprise note: Documents over 5 pages utilize 1 credit per 5-page block.

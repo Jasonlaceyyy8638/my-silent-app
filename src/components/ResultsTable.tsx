@@ -22,6 +22,8 @@ type ResultsTableProps = {
   selectedFolder?: FolderId;
   /** When 'free', CSV/Excel export is disabled with upgrade tooltip. */
   plan?: MePlan;
+  /** When true, Sync button is disabled and shows "Out of Credits — Upgrade Now". */
+  outOfCredits?: boolean;
 };
 
 function escapeCsvCell(value: string): string {
@@ -149,7 +151,7 @@ function downloadExcel(rows: ExtractedRow[], filename?: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit, onSyncSuccess, onSyncError, onSyncStart, selectedFolder = "all", plan }: ResultsTableProps) {
+export function ResultsTable({ documents, currentUserId, userRole, onDelete, onEdit, onSyncSuccess, onSyncError, onSyncStart, selectedFolder = "all", plan, outOfCredits = false }: ResultsTableProps) {
   const [editDoc, setEditDoc] = useState<DocumentWithRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showExportPaywall, setShowExportPaywall] = useState(false);
@@ -351,6 +353,13 @@ export function ResultsTable({ documents, currentUserId, userRole, onDelete, onE
                         >
                           <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
                           <span className="text-xs font-medium">Synced</span>
+                        </span>
+                      ) : outOfCredits ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-amber-200/90 text-xs font-medium cursor-not-allowed"
+                          title="Out of credits — upgrade to continue"
+                        >
+                          Out of Credits — Upgrade Now
                         </span>
                       ) : (
                         <button
